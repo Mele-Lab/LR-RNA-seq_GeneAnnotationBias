@@ -3,3 +3,6 @@
 01_blast/01_results
 logs
 scripts
+02_extract_UMI/01_extracted_UMI
+03_genome_mapping/01_alignment_results
+04_dedup/01_dedup_results
