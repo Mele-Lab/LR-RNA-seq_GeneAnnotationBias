@@ -61,8 +61,8 @@ library(data.table)
 if(machine=="mn4"){setDTthreads(threads=48)}
 
 ## 0---------END OF HEADER-------------------------------------------------------------------0 ##
-FILENAME <- "fiveLink_results.tsv"
-NUMREADS <- 4438695
+FILENAME <- "top100res.tsv"
+NUMREADS <- 100000/2
 alignment_res <- fread(paste0("01_blast/01_results/",FILENAME))
 colnames(alignment_res) <- c("qseqid", 
                              "qlen", "slen", 
@@ -133,3 +133,5 @@ ggplot(alignment_res)+
   geom_bar(aes(x=nident, fill=umi))
 ggplot(alignment_res)+
   geom_bar(aes(x=mismatch, fill=umi))
+ggplot(alignment_res)+
+  geom_bar(aes(x=length, fill=umi))
