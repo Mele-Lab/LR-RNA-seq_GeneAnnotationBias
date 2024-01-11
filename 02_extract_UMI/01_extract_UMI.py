@@ -6,7 +6,6 @@
 
 import re
 import pandas as pd
-import numpy as np
 import sys
 
 #-DEFINITIONS--------------------------------------------------------------
@@ -29,9 +28,6 @@ def is_concatamer(cigar):
     if count > 1:
         return True
     return False
-
-cigar='444S33=16X20=718S'
-extract_UMI(cigar)
 
 
 # Functions definitions
@@ -70,23 +66,29 @@ def extract_UMI(df):
 
 #---------------------------------------------------------------
 
-
 # Read filtered sam file (unmapped reads have been filtered out)
-sam_path = "01_blast/01_results/top100res.filtered.sam"
-sam_path = sys.argv[0]
+sam_path = sys.argv[1]
+print(sam_path)
+NAME = sam_path.split("/")[-1].split(".")[0]
 
-df = pd.read_csv(sam_path, sep='\t', skiprows=2)
-df.columns=['read_name', 'flag', 'ref_name', 'pos', 'mapq', 'cigar', 'rnext', 'pnext', 'template_length', 'seq', 'qual', 'x1', 'x2', 'x3', 'x4']
-print(df)
+
+
+sam = pd.read_csv(sam_path, sep='\t', skiprows=2)
+print(sam)
+print(len(sam.columns))
+print(sam.columns)
+sam.columns=['read_name', 'flag', 'ref_name', 'pos', 'mapq', 'cigar', 'rnext', 'pnext', 'template_length', 'seq', 'qual', 'x1', 'x2', 'x3', 'x4']
+print(sam)
 
 # for each read, obtain the sequence of the UMI
-umi_series= df.apply(extract_UMI, axis=1)
+umi_series= sam.apply(extract_UMI, axis=1)
+print('UMIs extracted\n\n')
 
 # convert series to df
 umi_table = umi_series.apply(lambda x: pd.Series({'read_name': x[0], 'read_seq': x[1], 'umi_seq': x[2], 'umi_start' : x[3], 'umi_end' : x[4], 'cigar': x[5], 'potential_concatamer': x[6]}))
 
 # convert lists inside of dataframe to strings
-umi_df = umi_table.map(lambda x: x[0] if len(x) > 0 else x)
+umi_df = umi_table.applymap(lambda x: x[0] if len(x) > 0 else x)
 
 # remove rows that for some reason miss the read name
 umi_df = umi_df[umi_df['read_seq'] != '*']
@@ -100,13 +102,14 @@ umi_df.insert(1, 'read_name_UMI', '>' + umi_df['read_name'] + '_' + umi_df['umi_
 # keep only unique reads (reads with only one alignment containing a UMI)
 umi_df = umi_df[~umi_df['read_name'].duplicated()]
 
-
+# remove those that do not have a 16 nt UMI
+umi_df = umi_df[umi_df['umi_seq'].apply(len)==16]
 
 # save table
-umi_df.to_csv('02_extract_UMI/reads_and_umis.tsv', sep='\t', index=False)
+umi_df.to_csv(f'02_extract_UMI/01_extracted_UMI/{NAME}_extracted_UMI.tsv', sep='\t', index=False)
 
 # now create a fasta file
 data_to_create_fasta= umi_df[['read_name_UMI', 'read_seq']]
-data_to_create_fasta.to_csv('/home/pclavell/mounts/projects/Projects/gencode_diversity/deduplication/02_extract_UMI/umi_extracted.fasta', sep='\n', index=False, header=False)
+data_to_create_fasta.to_csv(f'02_extract_UMI/01_extracted_UMI/{NAME}_with_extracted_UMI.fasta', sep='\n', index=False, header=False)
 
-
+print(f'02_extract_UMI/01_extracted_UMI/{NAME}_with_extracted_UMI.fasta')
