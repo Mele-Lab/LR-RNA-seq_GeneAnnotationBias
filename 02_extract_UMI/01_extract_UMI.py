@@ -41,7 +41,7 @@ def find_UMI_location(cigar):
     # assess how many read bases are before the UMI
     for count, alignment_type in parsed_cigar:
         count = int(count)
-        if alignment_type in ['S', '=', 'H', 'I']:
+        if alignment_type in ['S', '=', 'H', 'I']: # Deletions are not considered because a deletion means that the read is lacking a base in the reference, so no need to account for that when extracting UMI
             start_position += count
         elif alignment_type == 'X':
             if count > 10:
