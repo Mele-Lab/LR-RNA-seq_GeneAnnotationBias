@@ -9,3 +9,5 @@ scripts
 03_genome_mapping/hg38.mmi
 03_genome_mapping/gencodev44_transcriptome.mmi
 04_dedup/gencodev44_transcript_map.tsv
+04_dedup/01_dedup.sh
+03_genome_mapping/gencodev44_transcriptome.mmi.fai
