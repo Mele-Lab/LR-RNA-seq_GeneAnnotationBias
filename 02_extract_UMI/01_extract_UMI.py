@@ -90,7 +90,7 @@ umi_table = umi_series.apply(lambda x: pd.Series({'read_name': x[0], 'read_seq':
 # convert lists inside of dataframe to strings
 umi_df = umi_table.applymap(lambda x: x[0] if len(x) > 0 else x)
 
-# remove rows that for some reason miss the read name
+# remove rows that for some reason (not aligned) miss the read name
 umi_df = umi_df[umi_df['read_seq'] != '*']
 
 # drop potential concatamers
@@ -99,7 +99,7 @@ umi_df = umi_df[~ umi_df['potential_concatamer']]
 # add column with read_name + UMIseq
 umi_df.insert(1, 'read_name_UMI', '>' + umi_df['read_name'] + '_' + umi_df['umi_seq'])
 
-# keep only unique reads (reads with only one alignment containing a UMI)
+# keep only one alignment from multimapping reads
 umi_df = umi_df[~umi_df['read_name'].duplicated()]
 
 # remove those that do not have a 16 nt UMI
