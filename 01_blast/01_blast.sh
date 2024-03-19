@@ -3,8 +3,9 @@ module load blast/2.11.0
 module load samtools
 
 QUERY=$1
-DATABASE=$2
-OUTPUT_NAME=$3
+DATABASE=$2 # 00_reference/fiveLinkDb
+OUTPUT=$(echo "$QUERY" | sed 's/.*\///' | sed 's/_.*//' )
+OUTPUT_NAME=01_blast/01_results/$OUTPUT.xml
 
 blastn -query $QUERY \
     -db $DATABASE \

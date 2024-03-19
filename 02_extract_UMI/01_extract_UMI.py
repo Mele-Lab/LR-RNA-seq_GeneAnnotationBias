@@ -70,7 +70,7 @@ def extract_UMI(df):
 sam_path = sys.argv[1]
 print(sam_path)
 NAME = sam_path.split("/")[-1].split(".")[0]
-
+#sam_path="/home/pclavell/mounts/projects/Projects/gencode_diversity/deduplication/test"
 
 
 sam = pd.read_csv(sam_path, sep='\t', skiprows=2)
@@ -99,11 +99,12 @@ umi_df = umi_df[~ umi_df['potential_concatamer']]
 # add column with read_name + UMIseq
 umi_df.insert(1, 'read_name_UMI', '>' + umi_df['read_name'] + '_' + umi_df['umi_seq'])
 
+# remove those that do not have a 16 nt UMI
+umi_df = umi_df[umi_df['umi_seq'].apply(len)==16]
+
 # keep only one alignment from multimapping reads
 umi_df = umi_df[~umi_df['read_name'].duplicated()]
 
-# remove those that do not have a 16 nt UMI
-umi_df = umi_df[umi_df['umi_seq'].apply(len)==16]
 
 # save table
 umi_df.to_csv(f'02_extract_UMI/01_extracted_UMI/{NAME}_extracted_UMI.tsv', sep='\t', index=False)
