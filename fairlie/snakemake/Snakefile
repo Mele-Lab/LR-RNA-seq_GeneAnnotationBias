@@ -1,0 +1,19 @@
+import pandas as pd
+
+include: 'blast.smk'
+include: 'samtools.smk'
+
+# corr. to 01_blast/00_create_db.sh
+use rule make_blast_db as blast_db with:
+    input:
+        fa = ##
+    output:
+        db = ##
+
+# corr to 01_blast/01_blast.sh
+use rule blast as blast_seq with:
+    input:
+        fa = rules.blast_db.input.fa,
+        db = rules.blast_db.output.db
+    output:
+        xml = ## 
