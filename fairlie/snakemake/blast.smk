@@ -1,4 +1,7 @@
 rule make_blast_db:
+    resources:
+        threads = 8,
+        mem_gb = 16
     shell:
         """
         module load blast
