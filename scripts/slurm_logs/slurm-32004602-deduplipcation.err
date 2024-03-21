@@ -1,0 +1,12 @@
+unload PYTHON/3.6.1 (PATH, MANPATH, LD_LIBRARY_PATH, LIBRARY_PATH,
+PKG_CONFIG_PATH, C_INCLUDE_PATH, CPLUS_INCLUDE_PATH, PYTHONHOME, PYTHONPATH) 
+load PYTHON/3.6.1 (PATH, MANPATH, LD_LIBRARY_PATH, LIBRARY_PATH,
+PKG_CONFIG_PATH, C_INCLUDE_PATH, CPLUS_INCLUDE_PATH, PYTHONHOME, PYTHONPATH) 
+Traceback (most recent call last):
+  File "/apps/PYTHON/3.6.1/INTEL/bin/umi_tools", line 10, in <module>
+    sys.exit(main())
+  File "/apps/PYTHON/3.6.1/INTEL/lib/python3.6/site-packages/umi_tools/umi_tools.py", line 61, in main
+    module.main(sys.argv)
+  File "/apps/PYTHON/3.6.1/INTEL/lib/python3.6/site-packages/umi_tools/dedup.py", line 160, in main
+    raise ValueError("Input on standard in not currently supported")
+ValueError: Input on standard in not currently supported
