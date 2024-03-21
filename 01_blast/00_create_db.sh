@@ -2,7 +2,7 @@
 
 module load blast
 
-INPUT=$1
+FASTA=$1
 OUTPUT=$2
 
-makeblastdb -in $INPUT -input_type fasta -dbtype nucl -out $OUTPUT
+makeblastdb -in $FASTA -input_type fasta -dbtype nucl -out $OUTPUT

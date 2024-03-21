@@ -1,13 +1,3 @@
-00_data/
-01_blast/00_reference
-01_blast/01_results
-logs
-scripts
-02_extract_UMI/01_extracted_UMI
-03_genome_mapping/01_alignment_results
-04_dedup/01_dedup_results
-03_genome_mapping/hg38.mmi
-03_genome_mapping/gencodev44_transcriptome.mmi
-04_dedup/gencodev44_transcript_map.tsv
-04_dedup/01_dedup.sh
-03_genome_mapping/gencodev44_transcriptome.mmi.fai
+data
+.gitignore
+slurm_logs
