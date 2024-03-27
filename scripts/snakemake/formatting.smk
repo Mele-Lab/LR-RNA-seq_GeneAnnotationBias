@@ -3,4 +3,4 @@ rule fq_to_fa:
         mem_gb = 4,
         threads = 1
     shell:
-        """sed -n '1~4s/^@/>/p;2~4p' {input.fq} > {output.fa}"""
+        """zcat {input.fq} | sed -n '1~4s/^@/>/p;2~4p' > {output.fa}"""

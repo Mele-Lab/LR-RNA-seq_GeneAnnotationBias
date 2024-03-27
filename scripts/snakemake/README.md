@@ -1,4 +1,5 @@
 ```bash
+# dryrun
 bash /gpfs/projects/bsc83/utils/wrappers/Slurm-wrapper-Ruben-unstable_PauModified.sh \
   -j main_snakemake \
   -u 1 \
@@ -6,10 +7,11 @@ bash /gpfs/projects/bsc83/utils/wrappers/Slurm-wrapper-Ruben-unstable_PauModifie
   -t 2:00:00 \
   -c 'bash submit_dryrun.sh'
 
+# run
 bash /gpfs/projects/bsc83/utils/wrappers/Slurm-wrapper-Ruben-unstable_PauModified.sh \
   -j main_snakemake \
   -u 1 \
-  -q debug \
+  -q bsc_ls \
   -t 2:00:00 \
   -c 'bash submit.sh'
 ```

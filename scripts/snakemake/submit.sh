@@ -8,6 +8,6 @@ snakemake \
 -j 100 \
 --latency-wait 120 \
 --cluster "sbatch \
-  -q debug \
+  -q bsc_ls \
   -c {resources.threads}  \
   --time=2:00:00"
