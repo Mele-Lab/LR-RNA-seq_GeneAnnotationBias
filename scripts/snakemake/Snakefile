@@ -6,10 +6,23 @@ include: 'formatting.smk'
 
 configfile: 'config.yml'
 
+df = pd.read_csv('test_data.tsv', sep='\t')
+
+def get_df_val(df, col, sample):
+    temp = df.loc[df['sample']==sample]
+    assert len(temp.index) == 1
+    return temp[col].values[0]
+
+rule all:
+    input:
+        expand(rules.blast_seq.output,
+               sample=df['sample'].tolist())
+
 # corr. to 00_fastq2fasta.sh
 use rule fq_to_fa as raw_fq_to_fa with:
     input:
-        fq = config['raw']['fq']
+        fq = lambda wc: get_df_val(df, 'fname', wc.sample)
+        # fq = config['raw']['fq']
     output:
         fa = config['raw']['fa']
 
