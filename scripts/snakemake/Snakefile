@@ -51,7 +51,7 @@ use rule blast as blast_seq with:
 use rule blast2bam as blast2bam_seq with:
     input:
         ref_fa = config['ref']['fa'],
-        fa = config['data']['fa'],
+        fa = config['data']['raw']['fa'],
         xml = config['data']['blast']['xml']
     params:
         blast2bam = config['bin']['blast2bam']
