@@ -24,7 +24,7 @@ use rule fq_to_fa as raw_fq_to_fa with:
         fq = lambda wc: get_df_val(df, 'fname', wc.sample)
         # fq = config['raw']['fq']
     output:
-        fa = config['raw']['fa']
+        fa = config['data']['raw']['fa']
 
 # corr. to 01_blast/00_create_db.sh
 use rule make_blast_db as blast_db with:
@@ -36,7 +36,7 @@ use rule make_blast_db as blast_db with:
 # corr to 01_blast/01_blast.sh
 use rule blast as blast_seq with:
     input:
-        fa = config['raw']['fa'],
+        fa = config['data']['raw']['fa'],
         db = config['data']['blast']['db']
     output:
         xml = config['data']['blast']['xml']
