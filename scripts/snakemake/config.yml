@@ -30,9 +30,9 @@ data:
       bam_sort: data/blast/{sample}_sorted.bam
       bam_ind: data/blast/{sample}_sorted.bam.bai
 
-    umi:
-      umis: data/umi/{sample}_extracted_UMI.tsv
-      fa: data/umi/{sample}_with_extracted_UMI.fasta
+  umi:
+    umis: data/umi/{sample}_extracted_UMI.tsv
+    fa: data/umi/{sample}_with_extracted_UMI.fasta
 
-    minimap:
-        sam: data/minimap/{sample}.sam
+  minimap:
+    sam: data/minimap/{sample}.sam
