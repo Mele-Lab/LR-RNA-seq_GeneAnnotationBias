@@ -46,3 +46,36 @@ use rule blast as blast_seq with:
         db = config['data']['blast']['db']
     output:
         xml = config['data']['blast']['xml']
+
+# corr to 01_blast/02_xml2sam
+use rule blast2bam as blast2bam_seq with:
+    input:
+        ref_fa = config['ref']['fa'],
+        fa = config['data']['fa'],
+        xml = config['data']['blast']['xml']
+    output:
+        sam = temporary(config['data']['blast']['sam'])
+
+use rule sam_filt_unmapped as filt_sam_blast with:
+    input:
+        align = config['data']['blast']['sam']
+    output:
+        align = temporary(config['data']['blast']['sam_filt'])
+
+use rule sam_to_bam as sam_to_bam_blast with:
+    input:
+        align = config['data']['blast']['sam_filt']
+    output:
+        align = temporary(config['data']['blast']['bam'])
+
+use rule sam_sort as bam_sort_blast with:
+    input:
+        align = config['data']['blast']['bam']
+    output:
+        align = config['data']['blast']['bam_sort']
+
+use rule bam_index as bam_index_blast with:
+    input:
+        align = config['data']['blast']['bam_sort']
+    output:
+        align = config['data']['blast']['bam_ind']

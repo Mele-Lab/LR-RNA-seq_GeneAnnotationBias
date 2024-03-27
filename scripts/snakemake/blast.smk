@@ -34,17 +34,17 @@ rule blast:
             -reward 1
         """
 
-# rule blast2bam:
-#     resources:
-#         threads = 8,
-#         mem_gb = 16
-#     params:
-#         blast2bam = config['bin']['blast2bam']
-#     shell:
-#         """
-#         {params.blast2bam} \
-#             --minAlignLength 44 \
-#             {input.xml} \
-#             {input.ref_fa} \
-#             {input.fa} > {output.sam}
-#         """
+rule blast2bam:
+    resources:
+        threads = 8,
+        mem_gb = 16
+    params:
+        blast2bam = config['bin']['blast2bam']
+    shell:
+        """
+        {params.blast2bam} \
+            --minAlignLength 44 \
+            {input.xml} \
+            {input.ref_fa} \
+            {input.fa} > {output.sam}
+        """

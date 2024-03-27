@@ -16,9 +16,14 @@ data:
     fq: data/raw/{sample}.fq
     fa: data/raw/{sample}.fa
   blast:
-      db: data/blast/db/5_linker_db
+      db: data/blast/5_linker_db
       nhr: data/blast/5_linker_db.nhr
       nin: data/blast/5_linker_db.nin
       nsq: data/blast/5_linker_db.nsq
 
       xml: data/blast/{sample}.xml
+      sam: data/blast/{sample}.sam
+      sam_filt: data/blast/{sample}_filt.sam
+      bam: data/blast/{sample}.bam
+      bam_sort: data/blast/{sample}_sorted.bam
+      bam_ind: data/blast/{sample}_sorted.bam.bai

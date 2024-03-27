@@ -8,6 +8,16 @@ rule sam_filt_unmapped:
         samtools view -f 4 {input.align} > {output.align}
         """
 
+rule sam_to_bam:
+    resources:
+        threads = 8,
+        mem_gb = 32
+    shell:
+        """
+        module load samtools
+        samtools view -hSb {input.align} > {output.align}
+        """
+
 rule sam_sort:
     resources:
         threads = 8,
@@ -18,7 +28,7 @@ rule sam_sort:
         samtools sort {input.align} > {output.align}
         """
 
-rule sam_index:
+rule bam_index:
     resources:
         threads = 8,
         mem_gb = 32
