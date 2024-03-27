@@ -14,6 +14,11 @@ def get_df_val(df, col, sample):
     assert len(temp.index) == 1
     return temp[col].values[0]
 
+rule all:
+    input:
+        expand(config['data']['blast']['xml'],
+               sample=df['sample'].tolist())
+
 # corr. to 00_fastq2fasta.sh
 use rule fq_to_fa as raw_fq_to_fa with:
     input:
@@ -96,8 +101,3 @@ use rule minimap as map with:
     output:
         mmi = config['ref']['mmi'],
         sam = config['data']['minimap']
-
-rule all:
-    input:
-        expand(config['data']['blast']['xml'],
-               sample=df['sample'].tolist())
