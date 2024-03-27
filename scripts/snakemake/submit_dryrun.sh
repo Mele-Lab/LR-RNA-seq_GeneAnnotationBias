@@ -10,4 +10,5 @@ snakemake \
 --cluster "sbatch \
   -q debug \
   -c {resources.threads}  \
-  --time=2:00:00"
+  --time=2:00:00" \
+  -n
