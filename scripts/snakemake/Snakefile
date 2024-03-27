@@ -83,7 +83,7 @@ use rule extract_umi as extract_umi_blast with:
     input:
         align = rules.filt_sam_blast.output.align
     params:
-        opref = config['data']['umi']['umis'].str.split('_extracted_UMI.tsv')[0]
+        opref = config['data']['umi']['umis'].split('_extracted_UMI.tsv')[0]
     output:
         umis = config['data']['umi']['umis'],
         fa = config['data']['umi']['fa']
