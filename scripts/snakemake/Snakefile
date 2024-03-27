@@ -15,7 +15,7 @@ def get_df_val(df, col, sample):
 
 rule all:
     input:
-        expand(rules.blast_seq.output,
+        expand(config['data']['blast']['xml'],
                sample=df['sample'].tolist())
 
 # corr. to 00_fastq2fasta.sh
@@ -36,7 +36,7 @@ use rule make_blast_db as blast_db with:
 # corr to 01_blast/01_blast.sh
 use rule blast as blast_seq with:
     input:
-        fa = rules.raw_fq_to_fa.output.fa,
-        db = rules.blast_db.output.db
+        fa = config['raw']['fa'],
+        db = config['data']['blast']['db']
     output:
         xml = config['data']['blast']['xml']
