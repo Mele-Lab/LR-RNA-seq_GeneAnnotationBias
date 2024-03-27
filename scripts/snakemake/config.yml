@@ -9,6 +9,8 @@ ref:
   gtf_link: https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_44/gencode.v44.chr_patch_hapl_scaff.annotation.gtf.gz
   gtf: /gpfs/projects/bsc83/Data/gene_annotation/gencode/release_44/gencode.v44.chr_patch_hapl_scaff.annotation.gtf
 
+  linker_5_fa: ref/linker_5.fa
+
 data:
   raw:
     fq: data/raw/{sample}.fq

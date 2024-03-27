@@ -29,7 +29,7 @@ use rule fq_to_fa as raw_fq_to_fa with:
 # corr. to 01_blast/00_create_db.sh
 use rule make_blast_db as blast_db with:
     input:
-        fa = config['ref']['fa']
+        fa = config['ref']['linker_5_fa']
     params:
         db = config['data']['blast']['db']
     output:
