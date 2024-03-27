@@ -22,7 +22,7 @@ def is_concatamer(cigar):
     logical = ['S' in alignment_type for alignment_type in parsed_cigar]
     sub_cigar = [item for item, include in zip(parsed_cigar, logical) if include]
     count = int(0)
-    for item in sub_cigar: 
+    for item in sub_cigar:
         if int(item[0])>40:
             count += 1
     if count > 1:
@@ -73,15 +73,18 @@ NAME = sam_path.split("/")[-1].split(".")[0]
 #sam_path="/home/pclavell/mounts/projects/Projects/gencode_diversity/deduplication/test"
 
 
-sam = pd.read_csv(sam_path, sep='\t', skiprows=2)
+sam = pd.read_csv(sam_path, sep='\t', skiprows=2, usecols=[0:10])
 print(sam)
 print(len(sam.columns))
 print(sam.columns)
-sam.columns=['read_name', 'flag', 'ref_name', 'pos', 'mapq', 'cigar', 'rnext', 'pnext', 'template_length', 'seq', 'qual', 'x1', 'x2', 'x3', 'x4']
+sam.columns=['read_name', 'flag', 'ref_name',
+             'pos', 'mapq', 'cigar', 'rnext',
+             'pnext', 'template_length', 'seq',
+             'qual']
 print(sam)
 
 # for each read, obtain the sequence of the UMI
-umi_series= sam.apply(extract_UMI, axis=1)
+umi_series = sam.apply(extract_UMI, axis=1)
 print('UMIs extracted\n\n')
 
 # convert series to df
