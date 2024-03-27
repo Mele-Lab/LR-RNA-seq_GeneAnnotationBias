@@ -100,4 +100,4 @@ use rule minimap as map with:
         fa = rules.extract_umi_blast.output.fa
     output:
         mmi = config['ref']['mmi'],
-        sam = config['data']['minimap']
+        sam = config['data']['minimap']['sam']
