@@ -1,2 +1,18 @@
 bin:
   blast2bam: /gpfs/projects/bsc83/utils/Blast2Bam/bin/blast2bam
+
+ref:
+  fa_ver: 'hg38'
+  fa_link: https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_44/GRCh38.p14.genome.fa.gz
+  fa: /gpfs/projects/bsc83/Data/assemblies/gencode/GRCh38.p14/GRCh38.p14.genome.fa
+
+  gtf_link: https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_44/gencode.v44.chr_patch_hapl_scaff.annotation.gtf.gz
+  gtf: /gpfs/projects/bsc83/Data/gene_annotation/gencode/release_44/gencode.v44.chr_patch_hapl_scaff.annotation.gtf
+
+data:
+  raw:
+    fq: data/raw/{sample}.fq
+    fa: data/raw/{sample}.fa
+  blast:
+      db: data/blast/5_linker.db
+      xml: data/blast/{sample}.xml

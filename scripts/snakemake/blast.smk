@@ -11,6 +11,8 @@ rule make_blast_db:
             -out {output.db}
         """
 
+# TODO figure out how to iterate over parameters for optimazation
+# probably make standalone
 rule blast:
     resources:
         threads = 48,

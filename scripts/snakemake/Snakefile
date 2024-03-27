@@ -2,18 +2,28 @@ import pandas as pd
 
 include: 'blast.smk'
 include: 'samtools.smk'
+include: 'formatting.smk'
+
+configfile: 'config.yml'
+
+# corr. to 00_fastq2fasta.sh
+use rule fq_to_fa as raw_fq_to_fa with:
+    input:
+        fq = config['raw']['fq']
+    output:
+        fa = config['raw']['fa']
 
 # corr. to 01_blast/00_create_db.sh
 use rule make_blast_db as blast_db with:
     input:
-        fa = ##
+        fa = config['ref']['fa']
     output:
-        db = ##
+        db = config['data']['blast']['db']
 
 # corr to 01_blast/01_blast.sh
 use rule blast as blast_seq with:
     input:
-        fa = rules.blast_db.input.fa,
+        fa = rules.raw_fq_to_fa.output.fa,
         db = rules.blast_db.output.db
     output:
-        xml = ## 
+        xml = config['data']['blast']['xml']
