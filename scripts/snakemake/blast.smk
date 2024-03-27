@@ -8,7 +8,7 @@ rule make_blast_db:
         makeblastdb -in {input.fa} \
             -input_type fasta \
             -dbtype nucl \
-            -out {output.db}
+            -out {params.db}
         """
 
 # TODO figure out how to iterate over parameters for optimazation

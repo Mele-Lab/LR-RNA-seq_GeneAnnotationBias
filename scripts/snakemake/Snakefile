@@ -30,6 +30,8 @@ use rule fq_to_fa as raw_fq_to_fa with:
 use rule make_blast_db as blast_db with:
     input:
         fa = config['ref']['fa']
+    params:
+        db = config['data']['blast']['db']
     output:
         nhr = config['data']['blast']['nhr'],
         nin = config['data']['blast']['nin'],
