@@ -3,6 +3,7 @@ import pandas as pd
 include: 'blast.smk'
 include: 'samtools.smk'
 include: 'formatting.smk'
+include: 'minimap.smk'
 
 configfile: 'config.yml'
 
@@ -12,11 +13,6 @@ def get_df_val(df, col, sample):
     temp = df.loc[df['sample']==sample]
     assert len(temp.index) == 1
     return temp[col].values[0]
-
-rule all:
-    input:
-        expand(config['data']['blast']['xml'],
-               sample=df['sample'].tolist())
 
 # corr. to 00_fastq2fasta.sh
 use rule fq_to_fa as raw_fq_to_fa with:
@@ -40,10 +36,10 @@ use rule make_blast_db as blast_db with:
 # corr to 01_blast/01_blast.sh
 use rule blast as blast_seq with:
     input:
-        fa = config['data']['raw']['fa'],
-        nhr = config['data']['blast']['nhr']
+        fa = rules.raw_fq_to_fa.output.fa,
+        nhr = rules.blast_db.output.nhr
     params:
-        db = config['data']['blast']['db']
+        db = rules.blast_db.params.db
     output:
         xml = config['data']['blast']['xml']
 
@@ -51,8 +47,8 @@ use rule blast as blast_seq with:
 use rule blast2bam as blast2bam_seq with:
     input:
         ref_fa = config['ref']['fa'],
-        fa = config['data']['raw']['fa'],
-        xml = config['data']['blast']['xml']
+        fa = rules.blast_seq.input.fa,
+        xml = rules.blast_seq.output.xml
     params:
         blast2bam = config['bin']['blast2bam']
     output:
@@ -60,24 +56,48 @@ use rule blast2bam as blast2bam_seq with:
 
 use rule sam_filt_unmapped as filt_sam_blast with:
     input:
-        align = config['data']['blast']['sam']
+        align = rules.blast2bam_seq.output.sam
     output:
         align = temporary(config['data']['blast']['sam_filt'])
 
 use rule sam_to_bam as sam_to_bam_blast with:
     input:
-        align = config['data']['blast']['sam_filt']
+        align = rules.filt_sam_blast.output.align
     output:
         align = temporary(config['data']['blast']['bam'])
 
 use rule sam_sort as bam_sort_blast with:
     input:
-        align = config['data']['blast']['bam']
+        align = rules.sam_to_bam_blast.output.align
     output:
         align = config['data']['blast']['bam_sort']
 
 use rule bam_index as bam_index_blast with:
     input:
-        align = config['data']['blast']['bam_sort']
+        align = rules.bam_sort_blast.output.align
     output:
         align = config['data']['blast']['bam_ind']
+
+# corr. to 02_extract_UMI/01_extract_UMI.sh
+use rule extract_umi as extract_umi_blast with:
+    input:
+        align = rules.filt_sam_blast.output.align
+    params:
+        opref = config['data']['umi']['umis'].str.split('_extracted_UMI.tsv')[0]
+    output:
+        umis = config['data']['umi']['umis'],
+        fa = config['data']['umi']['fa']
+
+# corr. to 03_genome_mapping/01_minimap.sh
+use rule minimap as map with:
+    input:
+        junc_bed = config['ref']['junc_bed'],
+        fa = rules.extract_umi_blast.output.fa
+    output:
+        mmi = config['ref']['mmi'],
+        sam = config['data']['minimap']
+
+rule all:
+    input:
+        expand(config['data']['blast']['xml'],
+               sample=df['sample'].tolist())

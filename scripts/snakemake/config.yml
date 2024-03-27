@@ -5,9 +5,11 @@ ref:
   fa_ver: 'hg38'
   fa_link: https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_44/GRCh38.p14.genome.fa.gz
   fa: /gpfs/projects/bsc83/Data/assemblies/gencode/GRCh38.p14/GRCh38.p14.genome.fa
+  mmi: ref/ref.mmi
 
   gtf_link: https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_44/gencode.v44.chr_patch_hapl_scaff.annotation.gtf.gz
   gtf: /gpfs/projects/bsc83/Data/gene_annotation/gencode/release_44/gencode.v44.chr_patch_hapl_scaff.annotation.gtf
+  junc_bed: /gpfs/projects/bsc83/Data/gene_annotation/gencode/release_44/modified/gencode.v44.chr_patch_hapl_scaff.annotation_transcriptlevel.bed
 
   linker_5_fa: ref/linker_5.fa
 
@@ -27,3 +29,10 @@ data:
       bam: data/blast/{sample}.bam
       bam_sort: data/blast/{sample}_sorted.bam
       bam_ind: data/blast/{sample}_sorted.bam.bai
+
+    umi:
+      umis: data/umi/{sample}_extracted_UMI.tsv
+      fa: data/umi/{sample}_with_extracted_UMI.fasta
+
+    minimap:
+        sam: data/minimap/{sample}.sam
