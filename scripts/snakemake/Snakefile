@@ -31,12 +31,16 @@ use rule make_blast_db as blast_db with:
     input:
         fa = config['ref']['fa']
     output:
-        db = config['data']['blast']['db']
+        nhr = config['data']['blast']['nhr'],
+        nin = config['data']['blast']['nin'],
+        nsq = config['data']['blast']['nsq']
 
 # corr to 01_blast/01_blast.sh
 use rule blast as blast_seq with:
     input:
         fa = config['data']['raw']['fa'],
+        nhr = config['data']['blast']['nhr']
+    params:
         db = config['data']['blast']['db']
     output:
         xml = config['data']['blast']['xml']

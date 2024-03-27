@@ -22,7 +22,7 @@ rule blast:
         module load blast/2.11.0
         module load samtools
         blastn -query {input.fa} \
-            -db {input.db} \
+            -db {params.db} \
             -outfmt 5 \
             -out {output.xml} \
             -num_threads 48 \

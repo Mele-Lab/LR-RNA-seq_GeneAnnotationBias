@@ -14,5 +14,9 @@ data:
     fq: data/raw/{sample}.fq
     fa: data/raw/{sample}.fa
   blast:
-      db: data/blast/5_linker.db
+      db: data/blast/db/5_linker_db
+      nhr: data/blast/5_linker_db.nhr
+      nin: data/blast/5_linker_db.nin
+      nsq: data/blast/5_linker_db.nsq
+
       xml: data/blast/{sample}.xml
