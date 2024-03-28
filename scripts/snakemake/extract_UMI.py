@@ -73,7 +73,7 @@ NAME = sam_path.split("/")[-1].split(".")[0]
 #sam_path="/home/pclavell/mounts/projects/Projects/gencode_diversity/deduplication/test"
 
 
-sam = pd.read_csv(sam_path, sep='\t', skiprows=2, usecols=[0:10])
+sam = pd.read_csv(sam_path, sep='\t', skiprows=2, usecols=[i for i in range(10)])
 print(sam)
 print(len(sam.columns))
 print(sam.columns)
