@@ -36,3 +36,4 @@ data:
 
   minimap:
     sam: data/minimap/{sample}.sam
+    mmi: data/minimap/{sample}.mmi

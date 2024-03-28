@@ -11,4 +11,5 @@ snakemake \
 --cluster "sbatch \
   -q bsc_ls \
   -c {resources.threads}  \
-  --time=2:00:00"
+  --time=2:00:00" \
+  -n
