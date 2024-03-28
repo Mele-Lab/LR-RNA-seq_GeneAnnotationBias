@@ -72,6 +72,8 @@ print(sam_path)
 NAME = sam_path.split("/")[-1].split(".")[0]
 #sam_path="/home/pclavell/mounts/projects/Projects/gencode_diversity/deduplication/test"
 
+opref = sys.argv[2]
+
 
 sam = pd.read_csv(sam_path, sep='\t', skiprows=2, usecols=[i for i in range(11)])
 print(sam)
@@ -110,10 +112,10 @@ umi_df = umi_df[~umi_df['read_name'].duplicated()]
 
 
 # save table
-umi_df.to_csv(f'02_extract_UMI/01_extracted_UMI/{NAME}_extracted_UMI.tsv', sep='\t', index=False)
+umi_df.to_csv(f'{opref}_extracted_UMI.tsv', sep='\t', index=False)
 
 # now create a fasta file
 data_to_create_fasta= umi_df[['read_name_UMI', 'read_seq']]
-data_to_create_fasta.to_csv(f'02_extract_UMI/01_extracted_UMI/{NAME}_with_extracted_UMI.fasta', sep='\n', index=False, header=False)
+data_to_create_fasta.to_csv(f'{opref}_with_extracted_UMI.fasta', sep='\n', index=False, header=False)
 
-print(f'02_extract_UMI/01_extracted_UMI/{NAME}_with_extracted_UMI.fasta')
+print(f'{opref}_with_extracted_UMI.fasta')
