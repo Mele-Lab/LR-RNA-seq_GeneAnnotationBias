@@ -109,7 +109,8 @@ umi_df = umi_df[umi_df['read_seq'] != '*']
 umi_df = umi_df[~ umi_df['potential_concatamer']]
 
 # add column with read_name + UMIseq
-umi_df.insert(1, 'read_name_UMI', '>' + umi_df['read_name'] + '_' + umi_df['umi_seq'])
+if len(umi_df!=0):
+    umi_df.insert(1, 'read_name_UMI', '>' + umi_df['read_name'] + '_' + umi_df['umi_seq'])
 
 # remove those that do not have a 16 nt UMI
 umi_df = umi_df[umi_df['umi_seq'].apply(len)==16]
