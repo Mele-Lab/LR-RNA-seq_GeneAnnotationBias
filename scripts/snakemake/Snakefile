@@ -63,7 +63,8 @@ use rule sam_filt_unmapped as filt_sam_blast with:
     input:
         align = rules.blast2bam_seq.output.sam
     output:
-        align = temporary(config['data']['blast']['sam_filt'])
+        align = config['data']['blast']['sam_filt']
+        # align = temporary(config['data']['blast']['sam_filt'])
 
 use rule sam_to_bam as sam_to_bam_blast with:
     input:
