@@ -98,6 +98,7 @@ use rule extract_umi as extract_umi_blast with:
 use rule minimap as map with:
     input:
         junc_bed = config['ref']['junc_bed'],
-        fa = rules.extract_umi_blast.output.fa
+        fa = rules.extract_umi_blast.output.fa,
+        ref_fa = config['ref']['fa']
     output:
         sam = config['data']['minimap']['sam']

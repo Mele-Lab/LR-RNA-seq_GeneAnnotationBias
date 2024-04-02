@@ -9,5 +9,6 @@ rule minimap:
             --junc-bed {input.junc_bed} \
             -t {resources.threads} \
             -o {output.sam} \
+            {input.ref_fa} \
             {input.fa}
         """
