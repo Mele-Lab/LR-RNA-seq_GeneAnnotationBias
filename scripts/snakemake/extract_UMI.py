@@ -76,7 +76,7 @@ NAME = sam_path.split("/")[-1].split(".")[0]
 opref = sys.argv[2]
 
 
-sam = pd.read_csv(sam_path, sep='\t', skiprows=2, usecols=[i for i in range(11)])
+sam = pd.read_csv(sam_path, sep='\t', comment='@', usecols=[i for i in range(11)])
 print(sam)
 print(len(sam.columns))
 print(sam.columns)
@@ -100,6 +100,7 @@ umi_table = umi_series.apply(lambda x: pd.Series({'read_name': x[0], 'read_seq':
 
 # convert lists inside of dataframe to strings
 umi_df = umi_table.applymap(lambda x: x[0] if len(x) > 0 else x)
+
 
 umi_df.to_csv(f'{opref}_temp.tsv', sep='\t')
 
