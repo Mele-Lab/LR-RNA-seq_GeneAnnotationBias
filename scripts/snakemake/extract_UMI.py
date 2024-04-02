@@ -89,7 +89,7 @@ print(sam)
 umi_series = sam.apply(extract_UMI, axis=1)
 print('UMIs extracted\n\n')
 
-umi_series.to_df().to_csv(f'{opref}_temp.tsv', sep='\t')
+umi_series.to_frame().to_csv(f'{opref}_temp.tsv', sep='\t')
 
 
 
