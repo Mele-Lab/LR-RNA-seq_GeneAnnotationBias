@@ -16,7 +16,7 @@ def get_df_val(df, col, sample):
 
 rule all:
     input:
-        expand(config['data']['minimap']['sam'],
+        expand(config['data']['umi']['fa'],
                sample=df['sample'].tolist())
 
 # corr. to 00_fastq2fasta.sh
