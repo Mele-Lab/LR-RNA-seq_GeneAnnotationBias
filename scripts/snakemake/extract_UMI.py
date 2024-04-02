@@ -89,10 +89,12 @@ print(sam)
 umi_series = sam.apply(extract_UMI, axis=1)
 print('UMIs extracted\n\n')
 
-import pdb; pdb.set_trace()
+
 
 # convert series to df
 umi_table = umi_series.apply(lambda x: pd.Series({'read_name': x[0], 'read_seq': x[1], 'umi_seq': x[2], 'umi_start' : x[3], 'umi_end' : x[4], 'cigar': x[5], 'potential_concatamer': x[6]}))
+
+umi_table.to_csv(f'{opref}_temp.tsv', sep='\t')
 
 # convert lists inside of dataframe to strings
 umi_df = umi_table.applymap(lambda x: x[0] if len(x) > 0 else x)
