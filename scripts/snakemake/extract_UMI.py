@@ -89,6 +89,8 @@ print(sam)
 umi_series = sam.apply(extract_UMI, axis=1)
 print('UMIs extracted\n\n')
 
+import pdb; pdb.set_trace()
+
 # convert series to df
 umi_table = umi_series.apply(lambda x: pd.Series({'read_name': x[0], 'read_seq': x[1], 'umi_seq': x[2], 'umi_start' : x[3], 'umi_end' : x[4], 'cigar': x[5], 'potential_concatamer': x[6]}))
 
@@ -102,7 +104,6 @@ umi_df = umi_df[umi_df['read_seq'] != '*']
 umi_df = umi_df[~ umi_df['potential_concatamer']]
 
 # add column with read_name + UMIseq
-umi_df.to_csv(f'{opref}_temp.tsv', sep='\t')
 umi_df.insert(1, 'read_name_UMI', '>' + umi_df['read_name'] + '_' + umi_df['umi_seq'])
 
 # remove those that do not have a 16 nt UMI
