@@ -7,6 +7,7 @@
 import re
 import pandas as pd
 import sys
+import numpy as np
 
 #-DEFINITIONS--------------------------------------------------------------
 
