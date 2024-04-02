@@ -99,5 +99,4 @@ use rule minimap as map with:
         junc_bed = config['ref']['junc_bed'],
         fa = rules.extract_umi_blast.output.fa
     output:
-        sam = config['data']['minimap']['sam'],
-        mmi = config['data']['minimap']['mmi']
+        sam = config['data']['minimap']['sam']
