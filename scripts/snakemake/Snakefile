@@ -109,7 +109,7 @@ use rule align_filt_unmapped_supp as filt_sam_map with:
     input:
         align = rules.map.output.sam
     output:
-        align = config['data']['minimap']['filt']
+        align = config['data']['minimap']['sam_filt']
 
 use rule sam_to_bam as sam_to_bam_map with:
     input:
