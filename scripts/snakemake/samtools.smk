@@ -45,5 +45,5 @@ rule align_filt_unmapped_supp:
     shell:
         """
         module load samtools
-        samtools view -F 4 -F 2048 {input.align} > {output.align}
+        samtools view -h -F 4 -F 2048 {input.align} > {output.align}
         """
