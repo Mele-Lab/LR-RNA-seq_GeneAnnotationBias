@@ -107,7 +107,7 @@ use rule minimap as map with:
 # rules below corr. to 03_genome_mapping/02_filter_and_transform_results
 use rule align_filt_unmapped_supp as filt_sam_map with:
     input:
-        align = rules.map.sam
+        align = rules.map.output.sam
     output:
         align = config['config']['minimap']['filt']
 
