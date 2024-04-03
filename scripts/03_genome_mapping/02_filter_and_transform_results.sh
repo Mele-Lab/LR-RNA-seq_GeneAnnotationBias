@@ -10,7 +10,11 @@ echo $NAME
 # keep lines starting with @ or that do not have a * in 10th position
 #awk '$1 ~ /^@/ || $10 !~ /\*/' $QUERY | awk '$1 ~ /^@/ || $2<2048 {print}' | awk '{split($1,a,"_"); if(length(a[2])==16|| $0 ~ /^@/) print $0}'> $TMPDIR/$NAME.filtered.sam
 awk '$1 ~/^@/ {print $0}' $QUERY > 03_genome_mapping/01_alignment_results/$NAME.filtered.sam
-awk '$2<2048 && $10 !~ /\*/' $QUERY | awk '{split($1,a,"_"); if(length(a[2])==16) print $0}'>> 03_genome_mapping/01_alignment_results/$NAME.filtered.sam
+awk '$2<2048 && $10 !~ /\*/' $QUERY >> 03_genome_mapping/01_alignment_results/$NAME.filtered.sam
+
+# the latter part of this was unecessary because the fasta file that was mapped already was filtered
+# for reads w/ an identifiable 16 bp UMI
+# awk '$2<2048 && $10 !~ /\*/' $QUERY | awk '{split($1,a,"_"); if(length(a[2])==16) print $0}'>> 03_genome_mapping/01_alignment_results/$NAME.filtered.sam
 
 
 samtools view -b 03_genome_mapping/01_alignment_results/$NAME.filtered.sam > 03_genome_mapping/01_alignment_results/$NAME.bam

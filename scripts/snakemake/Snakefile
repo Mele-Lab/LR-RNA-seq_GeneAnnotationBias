@@ -16,7 +16,7 @@ def get_df_val(df, col, sample):
 
 rule all:
     input:
-        expand(config['data']['minimap']['sam'],
+        expand(config['data']['minimap']['bam_ind'],
                sample=df['sample'].tolist())
 
 # corr. to 00_fastq2fasta.sh
@@ -102,3 +102,29 @@ use rule minimap as map with:
         ref_fa = config['ref']['fa']
     output:
         sam = config['data']['minimap']['sam']
+        # sam = temporary(config['data']['minimap']['sam'])
+
+# rules below corr. to 03_genome_mapping/02_filter_and_transform_results
+use rule align_filt_unmapped_supp as filt_sam_map with:
+    input:
+        align = rules.map.sam
+    output:
+        align = config['config']['minimap']['filt']
+
+use rule sam_to_bam as sam_to_bam_map with:
+    input:
+        align = rules.filt_sam_map.output.align
+    output:
+        align = temporary(config['data']['minimap']['bam'])
+
+use rule sam_sort as bam_sort_map with:
+    input:
+        align = rules.sam_to_bam_map.output.align
+    output:
+        align = config['data']['minimap']['bam_sort']
+
+use rule bam_index as bam_index_map with:
+    input:
+        align = rules.bam_sort_map.output.align
+    output:
+        align = config['data']['minimap']['bam_ind']

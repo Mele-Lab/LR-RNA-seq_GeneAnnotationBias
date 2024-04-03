@@ -90,10 +90,6 @@ print(sam)
 umi_series = sam.apply(extract_UMI, axis=1)
 print('UMIs extracted\n\n')
 
-umi_series.to_frame().to_csv(f'{opref}_temp.tsv', sep='\t')
-
-
-
 # convert series to df
 umi_table = umi_series.apply(lambda x: pd.Series({'read_name': x[0], 'read_seq': x[1], 'umi_seq': x[2], 'umi_start' : x[3], 'umi_end' : x[4], 'cigar': x[5], 'potential_concatamer': x[6]}))
 
@@ -122,12 +118,11 @@ umi_df = umi_df[umi_df['umi_seq'].apply(len)==16]
 # keep only one alignment from multimapping reads
 umi_df = umi_df[~umi_df['read_name'].duplicated()]
 
-
 # save table
 umi_df.to_csv(f'{opref}_extracted_UMI.tsv', sep='\t', index=False)
 
 # now create a fasta file
-data_to_create_fasta= umi_df[['read_name_UMI', 'read_seq']]
+data_to_create_fasta = umi_df[['read_name_UMI', 'read_seq']]
 data_to_create_fasta.to_csv(f'{opref}_with_extracted_UMI.fasta', sep='\n', index=False, header=False)
 
 print(f'{opref}_with_extracted_UMI.fasta')

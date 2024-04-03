@@ -36,4 +36,7 @@ data:
 
   minimap:
     sam: data/minimap/{sample}.sam
-    mmi: data/minimap/{sample}.mmi
+    sam_filt: data/minimap/{sample}_filt.sam
+    bam: data/minimap/{sample}.bam
+    bam_sort: data/minimap/{sample}_sorted.bam
+    bam_ind: data/minimap/{sample}_sorted.bam.bai
