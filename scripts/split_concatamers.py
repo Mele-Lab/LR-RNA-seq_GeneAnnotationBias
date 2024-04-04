@@ -18,6 +18,10 @@ import numpy as np
 from pyfastx import Fastx
 from tqdm import tqdm
 
+
+
+sys.path.append("/gpfs/projects/bsc83/utils/python_libs/duplex-tools/duplex_tools")
+
 import duplex_tools #https://github.com/nanoporetech/duplex-tools
 
 EDIT_THRESHOLDS = {'PCR': 50, 'Native': 9} #defaults:'PCR':45,'Native':9#####        #PCR5;Native5 #PCR 14 for linkers
