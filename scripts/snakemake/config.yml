@@ -20,6 +20,7 @@ data:
   duplex:
       sam: data/duplex/{sample}.sam
       fq: data/duplex/{sample}.fq.gz
+      fa: data/duplex/{sample}.fa
 
   blast:
       db: data/blast/5_linker_db
