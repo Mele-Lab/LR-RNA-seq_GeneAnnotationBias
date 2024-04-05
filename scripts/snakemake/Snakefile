@@ -36,12 +36,12 @@ use rule add_duplex_status as basecalled_add_duplex_status with:
         align = config['data']['duplex']['sam']
 
 # corr. to 00_fastq2fasta.sh
-# use rule fq_to_fa as raw_fq_to_fa with:
-#     input:
-#         fq = lambda wc: get_df_val(df, 'fname', wc.sample)
-#         # fq = config['raw']['fq']
-#     output:
-#         fa = config['data']['raw']['fa']
+use rule fq_to_fa as raw_fq_to_fa with:
+    input:
+        fq = lambda wc: get_df_val(df, 'fname', wc.sample)
+        # fq = config['raw']['fq']
+    output:
+        fa = config['data']['raw']['fa']
 
 # corr. to 01_blast/00_create_db.sh
 use rule make_blast_db as blast_db with:
