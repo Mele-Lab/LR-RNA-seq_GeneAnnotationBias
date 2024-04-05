@@ -11,13 +11,12 @@ def append_duplex_tag_read_name(infile, outfile, threads):
         out_mode = 'w'
 
     # use header from prev. file as template
-    import pdb; pdb.set_trace()
     input = pysam.AlignmentFile(infile, in_mode,
                   check_header=False,
                   check_sq=False)
     output = pysam.AlignmentFile(outfile, out_mode, template=input)
-
-    for read in input:
+    
+    for read in input.fetch():
         tag = read.get_tag('dx')
         new_qname = read.query_name+';'+tag
         read.query_name = new_qname
