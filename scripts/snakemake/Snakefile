@@ -1,13 +1,17 @@
 import pandas as pd
 
+# p = os.getcwd()
+# sys.path.append(p)
+#
+# from utils import *
+
 include: 'blast.smk'
 include: 'samtools.smk'
 include: 'formatting.smk'
 include: 'minimap.smk'
 
 configfile: 'config.yml'
-
-df = pd.read_csv('test_data.tsv', sep='\t')
+# df = pd.read_csv('test_data.tsv', sep='\t')
 
 def get_df_val(df, col, sample):
     temp = df.loc[df['sample']==sample]
@@ -16,16 +20,27 @@ def get_df_val(df, col, sample):
 
 rule all:
     input:
-        expand(config['data']['minimap']['bam_ind'],
+        expand(config['data']['duplex']['sam'],
                sample=df['sample'].tolist())
+        # expand(config['data']['minimap']['bam_ind'],
+        #        sample=df['sample'].tolist())
 
-# corr. to 00_fastq2fasta.sh
-use rule fq_to_fa as raw_fq_to_fa with:
+# get duplex status of each read and record in new bam
+# corresponds to scripts/00.1_append_samtag.sh
+use rule add_duplex_status as basecalled_add_duplex_status with:
     input:
-        fq = lambda wc: get_df_val(df, 'fname', wc.sample)
+        align = lambda wc: get_df_val(df, 'fname', wc.sample)
         # fq = config['raw']['fq']
     output:
-        fa = config['data']['raw']['fa']
+        align = config['data']['duplex']['sam']
+
+# corr. to 00_fastq2fasta.sh
+# use rule fq_to_fa as raw_fq_to_fa with:
+#     input:
+#         fq = lambda wc: get_df_val(df, 'fname', wc.sample)
+#         # fq = config['raw']['fq']
+#     output:
+#         fa = config['data']['raw']['fa']
 
 # corr. to 01_blast/00_create_db.sh
 use rule make_blast_db as blast_db with:
@@ -93,6 +108,8 @@ use rule extract_umi as extract_umi_blast with:
     output:
         umis = config['data']['umi']['umis'],
         fa = config['data']['umi']['fa']
+
+# TODO this is where the duplex read recovery will happen
 
 # corr. to 03_genome_mapping/01_minimap.sh
 use rule minimap as map with:
