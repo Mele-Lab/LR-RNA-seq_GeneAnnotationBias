@@ -17,8 +17,9 @@ bash /gpfs/projects/bsc83/utils/wrappers/Slurm-wrapper-Ruben-unstable_PauModifie
 ```
 
 ```bash
-module load intel mkl impi gcc/7.2.0
-module load miniconda3/py39_4.10.3 && source activate snakemake
+# module load intel mkl impi gcc/7.2.0
+# module load miniconda3/py39_4.10.3 && source activate snakemake
+conda activate pt_snakemake
 snakemake \
 -s Snakefile \
 -j 100 \

@@ -2,11 +2,14 @@ rule add_duplex_status:
     resources:
         mem_gb = 16,
         threads = 8
-    shell:
-        """
-        module load samtools
-        samtools view {input.align} | awk '{$1=$1"_"$13; print $0}' > {output.align}
-        """
+    run:
+        append_duplex_tag_read_name(input.align, output.align, resources.threads)
+    # shell:
+    #     """
+    #     module load samtools
+    #     # TODO maybe add a check that guarantees that all 13th tags are the duplex tag?
+    #     samtools view {input.align} | awk '{$1=$1"_"$13; print $0}' > {output.align}
+    #     """
 
 rule fq_to_fa:
     resources:

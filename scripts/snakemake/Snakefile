@@ -1,9 +1,9 @@
 import pandas as pd
 
-# p = os.getcwd()
-# sys.path.append(p)
-#
-# from utils import *
+p = os.getcwd()
+sys.path.append(p)
+
+from utils import *
 
 include: 'blast.smk'
 include: 'samtools.smk'
