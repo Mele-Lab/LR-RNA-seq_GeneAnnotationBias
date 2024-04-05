@@ -14,9 +14,11 @@ ref:
   linker_5_fa: ref/linker_5.fa
 
 data:
-  raw:
-    fq: data/raw/{sample}.fq
-    fa: data/raw/{sample}.fa
+  # raw:
+  #   fq: data/raw/{sample}.fq
+  #   fa: data/raw/{sample}.fa
+  duplex:
+      sam: data/duplex/{sample}.sam
   blast:
       db: data/blast/5_linker_db
       nhr: data/blast/5_linker_db.nhr
