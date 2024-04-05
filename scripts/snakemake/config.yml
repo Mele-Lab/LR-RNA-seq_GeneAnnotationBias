@@ -19,7 +19,7 @@ data:
     fa: data/raw/{sample}.fa
   duplex:
       sam: data/duplex/{sample}.sam
-      fq: data/duplex/{sample}.fq
+      fq: data/duplex/{sample}.fq.gz
 
   blast:
       db: data/blast/5_linker_db

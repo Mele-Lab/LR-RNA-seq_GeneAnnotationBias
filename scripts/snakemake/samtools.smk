@@ -15,7 +15,7 @@ rule sam_to_fq:
     shell:
         """
         module load samtools
-        samtools fastq --threads {resources.threads} {input.align} > {output.fq}
+        samtools fastq --threads {resources.threads} {input.align} | gzip > {output.fq}
         """
 
 rule sam_to_bam:
