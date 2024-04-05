@@ -15,10 +15,10 @@ def append_duplex_tag_read_name(infile, outfile, threads):
                   check_header=False,
                   check_sq=False)
     output = pysam.AlignmentFile(outfile, out_mode, template=input)
-    
+
     for read in input.fetch():
         tag = read.get_tag('dx')
-        new_qname = read.query_name+';'+tag
+        new_qname = read.query_name+';'+str(tag)
         read.query_name = new_qname
         output.write(read)
 
