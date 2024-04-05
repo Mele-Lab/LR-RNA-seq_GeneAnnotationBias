@@ -12,6 +12,7 @@ include: 'minimap.smk'
 
 configfile: 'config.yml'
 # df = pd.read_csv('test_data.tsv', sep='\t')
+df = pd.read_csv('test_data_2.tsv', sep='\t')
 
 def get_df_val(df, col, sample):
     temp = df.loc[df['sample']==sample]
