@@ -49,7 +49,7 @@ use rule fq_to_fa as raw_fq_to_fa with:
         # fq = lambda wc: get_df_val(df, 'fname', wc.sample)
         # fq = config['raw']['fq']
     output:
-        fa = config['data']['duplex']['fa']
+        fa = config['data']['duplex']['fq']
 
 # corr. to 01_blast/00_create_db.sh
 use rule make_blast_db as blast_db with:
