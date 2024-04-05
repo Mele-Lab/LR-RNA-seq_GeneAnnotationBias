@@ -8,6 +8,16 @@ rule sam_filt_unmapped:
         samtools view -f 4 {input.align} > {output.align}
         """
 
+rule sam_to_fq:
+    resources:
+        threads = 8,
+        mem_gb = 32
+    shell:
+        """
+        module load samtools
+        samtools fastq --threads {resources.threads} {input.align} > {output.fq}
+        """
+
 rule sam_to_bam:
     resources:
         threads = 8,

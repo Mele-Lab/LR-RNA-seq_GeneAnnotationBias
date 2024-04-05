@@ -19,6 +19,8 @@ data:
     fa: data/raw/{sample}.fa
   duplex:
       sam: data/duplex/{sample}.sam
+      fq: data/duplex/{sample}.fq
+
   blast:
       db: data/blast/5_linker_db
       nhr: data/blast/5_linker_db.nhr

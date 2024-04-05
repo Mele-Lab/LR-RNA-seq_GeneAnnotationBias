@@ -21,24 +21,32 @@ def get_df_val(df, col, sample):
 
 rule all:
     input:
-        expand(config['data']['duplex']['sam'],
+        expand(config['data']['minimap']['bam_ind'],
                sample=df['sample'].tolist())
-        # expand(config['data']['minimap']['bam_ind'],
+        # expand(config['data']['duplex']['sam'],
         #        sample=df['sample'].tolist())
+
 
 # get duplex status of each read and record in new bam
 # corresponds to scripts/00.1_append_samtag.sh
-use rule add_duplex_status as basecalled_add_duplex_status with:
+use rule add_duplex_status as basecall_add_duplex_status with:
     input:
         align = lambda wc: get_df_val(df, 'fname', wc.sample)
         # fq = config['raw']['fq']
     output:
-        align = config['data']['duplex']['sam']
+        align = temporary(config['data']['duplex']['sam'])
+
+use rule sam_to_fq as duplex_sam_to_fq with:
+    input:
+        align = rules.basecall_add_duplex_status.output.align
+    output:
+        fq = temporary(config['data']['duplex']['fq'])
 
 # corr. to 00_fastq2fasta.sh
 use rule fq_to_fa as raw_fq_to_fa with:
     input:
-        fq = lambda wc: get_df_val(df, 'fname', wc.sample)
+        fq = rules.duplex_sam_to_fq.output.fq
+        # fq = lambda wc: get_df_val(df, 'fname', wc.sample)
         # fq = config['raw']['fq']
     output:
         fa = config['data']['raw']['fa']
