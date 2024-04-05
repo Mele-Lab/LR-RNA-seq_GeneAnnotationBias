@@ -12,7 +12,6 @@ def append_duplex_tag_read_name(infile, outfile, threads):
 
     # use header from prev. file as template
     input = pysam.AlignmentFile(infile, in_mode,
-                  check_header=False,
                   check_sq=False)
     output = pysam.AlignmentFile(outfile, out_mode, template=input)
 
