@@ -11,6 +11,7 @@ def append_duplex_tag_read_name(infile, outfile, threads):
         out_mode = 'w'
 
     # use header from prev. file as template
+    import pdb; pdb.set_trace()
     input = pysam.AlignmentFile(infile, in_mode,
                   check_header=False,
                   check_sq=False)
