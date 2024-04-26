@@ -20,7 +20,7 @@ from tqdm import tqdm
 
 
 
-sys.path.append("/gpfs/projects/bsc83/utils/python_libs/duplex-tools/duplex_tools")
+#sys.path.append("/gpfs/projects/bsc83/utils/python_libs/duplex-tools/duplex_tools")
 
 import duplex_tools #https://github.com/nanoporetech/duplex-tools
 
@@ -28,10 +28,17 @@ EDIT_THRESHOLDS = {'PCR': 50, 'Native': 9} #defaults:'PCR':45,'Native':9#####   
 mask_size_default_head = 5 #0 #3 #5
 mask_size_default_tail = 14 #0 #3 #14
 mask_size_default_N = 11 #0 #6 #11
-#HEAD_ADAPTER = 'AATGTACTTCGTTCAGTTACGTATTGCT'
-#TAIL_ADAPTER = 'GCAATACGTAACTGAACGAAGT'
-HEAD_ADAPTER = ''
-TAIL_ADAPTER = ''
+
+# CUSTOMIZE ADAPTERS
+HEAD_ADAPTER = 'AATGTACTTCGTTCAGTTACGTATTGCT'
+TAIL_ADAPTER = 'GCAATACGTAACTGAACGAAGT'
+FW_CAP_PRIMER = 'TCGTCGGCAGCGTC'
+RV_CAP_PRIMER = 'GTCTCGTGGGCTCGG'
+FIVE_LINKER = 'AGATGTGTATAAGAGACAGNNNNNNNNNNNNNNNNGTGGTATCAACGCAGAGTAC'
+THREE_LINKER = 'AGATGTGTATAAGAGACAGCGATGCTTTTTTTTTTTTTTTT'
+FULL_FIVE_LINKER = 'TCGTCGGCAGCGTCAGATGTGTATAAGAGACAGNNNNNNNNNNNNNNNNGTGGTATCAACGCAGAGTAC'
+FULL_THREE_LINKER = 'GTCTCGTGGGCTCGGAGATGTGTATAAGAGACAGCGATGCTTTTTTTTTTTTTTTT'
+
 rctrans = str.maketrans('ACGT', 'TGCA')
 
 
@@ -45,59 +52,50 @@ def build_targets(
         pcr_primers=(
             'ACTTGCCTGTCGCTCTATCTTCGGCGTCTGCTTGGGTGTTTAACC',  #default
             'TTTCTGTTGGTGCTGATATTGCGGCGTCTGCTTGGGTGTTTAACCT'),
-#             'TCGTCGGCAGCGTC',	#CapTrap primers
-#             'GTCTCGTGGGCTCGG'),
-###             'AGATGTGTATAAGAGACAGNNNNNNNNGTGGTATCAACGCAGAGTAC',	#CapTrap linkers
-###             'AGATGTGTATAAGAGACAGCGATGCTTTTTTTTTTTTTTTT'),
-##             'AATGTACTTCGTTCAGTTACGTATTGCT',
-##             'GCAATACGTAACTGAACGAAGT'),
         head_adapter=HEAD_ADAPTER, tail_adapter=TAIL_ADAPTER,
         n_replacement=None):
     print(adapter_type)
 
     if adapter_type=="ONT_sequencing_adapter":
        head_adapter=(
-            'AATGTACTTCGTTCAGTTACGTATTGCT')
+            HEAD_ADAPTER)
        tail_adapter=(
-            'GCAATACGTAACTGAACGAAGT') 
+            TAIL_ADAPTER) 
        pcr_primers=(
             '',
             '')
     elif adapter_type=="ONT_sequencing_adapter+CapTrapSeqJoint":
         head_adapter=(
-            'AATGTACTTCGTTCAGTTACGTATTGCT')
+            HEAD_ADAPTER)
         tail_adapter=(
-            'GCAATACGTAACTGAACGAAGT')
+            TAIL_ADAPTER)
         pcr_primers=(
-            'TCGTCGGCAGCGTCAGATGTGTATAAGAGACAGNNNNNNNNGTGGTATCAACGCAGAGTAC',
-            'GTCTCGTGGGCTCGGAGATGTGTATAAGAGACAGCGATGCTTTTTTTTTTTTTTTT')
+            FULL_FIVE_LINKER,
+            FULL_THREE_LINKER)
     elif adapter_type=="CapTrap_primer":
        head_adapter=(
             '')
        tail_adapter=(
             '')
        pcr_primers=(
-            'TCGTCGGCAGCGTC',
-            'GTCTCGTGGGCTCGG')	#5'rc(tail)3'
-            #'CCGAGCCCACGAGAC') #5'tail3'
-            #'CAGAGCACCCGAGCC') #3'tail5'
-            #'GGCTCGGGTGCTCTG') #3'rc(tail)5'
+            FW_CAP_PRIMER,
+            RV_CAP_PRIMER)
     elif adapter_type=="CapTrap_joint":
        head_adapter=(
             '')
        tail_adapter=(
             '')
        pcr_primers=(
-            'TCGTCGGCAGCGTCAGATGTGTATAAGAGACAGNNNNNNNNGTGGTATCAACGCAGAGTAC',#TCGTCGGCAGCGTC AGATGTGTATAAGAGACAGNNNNNNNNGTGGTATCAACGCAGAGTAC
-            'GTCTCGTGGGCTCGGAGATGTGTATAAGAGACAGCGATGCTTTTTTTTTTTTTTTT')#GTCTCGTGGGCTCGG AGATGTGTATAAGAGACAGCGATGCTTTTTTTTTTTTTTTT
+            FULL_FIVE_LINKER,
+            FULL_THREE_LINKER)
     else:
        head_adapter=(
             '')
        tail_adapter=(
             '')
        pcr_primers=(
-            'AGATGTGTATAAGAGACAGNNNNNNNNGTGGTATCAACGCAGAGTAC',
-            'AGATGTGTATAAGAGACAGCGATGCTTTTTTTTTTTTTTTT')
+            FIVE_LINKER,
+            THREE_LINKER)
         
     """Build some targets."""
     if degenerate_bases is None:
