@@ -18,9 +18,12 @@ data:
     fq: data/raw/{sample}.fq
     fa: data/raw/{sample}.fa
   duplex:
-      sam: data/duplex/{sample}.sam
-      fq: data/duplex/{sample}.fq.gz
-      fa: data/duplex/{sample}.fa
+    sam: data/duplex/{sample}.sam
+    fq: data/duplex/{sample}.fq
+    fa: data/duplex/{sample}.fa
+  split:
+    split_ONT_CapLinker: data/split/{sample}_1step/
+    split_CapLinker: data/split/{sample}_2step/
 
   blast:
       db: data/blast/5_linker_db

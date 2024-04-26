@@ -9,9 +9,10 @@ include: 'blast.smk'
 include: 'samtools.smk'
 include: 'formatting.smk'
 include: 'minimap.smk'
+include: 'splitting.smk'
 
 configfile: 'config.yml'
-# df = pd.read_csv('test_data.tsv', sep='\t')
+
 df = pd.read_csv('test_data_2.tsv', sep='\t')
 
 def get_df_val(df, col, sample):
@@ -19,33 +20,46 @@ def get_df_val(df, col, sample):
     assert len(temp.index) == 1
     return temp[col].values[0]
 
+
 rule all:
     input:
         expand(config['data']['minimap']['bam_ind'],
                sample=df['sample'].tolist())
-        # expand(config['data']['duplex']['sam'],
-        #        sample=df['sample'].tolist())
 
 
 # get duplex status of each read and record in new bam
 # corresponds to scripts/00.1_append_samtag.sh
 use rule add_duplex_status as basecall_add_duplex_status with:
     input:
-        align = lambda wc: get_df_val(df, 'fname', wc.sample)
+        unbam = lambda wc: get_df_val(df, 'fname', wc.sample)
         # fq = config['raw']['fq']
     output:
-        align = temporary(config['data']['duplex']['sam'])
+        unbam = temporary(config['data']['duplex']['sam']) # ALERT SAM R U SURE?
 
-use rule sam_to_fq as duplex_sam_to_fq with:
+
+# BAM to fastQ
+use rule bam_to_fastq as unalignedbam_to_fastq with:
     input:
-        align = rules.basecall_add_duplex_status.output.align
+        unbam = rule.basecall_add_duplex_status.output.unbam
     output:
-        fq = temporary(config['data']['duplex']['fq'])
+        fastq = config['data']['duplex']['fastq']
 
+# Step 1 splitting reads with both ONT adapter and full CapTrap linkers
+use rule split_ONT_plus_full_linker as first_split with:
+    input:
+        align = rule.unalignedbam_to_fastq.output.fastq
+    output:
+        align = config['data']['duplex']['sam']
+
+
+
+
+
+# START OF DEDUPLICATION
 # corr. to 00_fastq2fasta.sh
 use rule fq_to_fa as raw_fq_to_fa with:
     input:
-        fq = rules.duplex_sam_to_fq.output.fq
+        bam = rules.first_split.output.fq
         # fq = lambda wc: get_df_val(df, 'fname', wc.sample)
         # fq = config['raw']['fq']
     output:
