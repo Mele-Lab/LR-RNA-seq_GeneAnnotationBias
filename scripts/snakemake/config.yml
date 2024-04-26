@@ -22,8 +22,8 @@ data:
     fq: data/duplex/{sample}.fq
     fa: data/duplex/{sample}.fa
   split:
-    split_ONT_CapLinker: data/split/{sample}_1step/
-    split_CapLinker: data/split/{sample}_2step/
+    split_ONT_CapLinker: data/split/{sample}_1step/{sample}.fq.gz
+    split_CapLinker: data/split/{sample}_2step/{sample}.fq.gz
 
   blast:
       db: data/blast/5_linker_db

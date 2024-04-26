@@ -47,11 +47,23 @@ use rule bam_to_fastq as unalignedbam_to_fastq with:
 # Step 1 splitting reads with both ONT adapter and full CapTrap linkers
 use rule split_ONT_plus_full_linker as first_split with:
     input:
-        align = rule.unalignedbam_to_fastq.output.fastq
+        fastq = rule.unalignedbam_to_fastq.output.fastq
     output:
-        align = config['data']['duplex']['sam']
+        fastq = config['data']['split']['split_ONT_CapLinker']
 
+# Step 2 splitting reads with full CapTrap linkers
+use rule split_full_linker as second_split with:
+    input:
+        fastq = rule.first_split.output.fastq
+    output:
+        fastq = config['data']['split']['split_CapLinker']
 
+# Step 3 remove multisplits
+use rule skip_multisplits as remove_multisplits with:
+    input:
+        fq =
+    output:
+        fq = 
 
 
 
