@@ -24,11 +24,10 @@ rule split_full_linker:
 
 rule skip_multisplits:
     resources:
-        threads = 1
+        threads = 8
     shell:
         """
-        module load anaconda
-        bash skipMultiSplits.sh 
+        bash skipMultiSplits.sh . {input.outdir} {input.splitdir}/split {input.sample} {resources.threads}
         """
 
 # ex [fomr pclavell] 

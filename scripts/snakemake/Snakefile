@@ -23,8 +23,10 @@ def get_df_val(df, col, sample):
 
 rule all:
     input:
-        expand(config['data']['minimap']['bam_ind'],
-               sample=df['sample'].tolist())
+        expand(config['data']['split']['fastq_split'],
+                sample=df['sample'].tolist())#,
+#        expand(config['data']['minimap']['bam_ind'],
+#               sample=df['sample'].tolist())
 
 
 # get duplex status of each read and record in new bam
@@ -49,21 +51,32 @@ use rule split_ONT_plus_full_linker as first_split with:
     input:
         fastq = rule.unalignedbam_to_fastq.output.fastq
     output:
-        fastq = config['data']['split']['split_ONT_CapLinker']
+        fastq = config['data']['split']['outsplit1_ONT_CapLinker'],
+        out1.1 = config['data']['split']['outsplit1.1'],
+        out1.2 = config['data']['split']['outsplit1.2'],
+        out1.3 = config['data']['split']['outsplit1.3']
 
 # Step 2 splitting reads with full CapTrap linkers
 use rule split_full_linker as second_split with:
     input:
         fastq = rule.first_split.output.fastq
     output:
-        fastq = config['data']['split']['split_CapLinker']
+        fastq = config['data']['split']['outsplit2_CapLinker'],
+        out2.1 = config['data']['split']['outsplit2.1'],
+        out2.2 = config['data']['split']['outsplit2.2'],
+        out2.3 = config['data']['split']['outsplit2.3']
 
 # Step 3 remove multisplits
 use rule skip_multisplits as remove_multisplits with:
     input:
-        fq =
+        outdir = config['data']['split'],
+        splitdir = config['data']['split'],
+        sample = config['data']['split']
     output:
-        fq = 
+        fastq_split = config['data']['split']['fastq_split'],
+        fastq_multisplit = config['data']['split']['fastq_multisplit'],
+        multisplitsID1 = config['data']['split']['multisplitsID1'],
+        multisplitsID2 = config['data']['split']['multisplitsID2']
 
 
 

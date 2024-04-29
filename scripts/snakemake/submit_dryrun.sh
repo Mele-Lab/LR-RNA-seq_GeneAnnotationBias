@@ -1,10 +1,10 @@
 #!/bin/bash
 
 
-module load intel mkl impi gcc/7.2.0
-module load miniconda3/py39_4.10.3 && source activate snakemake
+#module load intel mkl impi gcc/7.2.0
+module load miniconda && source activate sqanti3-snakemake
 snakemake \
--s Snakefile \
+-s ONT_preprocessing/scripts/snakemake/Snakefile \
 -j 100 \
 --latency-wait 120 \
 --cluster "sbatch \
