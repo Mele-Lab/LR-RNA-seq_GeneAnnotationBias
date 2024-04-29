@@ -23,14 +23,14 @@ data:
     fa: data/duplex/{sample}.fa
   split:
     outsplit1_ONT_CapLinker: data/split/{sample}_1step/{sample}.fq.gz
-    outsplit1.1: data/split/{sample}_1step/{sample}/edited.pkl
-    outsplit1.2: data/split/{sample}_1step/{sample}/split_multiple_times.pkl
-    outsplit1.3: data/split/{sample}_1step/{sample}/unedited.pkl
+    outsplit1_1: data/split/{sample}_1step/{sample}/edited.pkl
+    outsplit1_2: data/split/{sample}_1step/{sample}/split_multiple_times.pkl
+    outsplit1_3: data/split/{sample}_1step/{sample}/unedited.pkl
 
     outsplit2_CapLinker: data/split/{sample}_2step/{sample}.fq.gz
-    outsplit2.1: data/split/{sample}_2step/{sample}/edited.pkl
-    outsplit2.2: data/split/{sample}_2step/{sample}/split_multiple_times.pkl
-    outsplit2.3: data/split/{sample}_2step/{sample}/unedited.pkl
+    outsplit2_1: data/split/{sample}_2step/{sample}/edited.pkl
+    outsplit2_2: data/split/{sample}_2step/{sample}/split_multiple_times.pkl
+    outsplit2_3: data/split/{sample}_2step/{sample}/unedited.pkl
 
     multisplitsID1: data/split/{sample}_1step/{sample}/detected_multiSPLIT_IDs.txt
     multisplitsID2: data/split/{sample}_2step/{sample}/detected_multiSPLIT_IDs.txt

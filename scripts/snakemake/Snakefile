@@ -11,9 +11,9 @@ include: 'formatting.smk'
 include: 'minimap.smk'
 include: 'splitting.smk'
 
-configfile: 'config.yml'
+configfile: '/gpfs/projects/bsc83/Projects/pantranscriptome/pclavell/ONT_preprocessing/scripts/snakemake/config.yml'
 
-df = pd.read_csv('test_data_2.tsv', sep='\t')
+df = pd.read_csv('/gpfs/projects/bsc83/Projects/pantranscriptome/pclavell/ONT_preprocessing/scripts/snakemake/test_data_2.tsv', sep='\t')
 
 def get_df_val(df, col, sample):
     temp = df.loc[df['sample']==sample]
@@ -42,36 +42,37 @@ use rule add_duplex_status as basecall_add_duplex_status with:
 # BAM to fastQ
 use rule bam_to_fastq as unalignedbam_to_fastq with:
     input:
-        unbam = rule.basecall_add_duplex_status.output.unbam
+        unbam = rules.basecall_add_duplex_status.output.unbam
     output:
         fastq = config['data']['duplex']['fastq']
 
 # Step 1 splitting reads with both ONT adapter and full CapTrap linkers
 use rule split_ONT_plus_full_linker as first_split with:
     input:
-        fastq = rule.unalignedbam_to_fastq.output.fastq
+        fastq = rules.unalignedbam_to_fastq.output.fastq
     output:
         fastq = config['data']['split']['outsplit1_ONT_CapLinker'],
-        out1.1 = config['data']['split']['outsplit1.1'],
-        out1.2 = config['data']['split']['outsplit1.2'],
-        out1.3 = config['data']['split']['outsplit1.3']
+        out1_1 = config['data']['split']['outsplit1_1'],
+        out1_2 = config['data']['split']['outsplit1_2'],
+        out1_3 = config['data']['split']['outsplit1_3']
 
 # Step 2 splitting reads with full CapTrap linkers
 use rule split_full_linker as second_split with:
     input:
-        fastq = rule.first_split.output.fastq
+        fastq = rules.first_split.output.fastq
     output:
         fastq = config['data']['split']['outsplit2_CapLinker'],
-        out2.1 = config['data']['split']['outsplit2.1'],
-        out2.2 = config['data']['split']['outsplit2.2'],
-        out2.3 = config['data']['split']['outsplit2.3']
+        out2_1 = config['data']['split']['outsplit2_1'],
+        out2_2 = config['data']['split']['outsplit2_2'],
+        out2_3 = config['data']['split']['outsplit2_3']
 
 # Step 3 remove multisplits
 use rule skip_multisplits as remove_multisplits with:
     input:
         outdir = config['data']['split'],
         splitdir = config['data']['split'],
-        sample = config['data']['split']
+        #sample = config['data']['split']
+    #params:
     output:
         fastq_split = config['data']['split']['fastq_split'],
         fastq_multisplit = config['data']['split']['fastq_multisplit'],
@@ -84,7 +85,7 @@ use rule skip_multisplits as remove_multisplits with:
 # corr. to 00_fastq2fasta.sh
 use rule fq_to_fa as raw_fq_to_fa with:
     input:
-        bam = rules.first_split.output.fq
+        bam = rules.remove_multisplits.output.fastq_split
         # fq = lambda wc: get_df_val(df, 'fname', wc.sample)
         # fq = config['raw']['fq']
     output:
