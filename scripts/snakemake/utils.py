@@ -1,6 +1,6 @@
 import pysam
 
-def append_duplex_tag_read_name(infile, outfile, threads):
+def append_duplex_tag_read_name(infile, outfile, threads, sep):
     if infile.endswith('.bam'):
         in_mode = 'rb'
     else:
@@ -18,7 +18,7 @@ def append_duplex_tag_read_name(infile, outfile, threads):
 
     for read in input.fetch():
         tag = read.get_tag('dx')
-        new_qname = read.query_name+';'+str(tag)
+        new_qname = read.query_name+sep+str(tag)
         read.query_name = new_qname
         output.write(read)
 

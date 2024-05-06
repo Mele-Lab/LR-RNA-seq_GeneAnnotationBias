@@ -5,7 +5,17 @@ rule sam_filt_unmapped:
     shell:
         """
         module load samtools
-        samtools view -f 4 {input.align} > {output.align}
+        samtools view -F 4 {input.align} > {output.align}
+        """
+
+rule sam_filt_for_primary:
+    resources:
+        threads = 8,
+        mem_gb = 32
+    shell:
+        """
+        module load samtools
+        samtools view -F 2048 -F 256 {input.align} > {output.align}
         """
 
 rule sam_to_fq:

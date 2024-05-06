@@ -74,6 +74,7 @@ NAME = sam_path.split("/")[-1].split(".")[0]
 #sam_path="/home/pclavell/mounts/projects/Projects/gencode_diversity/deduplication/test"
 
 opref = sys.argv[2]
+sep = sys.argv[3]
 
 
 sam = pd.read_csv(sam_path, sep='\t', comment='@', usecols=[i for i in range(11)])
@@ -101,22 +102,27 @@ umi_df = umi_table.applymap(lambda x: x[0] if len(x) > 0 else x)
 umi_df.to_csv(f'{opref}_temp.tsv', sep='\t')
 
 # remove rows that for some reason (not aligned) miss the read name
-umi_df = umi_df[umi_df['read_seq'] != '*']
+# umi_df = umi_df[umi_df['read_seq'] != '*']
+
+# make sure we have no unmapped reads
+assert len(umi_df.loc[umi_df['read_seq'] != '*'].index) == 0
 
 # drop potential concatamers
-umi_df = umi_df[~ umi_df['potential_concatamer']]
+# umi_df = umi_df[~ umi_df['potential_concatamer']]
 
 # add column with read_name + UMIseq
 if len(umi_df!=0):
-    umi_df.insert(1, 'read_name_UMI', '>' + umi_df['read_name'] + '_' + umi_df['umi_seq'])
+    umi_df.insert(1, 'read_name_UMI', '>' + umi_df['read_name'] + sep + umi_df['umi_seq'])
 else:
     umi_df['read_name_UMI'] = np.nan
 
 # remove those that do not have a 16 nt UMI
 umi_df = umi_df[umi_df['umi_seq'].apply(len)==16]
 
+# make sure there are no secondary or supplementary alignments
 # keep only one alignment from multimapping reads
-umi_df = umi_df[~umi_df['read_name'].duplicated()]
+# umi_df = umi_df[~umi_df['read_name'].duplicated()]
+assert len(umi_df.loc[umi_df.read_name.duplicated()].index) == 0
 
 # save table
 umi_df.to_csv(f'{opref}_extracted_UMI.tsv', sep='\t', index=False)

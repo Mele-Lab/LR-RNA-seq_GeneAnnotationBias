@@ -1,3 +1,7 @@
+params:
+    duplex_sep: ':'
+    umi_sep: '_'
+
 bin:
   blast2bam: /gpfs/projects/bsc83/utils/Blast2Bam/bin/blast2bam
 
@@ -31,6 +35,7 @@ data:
       xml: data/blast/{sample}.xml
       sam: data/blast/{sample}.sam
       sam_filt: data/blast/{sample}_filt.sam
+      sam_filt_2: data/blast/{sample}_filt2.sam
       bam: data/blast/{sample}.bam
       bam_sort: data/blast/{sample}_sorted.bam
       bam_ind: data/blast/{sample}_sorted.bam.bai
