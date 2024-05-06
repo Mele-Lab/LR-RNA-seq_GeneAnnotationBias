@@ -165,3 +165,21 @@ use rule bam_index as bam_index_map with:
         align = rules.bam_sort_map.output.align
     output:
         align = config['data']['minimap']['bam_ind']
+
+# rules below correspond to 05_deduplication/01_deduplication.sh
+use rule gtf_to_gt_map as get_gt_map with:
+    input:
+        gtf = config['ref']['gtf']
+    output:
+        gt_map = config['ref']['gt_map']
+
+use rule dedupe_umi as umi_dedupe_reads with:
+    input:
+        align = rules.bam_sort_map.output.align,
+        gt_map = config['ref']['gt_map']
+    params:
+        sep = config['params']['umi_sep'],
+        edit_dist = 2
+    output:
+        align = config['data']['umi_dedupe']['bam'],
+        log = config['data']['umi_dedupe']['log']

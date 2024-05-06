@@ -14,6 +14,7 @@ ref:
   gtf_link: https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_44/gencode.v44.chr_patch_hapl_scaff.annotation.gtf.gz
   gtf: /gpfs/projects/bsc83/Data/gene_annotation/gencode/release_44/gencode.v44.chr_patch_hapl_scaff.annotation.gtf
   junc_bed: /gpfs/projects/bsc83/Data/gene_annotation/gencode/release_44/modified/gencode.v44.chr_patch_hapl_scaff.annotation_transcriptlevel.bed
+  gt_map: ref/gt_map.tsv
 
   linker_5_fa: ref/linker_5.fa
 
@@ -25,7 +26,6 @@ data:
       sam: data/duplex/{sample}.sam
       fq: data/duplex/{sample}.fq.gz
       fa: data/duplex/{sample}.fa
-
   blast:
       db: data/blast/5_linker_db
       nhr: data/blast/5_linker_db.nhr
@@ -39,7 +39,6 @@ data:
       bam: data/blast/{sample}.bam
       bam_sort: data/blast/{sample}_sorted.bam
       bam_ind: data/blast/{sample}_sorted.bam.bai
-
   umi:
     umis: data/umi/{sample}_extracted_UMI.tsv
     fa: data/umi/{sample}_with_extracted_UMI.fasta
@@ -50,3 +49,7 @@ data:
     bam: data/minimap/{sample}.bam
     bam_sort: data/minimap/{sample}_sorted.bam
     bam_ind: data/minimap/{sample}_sorted.bam.bai
+
+  umi_dedupe:
+    bam: data/umi_dedupe/{sample}.bam
+    log: data/umi_dedupe/{sample}.log
