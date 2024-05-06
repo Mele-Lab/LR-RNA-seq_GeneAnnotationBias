@@ -31,6 +31,18 @@ rule fasta_get_read_ids:
         grep "^>" {input.fa} | cut -c 2- > {output.txt}
         """
 
+rule read_id_union:
+    resources:
+        threads = 1,
+        mem_gb = 4
+    run:
+        a = set(pd.read_csv(input.a, header=None)[0].tolist())
+        b = set(pd.read_csv(input.b, header=None)[0].tolist())
+        union = list(a|b)
+        df = pd.DataFrame()
+        df['read_id'] = union
+        df.to_csv(output.txt, header=False)
+
 rule read_id_diff:
     resources:
         threads = 1,
