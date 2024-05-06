@@ -8,6 +8,16 @@ rule sam_filt_unmapped:
         samtools view -F 4 {input.align} > {output.align}
         """
 
+rule sam_get_read_ids:
+    resources:
+        threads = 1,
+        mem_gb = 16
+    shell:
+        """
+        module load samtools
+        samtools view {input.align} | cut -f1 > {output.txt}
+        """
+
 rule sam_filt_for_primary:
     resources:
         threads = 8,

@@ -38,6 +38,13 @@ use rule add_duplex_status as basecall_add_duplex_status with:
     output:
         align = temporary(config['data']['duplex']['sam'])
 
+# get the read IDs of all reads
+use rule sam_get_read_ids as get_all_read_ids with:
+    input:
+        align = rules.basecall_add_duplex_status.output.align
+    output:
+        txt = config['data']['duplex']['read_ids']
+
 use rule sam_to_fq as duplex_sam_to_fq with:
     input:
         align = rules.basecall_add_duplex_status.output.align
@@ -128,6 +135,21 @@ use rule extract_umi as extract_umi_blast with:
     output:
         umis = config['data']['umi']['umis'],
         fa = config['data']['umi']['fa']
+
+use rule fasta_get_read_ids as get_umi_read_ids with:
+    input:
+        fa = rules.extract_umi_blast.output.fa
+    output:
+        txt = config['data']['umi']['read_ids']
+
+# get the read ids of reads that we didn't find UMIs for
+# by subtracting the reads with a UMI from the list of all reads
+use rule read_id_diff as get_non_umi_read_ids with:
+    input:
+        a = rules.get_all_read_ids.output.txt,
+        b = rules.get_umi_read_ids.output.txt
+    output:
+        txt = config['data']['umi']['no_umi_read_ids']
 
 # TODO this is where the duplex read recovery will happen
 

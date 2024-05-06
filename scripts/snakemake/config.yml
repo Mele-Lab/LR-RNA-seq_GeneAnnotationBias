@@ -24,6 +24,7 @@ data:
     fa: data/raw/{sample}.fa
   duplex:
       sam: data/duplex/{sample}.sam
+      read_ids: data/duplex/{sample}_read_ids.txt
       fq: data/duplex/{sample}.fq.gz
       fa: data/duplex/{sample}.fa
   blast:
@@ -42,6 +43,8 @@ data:
   umi:
     umis: data/umi/{sample}_extracted_UMI.tsv
     fa: data/umi/{sample}_with_extracted_UMI.fasta
+    read_ids: data/umi/{sample}_read_ids.txt
+    no_umi_read_ids: data/umi/{sample}_no_umi_read_ids.txt
 
   minimap:
     sam: data/minimap/{sample}.sam
