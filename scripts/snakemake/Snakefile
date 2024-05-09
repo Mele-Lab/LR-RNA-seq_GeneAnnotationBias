@@ -216,7 +216,7 @@ use rule sam_get_read_ids as get_umi_dedupe_read_ids with:
 # get bam file of
 # 1. UMI deduplicated reads
 # 2. reads that we didn't find UMIs for
-use read_id_union as get_qc_reads with:
+use rule read_id_union as get_qc_reads with:
     input:
         a = rules.get_non_umi_read_ids.output.txt,
         b = rules.get_umi_dedupe_read_ids.output.txt
