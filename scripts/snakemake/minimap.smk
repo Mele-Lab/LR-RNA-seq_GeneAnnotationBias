@@ -1,6 +1,6 @@
 rule minimap:
     resources:
-        threads = 48
+        threads = 25
     shell:
         """
         module load minimap2/2.24-r1122
