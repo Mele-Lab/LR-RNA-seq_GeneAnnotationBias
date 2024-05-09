@@ -14,3 +14,20 @@ Dealing with duplex relationships and putting them in read names
 ```python
 import pysam
 ```
+
+
+```bash
+conda install -n base -c conda-forge mamba
+
+conda create -c conda-forge -c bioconda -n rrna_snakemake python==3.9 pandas pysam
+conda activate rrna_snakemake
+
+conda install pyfaidx
+
+# conda install pandas
+# pip install numpy==1.23.5
+
+conda install -c conda-forge adjusttext
+conda install toposort==1.10
+conda install snakemake-minimal==7.32
+```

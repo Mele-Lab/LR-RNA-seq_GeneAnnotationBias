@@ -58,5 +58,5 @@ data:
     log: data/umi_dedupe/{sample}.log
     read_ids: data/umi_dedupe/{sample}_read_ids.txt
   qc:
-    read_ids: data/qc/{sample}.bam
+    read_ids: data/qc/{sample}_read_ids.txt
     bam: data/qc/{sample}.bam

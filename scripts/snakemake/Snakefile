@@ -14,6 +14,9 @@ configfile: 'config.yml'
 # df = pd.read_csv('test_data.tsv', sep='\t')
 df = pd.read_csv('test_data_2.tsv', sep='\t')
 
+wildcard_constraints:
+    sample='|'.join([re.escape(x) for x in df['sample'].tolist()]),
+
 def get_df_val(df, col, sample):
     temp = df.loc[df['sample']==sample]
     assert len(temp.index) == 1
@@ -224,9 +227,9 @@ use rule read_id_union as get_qc_reads with:
     output:
         txt = config['data']['qc']['read_ids']
 
-# use rule sam_filt_for_read_ids as make_qc_bam with:
-#     input:
-#         align = rules.get_all_read_ids.input.align,
+use rule sam_filt_for_read_ids as make_qc_bam with:
+    input:
+        align = rules.get_all_read_ids.input.align,
 #         read_ids = rules.get_qc_reads.output.txt
-#     output:
-#         align = config['data']['qc']['bam']
+    output:
+        align = config['data']['qc']['bam']
