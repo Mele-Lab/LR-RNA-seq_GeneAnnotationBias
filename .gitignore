@@ -1,3 +1,4 @@
 data
 .gitignore
-
+slurm_logs/
+slurm_scripts/

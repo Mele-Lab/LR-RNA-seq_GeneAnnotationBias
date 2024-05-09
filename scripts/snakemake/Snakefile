@@ -36,7 +36,7 @@ use rule add_duplex_status as basecall_add_duplex_status with:
         unbam = lambda wc: get_df_val(df, 'fname', wc.sample)
         # fq = config['raw']['fq']
     output:
-        unbam = temporary(config['data']['duplex']['sam']) # ALERT SAM R U SURE?
+        unbam = temporary(config['data']['duplex']['bam'])
 
 
 # BAM to fastQ
@@ -69,10 +69,11 @@ use rule split_full_linker as second_split with:
 # Step 3 remove multisplits
 use rule skip_multisplits as remove_multisplits with:
     input:
-        outdir = config['data']['split'],
-        splitdir = config['data']['split'],
-        #sample = config['data']['split']
-    #params:
+        mockinput = rules.second_split.output.fastq
+    params:
+        splitdir = "data/split",
+        sample = lambda wc: wc.get("sample"),
+        outdir = "data/split/"+str(lambda wc: wc.get("sample"))+"_postsplitting/"
     output:
         fastq_split = config['data']['split']['fastq_split'],
         fastq_multisplit = config['data']['split']['fastq_multisplit'],

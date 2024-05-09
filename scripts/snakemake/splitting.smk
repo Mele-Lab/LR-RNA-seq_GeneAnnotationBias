@@ -27,7 +27,7 @@ rule skip_multisplits:
         threads = 8
     shell:
         """
-        bash skipMultiSplits.sh . {input.outdir} {input.splitdir}/split {wildcards.sample} {resources.threads}
+        bash skipMultiSplits.sh . {params.outdir} {params.splitdir} {params.sample} {resources.threads} {input.mockinput}
         """
 
 # ex [fomr pclavell] 

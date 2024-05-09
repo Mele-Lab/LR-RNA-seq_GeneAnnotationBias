@@ -18,7 +18,7 @@ data:
     fq: data/raw/{sample}.fq
     fa: data/raw/{sample}.fa
   duplex:
-    sam: data/duplex/{sample}.sam
+    bam: data/duplex/{sample}.bam
     fastq: data/duplex/{sample}.fq
     fa: data/duplex/{sample}.fa
   split:
