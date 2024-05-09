@@ -21,7 +21,7 @@ def get_df_val(df, col, sample):
 
 rule all:
     input:
-        expand(config['data']['minimap']['bam_ind'],
+        expand(config['data']['qc']['bam'],
                sample=df['sample'].tolist())
         # expand(config['data']['duplex']['sam'],
         #        sample=df['sample'].tolist())
