@@ -1,6 +1,6 @@
 #!/bin/bash
 
-module load minimap2/2.24-r1122
+module load minimap2
 
 QUERY=$1
 #REFERENCE=$2

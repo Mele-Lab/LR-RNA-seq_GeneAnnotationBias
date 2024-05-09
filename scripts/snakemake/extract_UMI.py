@@ -104,7 +104,7 @@ umi_df.to_csv(f'{opref}_temp.tsv', sep='\t')
 umi_df = umi_df[umi_df['read_seq'] != '*']
 
 # drop potential concatamers
-umi_df = umi_df[~ umi_df['potential_concatamer']]
+#umi_df = umi_df[~ umi_df['potential_concatamer']]
 
 # add column with read_name + UMIseq
 if len(umi_df!=0):
