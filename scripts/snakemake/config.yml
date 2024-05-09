@@ -8,12 +8,12 @@ bin:
 ref:
   fa_ver: 'hg38'
   fa_link: https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_44/GRCh38.p14.genome.fa.gz
-  fa: /gpfs/projects/bsc83/Data/assemblies/gencode/GRCh38.p14/GRCh38.p14.genome.fa
+  fa: /gpfs/projects/bsc83/MN4/bsc83/Data/assemblies/gencode/GRCh38.p14/GRCh38.p14.genome.fa
   mmi: ref/ref.mmi
 
   gtf_link: https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_44/gencode.v44.chr_patch_hapl_scaff.annotation.gtf.gz
-  gtf: /gpfs/projects/bsc83/Data/gene_annotation/gencode/release_44/gencode.v44.chr_patch_hapl_scaff.annotation.gtf
-  junc_bed: /gpfs/projects/bsc83/Data/gene_annotation/gencode/release_44/modified/gencode.v44.chr_patch_hapl_scaff.annotation_transcriptlevel.bed
+  gtf: /gpfs/projects/bsc83/MN4/bsc83/Data/gene_annotation/gencode/release_44/gencode.v44.chr_patch_hapl_scaff.annotation.gtf
+  junc_bed: /gpfs/projects/bsc83/MN4/bsc83/Data/gene_annotation/gencode/release_44/modified/gencode.v44.chr_patch_hapl_scaff.annotation_transcriptlevel.bed
   gt_map: ref/gt_map.tsv
 
   linker_5_fa: ref/linker_5.fa
