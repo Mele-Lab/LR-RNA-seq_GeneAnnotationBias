@@ -8,6 +8,8 @@ snakemake \
 -j 100 \
 --latency-wait 120 \
 --cluster "sbatch \
-  -q bsc_ls \
-  -c {resources.threads}  \
+  -q gp_bscls \
+  -c 1  \
+  -A bsc83 \
+  -o slurm_out/%a.out \
   --time=2:00:00"

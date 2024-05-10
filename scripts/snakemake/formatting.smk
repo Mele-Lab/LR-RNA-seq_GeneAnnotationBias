@@ -3,7 +3,7 @@ rule add_duplex_status:
         mem_gb = 16,
         threads = 8
     run:
-        append_duplex_tag_read_name(input.unbam, output.unbam, resources.threads)
+        append_duplex_tag_read_name(input.unbam, input.index , output.unbam, resources.threads)
 
 rule fq_to_fa:
     resources:

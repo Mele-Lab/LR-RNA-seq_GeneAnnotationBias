@@ -23,18 +23,25 @@ def get_df_val(df, col, sample):
 
 rule all:
     input:
-        expand(config['data']['split']['fastq_split'],
+        expand(config['data']['minimap']['bam_ind'],
                 sample=df['sample'].tolist())#,
-#        expand(config['data']['minimap']['bam_ind'],
+#        expand(config['data']['split']['fastq_split'],
 #               sample=df['sample'].tolist())
 
+
+# index unaligned bam so next rule can work properly
+use rule bamindex as index_unalignedbam with:
+    input:
+        bam = lambda wc: get_df_val(df, 'fname', wc.sample)
+    output:
+        index = temporary(config['data']['duplex']['index'])
 
 # get duplex status of each read and record in new bam
 # corresponds to scripts/00.1_append_samtag.sh
 use rule add_duplex_status as basecall_add_duplex_status with:
     input:
-        unbam = lambda wc: get_df_val(df, 'fname', wc.sample)
-        # fq = config['raw']['fq']
+        unbam = lambda wc: get_df_val(df, 'fname', wc.sample),
+        index = rules.index_unalignedbam.output.index
     output:
         unbam = temporary(config['data']['duplex']['bam'])
 

@@ -1,3 +1,13 @@
+rule bamindex:
+    resources:
+        threads = 8,
+        mem_gb = 32
+    shell:
+        """
+        module load samtools
+        samtools index -b --threads {resources.threads} {input.bam} -o {output.index}
+        """
+
 rule sam_filt_unmapped:
     resources:
         threads = 8,
@@ -5,7 +15,7 @@ rule sam_filt_unmapped:
     shell:
         """
         module load samtools
-        samtools view -f 4 {input.align} > {output.align}
+        samtools view -f 4 {input.align} --threads {resources.threads} > {output.align}
         """
 
 rule sam_to_fq:

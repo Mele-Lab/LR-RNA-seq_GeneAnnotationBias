@@ -5,6 +5,7 @@ rule split_ONT_plus_full_linker:
     shell:
         """
         module load anaconda
+        conda init
         conda activate /gpfs/projects/bsc83/utils/conda_envs/duplextools_env
         duplex_tools split_on_adapter --threads {resources.threads} --adapter_type ONT_sequencing_adapter+CapTrapSeqJoint {input.fastq} {output.fastq} PCR
         
