@@ -61,7 +61,7 @@ use rule bam_to_fastq as unalignedbam_to_fastq with:
  #       input = rules.unalignedbam_to_fastq.output.fastq
   #  params:
    #     outdir =
-#        prefix = 
+#        prefix =
  #       filetype =
   #  output:
   #      fastq = config['data']['split']['outsplit1_ONT_CapLinker'] # canviar
@@ -72,10 +72,10 @@ use rule split_ONT_plus_full_linker as first_split with:
     input:
         fastq = rules.unalignedbam_to_fastq.output.fastq
     output:
-        fastq = config['data']['split']['outsplit1_ONT_CapLinker'],
-        out1_1 = config['data']['split']['outsplit1_1'],
-        out1_2 = config['data']['split']['outsplit1_2'],
-        out1_3 = config['data']['split']['outsplit1_3']
+        fastq = config['data']['split']['outsplit1_ONT_CapLinker']
+        # out1_1 = config['data']['split']['outsplit1_1'],
+        # out1_2 = config['data']['split']['outsplit1_2'],
+        # out1_3 = config['data']['split']['outsplit1_3']
 
 # Step 2 splitting reads with full CapTrap linkers
 use rule split_full_linker as second_split with:
