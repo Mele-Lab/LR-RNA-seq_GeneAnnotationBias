@@ -5,7 +5,7 @@ module load miniconda && source activate sqanti3-snakemake
 #snakemake --unlock
 snakemake \
 -s snakemake/Snakefile \
--j 100 \
+-j 1 \
 --latency-wait 120 \
 --cluster "sbatch \
   -q gp_bscls \

@@ -107,7 +107,7 @@ use rule skip_multisplits as remove_multisplits with:
 # corr. to 00_fastq2fasta.sh
 use rule fq_to_fa as raw_fq_to_fa with:
     input:
-        bam = rules.remove_multisplits.output.fastq_split
+        fq = rules.remove_multisplits.output.fastq_split
         # fq = lambda wc: get_df_val(df, 'fname', wc.sample)
         # fq = config['raw']['fq']
     output:
