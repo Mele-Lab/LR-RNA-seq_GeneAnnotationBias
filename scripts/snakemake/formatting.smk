@@ -18,7 +18,7 @@ rule extract_umi:
         mem_gb = 16
     shell:
         """
-        python extract_UMI.py {input.align} {params.opref} {params.sep}
+        python snakemake/extract_UMI.py {input.align} {params.opref} {params.sep}
         """
 
 rule fasta_get_read_ids:
