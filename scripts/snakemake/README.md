@@ -32,13 +32,12 @@ snakemake \
     -n
 
 snakemake \
-  -s Snakefile \
-  -j 100 \
+  -s snakemake/Snakefile \
+  -j 10 \
   --latency-wait 120 \
   --cluster "sbatch \
-    -A bsc83 \
-    -q acc_bsc \
-    -c {resources.threads}  \
-    --time=2:00:00" \
-    -n
+  -q gp_bscls \
+  -A bsc83 \
+  --time=2:00:00" \
+  -n
 ```

@@ -16,7 +16,7 @@ ref:
   junc_bed: /gpfs/projects/bsc83/MN4/bsc83/Data/gene_annotation/gencode/release_44/modified/gencode.v44.chr_patch_hapl_scaff.annotation_transcriptlevel.bed
   gt_map: ref/gt_map.tsv
 
-  linker_5_fa: ref/linker_5.fa
+  linker_5_fa: snakemake/ref/linker_5.fa
 
 data:
   raw:

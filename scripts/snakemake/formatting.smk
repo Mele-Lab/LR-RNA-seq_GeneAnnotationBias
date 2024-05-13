@@ -18,8 +18,7 @@ rule extract_umi:
         mem_gb = 16
     shell:
         """
-        module load python/3.10.2
-        python3 extract_UMI.py {input.align} {params.opref} {params.sep}
+        python extract_UMI.py {input.align} {params.opref} {params.sep}
         """
 
 rule fasta_get_read_ids:
