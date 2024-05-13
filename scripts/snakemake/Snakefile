@@ -53,6 +53,20 @@ use rule bam_to_fastq as unalignedbam_to_fastq with:
     output:
         fastq = config['data']['duplex']['fastq']
 
+
+# First nanoplot
+# Step 1 splitting reads with both ONT adapter and full CapTrap linkers
+#use rule nanoplot as firstnanoplot with:
+#    input:
+ #       input = rules.unalignedbam_to_fastq.output.fastq
+  #  params:
+   #     outdir =
+#        prefix = 
+ #       filetype =
+  #  output:
+  #      fastq = config['data']['split']['outsplit1_ONT_CapLinker'] # canviar
+
+
 # Step 1 splitting reads with both ONT adapter and full CapTrap linkers
 use rule split_ONT_plus_full_linker as first_split with:
     input:

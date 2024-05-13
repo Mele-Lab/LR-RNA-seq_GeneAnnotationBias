@@ -28,3 +28,20 @@ rule count_fa_gz_reads:
         """
         echo $(gzcat {input.fq}|wc -l)/2|bc > {ouput.txt}
         """
+
+rule nanoplot:
+    resources:
+        threads = 8,
+        mem_gb = 32
+    shell:
+        """
+        module load anaconda
+        conda activate /gpfs/projects/bsc83/utils/conda_envs/nanoplot
+        /gpfs/projects/bsc83/utils/conda_envs/nanoplot/bin/NanoPlot \
+            -t {resources.threads} \
+            -o {params.outdir} \
+            -p {params.prefix} \
+            --tsv_stats \
+            -f png \
+            --{params.filetype} {input.reads} #ubam or fastq
+        """

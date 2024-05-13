@@ -1,0 +1,31 @@
+2024-05-13 10:23:01,432 NanoPlot 1.42.0 started with arguments Namespace(threads=112, verbose=False, store=False, raw=False, huge=False, outdir='testnanoplotdir', no_static=False, prefix='test1', tsv_stats=True, only_report=False, info_in_report=False, maxlength=None, minlength=None, drop_outliers=False, downsample=None, loglength=False, percentqual=False, alength=False, minqual=None, runtime_until=None, readtype='1D', barcoded=False, no_supplementary=False, color='#4CB391', colormap='Greens', format=['png'], plots=['kde', 'dot'], legacy=None, listcolors=False, listcolormaps=False, no_N50=False, N50=False, title=None, font_scale=1, dpi=100, hide_stats=False, fastq=None, fasta=None, fastq_rich=None, fastq_minimal=None, summary=None, bam=None, ubam=['/gpfs/projects/bsc83/Projects/pantranscriptome/pclavell/01_basecalling/data/modifications/20240212_HS_16_CH4_GM18772_10percent_subsampling.bam'], cram=None, pickle=None, feather=None, path='testnanoplotdir/test1')
+2024-05-13 10:23:01,432 Python version is: 3.12.3 | packaged by conda-forge | (main, Apr 15 2024, 18:38:13) [GCC 12.3.0]
+2024-05-13 10:23:01,597 Nanoget: Starting to collect statistics from ubam file /gpfs/projects/bsc83/Projects/pantranscriptome/pclavell/01_basecalling/data/modifications/20240212_HS_16_CH4_GM18772_10percent_subsampling.bam.
+2024-05-13 10:24:05,941 Nanoget: ubam /gpfs/projects/bsc83/Projects/pantranscriptome/pclavell/01_basecalling/data/modifications/20240212_HS_16_CH4_GM18772_10percent_subsampling.bam contains 2188154 reads.
+2024-05-13 10:24:06,462 Reduced DataFrame memory usage from 213.11879444122314Mb to 213.11879444122314Mb
+2024-05-13 10:24:07,163 Nanoget: Gathered all metrics of 2188154 reads
+2024-05-13 10:24:07,872 Calculated statistics
+2024-05-13 10:24:07,873 Using sequenced read lengths for plotting.
+2024-05-13 10:24:08,002 NanoPlot:  Valid color #4CB391.
+2024-05-13 10:24:08,003 NanoPlot:  Valid colormap Greens.
+2024-05-13 10:24:08,074 NanoPlot:  Creating length plots for Read length.
+2024-05-13 10:24:08,075 NanoPlot:  Using 2188154 reads maximum of 305381bp.
+2024-05-13 10:24:08,767 No static plots are saved due to some kaleido problem:
+2024-05-13 10:24:08,767 Transform failed with error code 1: Failed to serialize document: Uncaught
+2024-05-13 10:24:08,937 No static plots are saved due to some kaleido problem:
+2024-05-13 10:24:08,937 Transform failed with error code 1: Failed to serialize document: Uncaught
+2024-05-13 10:24:12,164 No static plots are saved due to some kaleido problem:
+2024-05-13 10:24:12,164 Transform failed with error code 1: Failed to serialize document: Uncaught
+2024-05-13 10:24:15,428 No static plots are saved due to some kaleido problem:
+2024-05-13 10:24:15,428 Transform failed with error code 1: Failed to serialize document: Uncaught
+2024-05-13 10:24:24,470 No static plots are saved due to some kaleido problem:
+2024-05-13 10:24:24,470 Transform failed with error code 1: Failed to serialize document: Uncaught
+2024-05-13 10:24:24,470 Created length plots
+2024-05-13 10:24:24,568 NanoPlot: Creating Read lengths vs Average read quality plots using 2188154 reads.
+2024-05-13 10:24:28,017 No static plots are saved due to some kaleido problem:
+2024-05-13 10:24:28,017 Transform failed with error code 1: Failed to serialize document: Uncaught
+2024-05-13 10:24:31,310 No static plots are saved due to some kaleido problem:
+2024-05-13 10:24:31,311 Transform failed with error code 1: Failed to serialize document: Uncaught
+2024-05-13 10:24:31,312 Created LengthvsQual plot
+2024-05-13 10:24:31,312 Writing html report.
+2024-05-13 10:24:31,319 Finished!

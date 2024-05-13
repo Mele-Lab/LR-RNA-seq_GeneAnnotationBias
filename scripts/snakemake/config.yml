@@ -23,7 +23,7 @@ data:
     fastq: data/duplex/{sample}.fq
     fa: data/duplex/{sample}.fa
   split:
-    outsplit1_ONT_CapLinker: data/split/{sample}_1step/{sample}.fq.gz
+    outsplit1_ONT_CapLinker: data/split/{sample}_1step/{sample}.fq
     outsplit1_1: data/split/{sample}_1step/{sample}/edited.pkl
     outsplit1_2: data/split/{sample}_1step/{sample}/split_multiple_times.pkl
     outsplit1_3: data/split/{sample}_1step/{sample}/unedited.pkl
