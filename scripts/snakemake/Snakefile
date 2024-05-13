@@ -10,7 +10,7 @@ include: 'samtools.smk'
 include: 'formatting.smk'
 include: 'minimap.smk'
 
-configfile: 'config.yml'
+configfile: 'snakemake/config.yml'
 # df = pd.read_csv('test_data.tsv', sep='\t')
 df = pd.read_csv('test_data_2.tsv', sep='\t')
 
