@@ -96,10 +96,10 @@ use rule skip_multisplits as remove_multisplits with:
         sample = lambda wc: wc.get("sample"),
         outdir = "data/split/"+str(lambda wc: wc.get("sample"))+"_postsplitting/"
     output:
-        fastq_split = config['data']['split']['fastq_split'],
-        fastq_multisplit = config['data']['split']['fastq_multisplit'],
-        multisplitsID1 = config['data']['split']['multisplitsID1'],
-        multisplitsID2 = config['data']['split']['multisplitsID2']
+        fastq_split = config['data']['split']['fastq_split']
+        # fastq_multisplit = config['data']['split']['fastq_multisplit'],
+        # multisplitsID1 = config['data']['split']['multisplitsID1'],
+        # multisplitsID2 = config['data']['split']['multisplitsID2']
 
 
 
