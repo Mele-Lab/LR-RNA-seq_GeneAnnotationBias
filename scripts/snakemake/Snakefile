@@ -12,7 +12,7 @@ include: 'minimap.smk'
 
 configfile: 'snakemake/config.yml'
 # df = pd.read_csv('test_data.tsv', sep='\t')
-df = pd.read_csv('test_data_2.tsv', sep='\t')
+df = pd.read_csv('snakemake/test_data_2.tsv', sep='\t')
 
 wildcard_constraints:
     sample='|'.join([re.escape(x) for x in df['sample'].tolist()]),
