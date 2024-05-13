@@ -4,10 +4,11 @@ rule split_ONT_plus_full_linker:
         mem_gb = 32
     shell:
         """
+        conda init
         module load anaconda
         conda activate /gpfs/projects/bsc83/utils/conda_envs/duplextools_env
         /gpfs/projects/bsc83/utils/conda_envs/duplextools_env/bin/duplex_tools split_on_adapter --threads {resources.threads} --adapter_type ONT_sequencing_adapter+CapTrapSeqJoint {input.fastq} {output.fastq} PCR
-        
+
         """
 
 rule split_full_linker:
@@ -19,7 +20,7 @@ rule split_full_linker:
         module load anaconda
         conda activate /gpfs/projects/bsc83/utils/conda_envs/duplextools_env
         /gpfs/projects/bsc83/utils/conda_envs/duplextools_env/bin/duplex_tools split_on_adapter --threads {resources.threads} --adapter_type CapTrap_joint --n_bases_to_mask_tail 0 --n_bases_to_mask_head 0 --degenerate_bases 0 --edit_threshold 26 {input.fastq} {output.fastq} PCR
-        
+
         """
 
 rule skip_multisplits:
@@ -30,7 +31,7 @@ rule skip_multisplits:
         bash skipMultiSplits.sh . {params.outdir} {params.splitdir} {params.sample} {resources.threads} {input.mockinput}
         """
 
-# ex [fomr pclavell] 
+# ex [fomr pclavell]
 
 # mkdir splitdir
 # mkdir splitdir/split_1step/
