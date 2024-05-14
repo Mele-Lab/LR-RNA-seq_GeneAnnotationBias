@@ -57,7 +57,7 @@ rule read_id_diff:
 rule gtf_to_gt_map:
     resources:
         threads = 1,
-        mem_gb = 4
+        mem_gb = 16
     run:
         import pyranges as pr
         df = pr.read_gtf(input.gtf).df
