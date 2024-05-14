@@ -2,7 +2,8 @@ data
 .gitignore
 slurm_logs/
 slurm_scripts/
+testnanoplotdir
 testnanoplot
-testnanoplot.sh
 .snakemake/
 scripts/testnanoplot
+.gitignore

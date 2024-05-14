@@ -1,3 +1,4 @@
+sample: {sample}
 bin:
   blast2bam: /gpfs/projects/bsc83/utils/Blast2Bam/bin/blast2bam
 
@@ -20,18 +21,23 @@ data:
   duplex:
     index: data/duplex/{sample}.bai
     bam: data/duplex/{sample}.bam
-    fastq: data/duplex/{sample}.fq
+    fastq: data/duplex/{sample}/{sample}.fq
     fa: data/duplex/{sample}.fa
   split:
-    outsplit1_ONT_CapLinker: data/split/{sample}_1step/{sample}.fq
-    outsplit1_1: data/split/{sample}_1step/{sample}/edited.pkl
-    outsplit1_2: data/split/{sample}_1step/{sample}/split_multiple_times.pkl
-    outsplit1_3: data/split/{sample}_1step/{sample}/unedited.pkl
+    fastqdir1: data/duplex/{sample}
+    outdir1: data/split/{sample}_1step/
+    mockout1: data/split/mock1_{sample}
+    mockout2: data/split/mock2_{sample}
+    mockout3: data/split/mock3_{sample}
+    multiout: data/split/{sample}_postsplitting/
+    #outsplit1_2: data/split/{sample}_1step/split_multiple_times.pkl
+    #outsplit1_3: data/split/{sample}_1step/unedited.pkl
 
-    outsplit2_CapLinker: data/split/{sample}_2step/{sample}.fq.gz
-    outsplit2_1: data/split/{sample}_2step/{sample}/edited.pkl
-    outsplit2_2: data/split/{sample}_2step/{sample}/split_multiple_times.pkl
-    outsplit2_3: data/split/{sample}_2step/{sample}/unedited.pkl
+    fastqdir2: data/split/{sample}_1step
+    outdir2: data/split/{sample}_2step/
+    outsplit2_1: data/split/{sample}_2step/edited.pkl
+    outsplit2_2: data/split/{sample}_2step/split_multiple_times.pkl
+    outsplit2_3: data/split/{sample}_2step/unedited.pkl
 
     multisplitsID1: data/split/{sample}_1step/{sample}/detected_multiSPLIT_IDs.txt
     multisplitsID2: data/split/{sample}_2step/{sample}/detected_multiSPLIT_IDs.txt

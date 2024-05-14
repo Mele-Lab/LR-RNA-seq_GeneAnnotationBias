@@ -1,0 +1,31 @@
+Building DAG of jobs...
+Using shell: /usr/bin/bash
+Provided cores: 2
+Rules claiming more threads will be scaled down.
+Provided resources: mem_mb=1000, mem_mib=954, disk_mb=1000, disk_mib=954, threads=8, mem_gb=16
+Select jobs to execute...
+
+[Tue May 14 10:01:38 2024]
+rule blast_db:
+    input: snakemake/ref/linker_5.fa
+    output: data/blast/5_linker_db.nhr, data/blast/5_linker_db.nin, data/blast/5_linker_db.nsq
+    jobid: 0
+    reason: Forced execution
+    resources: mem_mb=1000, mem_mib=954, disk_mb=1000, disk_mib=954, tmpdir=/scratch/tmp/1736260, threads=8, mem_gb=16
+
+load BLAST/2.11.0 (PATH, LD_LIBRARY_PATH, LIBRARY_PATH, C_INCLUDE_PATH,
+CPLUS_INCLUDE_PATH) 
+
+
+Building a new DB, current time: 05/14/2024 10:01:39
+New DB name:   /gpfs/projects/bsc83/Projects/pantranscriptome/pclavell/ONT_preprocessing/scripts/data/blast/5_linker_db
+New DB title:  snakemake/ref/linker_5.fa
+Sequence type: Nucleotide
+Keep MBits: T
+Maximum file size: 1000000000B
+Adding sequences from FASTA; added 1 sequences in 0.000808954 seconds.
+
+
+[Tue May 14 10:01:42 2024]
+Finished job 0.
+1 of 1 steps (100%) done
