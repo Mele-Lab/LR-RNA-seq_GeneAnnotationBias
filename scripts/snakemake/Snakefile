@@ -26,7 +26,7 @@ rule all:
     input:
         # expand(config['data']['qc']['bam'],
         expand(config['data']['blast']['sam'],
-               sample=df['sample'].tolist())
+               sample=df['sample'].tolist()),
         expand(config['data']['qc']['read_ids'],
                sample=df['sample'].tolist())
         # expand(config['data']['duplex']['sam'],
@@ -90,7 +90,7 @@ use rule blast as blast_seq with:
 # corr to 01_blast/02_xml2sam
 use rule blast2bam as blast2bam_seq with:
     input:
-        ref_fa = config['ref']['fa'],
+        ref_fa = config['ref']['linker_5_fa'],
         fa = rules.blast_seq.input.fa,
         xml = rules.blast_seq.output.xml
     params:
