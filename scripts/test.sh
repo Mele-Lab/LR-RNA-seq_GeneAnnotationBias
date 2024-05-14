@@ -1,5 +1,7 @@
 #!/bin/bash
 
+module load bedtools
+bedtools bamtofastq -i /gpfs/projects/bsc83/Projects/pantranscriptome/pclavell/01_basecalling/data/modifications/4kbam_entries.bam  -fq test/convertedto.fastq
 
 
 # module load anaconda

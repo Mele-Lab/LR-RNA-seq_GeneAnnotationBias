@@ -48,12 +48,3 @@ rule skip_multisplits:
         cat {input.mockinput} >> {output.mockout}
         """
 
-# ex [fomr pclavell]
-
-# mkdir splitdir
-# mkdir splitdir/split_1step/
-# mkdir splitdir/split_2step/
-# duplex_tools split_on_adapter --threads 8 --adapter_type "ONT_sequencing_adapter+CapTrapSeqJoint" 01_basecalling/data/modifications/tests/ splitdir/split_1step/20240212_HS_16_CH4_GM18772_40kreads_split PCR
-# duplex_tools split_on_adapter --threads 8 --n_bases_to_mask_tail 0 --n_bases_to_mask_head 0 --degenerate_bases 0 --edit_threshold 26 --adapter_type "CapTrap_joint" splitdir/split_1step/20240212_HS_16_CH4_GM18772_40kreads_split splitdir/split_2step/20240212_HS_16_CH4_GM18772_40kreads_split PCR
-# mkdir newdir
-# bash ONT_preprocessing/scripts/snakemake/skipMultiSplits.sh ONT_preprocessing/scripts/snakemake newdir splitdir/split 20240212_HS_16_CH4_GM18772_40kreads_split 8

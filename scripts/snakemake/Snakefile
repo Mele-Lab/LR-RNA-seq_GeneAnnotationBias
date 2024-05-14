@@ -23,9 +23,9 @@ def get_df_val(df, col, sample):
 
 rule all:
     input:
-        expand(config['data']['minimap']['bam_ind'],
+        expand(config['data']['split']['mockout3'],
                 sample=df['sample'].tolist())#,
-#        expand(config['data']['split']['fastq_split'],
+#        expand(config['data']['minimap']['bam_ind']
 #               sample=df['sample'].tolist())
 
 
@@ -34,7 +34,7 @@ use rule bamindex as index_unalignedbam with:
     input:
         bam = lambda wc: get_df_val(df, 'fname', wc.sample)
     output:
-        index = temporary(config['data']['duplex']['index'])
+        index = config['data']['duplex']['index']
 
 # get duplex status of each read and record in new bam
 # corresponds to scripts/00.1_append_samtag.sh
@@ -43,7 +43,7 @@ use rule add_duplex_status as basecall_add_duplex_status with:
         unbam = lambda wc: get_df_val(df, 'fname', wc.sample),
         index = rules.index_unalignedbam.output.index
     output:
-        unbam = temporary(config['data']['duplex']['bam'])
+        unbam = config['data']['duplex']['bam']
 
 
 # BAM to fastQ
@@ -53,18 +53,6 @@ use rule bam_to_fastq as unalignedbam_to_fastq with:
     output:
         fastq = config['data']['duplex']['fastq']
 
-
-# First nanoplot
-# Step 1 splitting reads with both ONT adapter and full CapTrap linkers
-#use rule nanoplot as firstnanoplot with:
-#    input:
- #       input = rules.unalignedbam_to_fastq.output.fastq
-  #  params:
-   #     outdir =
-#        prefix =
- #       filetype =
-  #  output:
-  #      fastq = config['data']['split']['outsplit1_ONT_CapLinker'] # canviar
 
 
 # Step 1 splitting reads with both ONT adapter and full CapTrap linkers

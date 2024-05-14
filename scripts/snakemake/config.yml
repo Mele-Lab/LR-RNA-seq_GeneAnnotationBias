@@ -15,11 +15,11 @@ ref:
   linker_5_fa: snakemake/ref/linker_5.fa
 
 data:
-  raw:
-    fq: data/raw/{sample}.fq
-    fa: data/raw/{sample}.fa
+  # raw:
+  #   fq: data/raw/{sample}.fq
+  #   fa: data/raw/{sample}.fa
   duplex:
-    index: data/duplex/{sample}.bai
+    index: data/duplex/{sample}.bam.bai
     bam: data/duplex/{sample}.bam
     fastq: data/duplex/{sample}/{sample}.fq
     fa: data/duplex/{sample}.fa
@@ -33,16 +33,16 @@ data:
     #outsplit1_2: data/split/{sample}_1step/split_multiple_times.pkl
     #outsplit1_3: data/split/{sample}_1step/unedited.pkl
 
-    fastqdir2: data/split/{sample}_1step
+    #fastqdir2: data/split/{sample}_1step
     outdir2: data/split/{sample}_2step/
-    outsplit2_1: data/split/{sample}_2step/edited.pkl
-    outsplit2_2: data/split/{sample}_2step/split_multiple_times.pkl
-    outsplit2_3: data/split/{sample}_2step/unedited.pkl
+    # outsplit2_1: data/split/{sample}_2step/edited.pkl
+    # outsplit2_2: data/split/{sample}_2step/split_multiple_times.pkl
+    # outsplit2_3: data/split/{sample}_2step/unedited.pkl
 
-    multisplitsID1: data/split/{sample}_1step/{sample}/detected_multiSPLIT_IDs.txt
-    multisplitsID2: data/split/{sample}_2step/{sample}/detected_multiSPLIT_IDs.txt
+    # multisplitsID1: data/split/{sample}_1step/{sample}/detected_multiSPLIT_IDs.txt
+    # multisplitsID2: data/split/{sample}_2step/{sample}/detected_multiSPLIT_IDs.txt
     fastq_split: data/split/{sample}_2step/splitReads.fastq.gz
-    fastq_multisplit: data/split/{sample}_2step/multiSplitReads.fastq.gz
+    # fastq_multisplit: data/split/{sample}_2step/multiSplitReads.fastq.gz
 
   blast:
       db: data/blast/5_linker_db

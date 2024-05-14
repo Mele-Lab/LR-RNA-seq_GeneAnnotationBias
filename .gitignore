@@ -6,4 +6,5 @@ testnanoplotdir
 testnanoplot
 .snakemake/
 scripts/testnanoplot
-.gitignore
+slurm_out
+scripts/test/convertedto.fastq
