@@ -25,6 +25,8 @@ def get_df_val(df, col, sample):
 rule all:
     input:
         # expand(config['data']['qc']['bam'],
+        expand(config['data']['blast']['sam'],
+               sample=df['sample'].tolist())
         expand(config['data']['qc']['read_ids'],
                sample=df['sample'].tolist())
         # expand(config['data']['duplex']['sam'],
@@ -94,7 +96,7 @@ use rule blast2bam as blast2bam_seq with:
     params:
         blast2bam = config['bin']['blast2bam']
     output:
-        sam = temporary(config['data']['blast']['sam'])
+        sam = config['data']['blast']['sam']
 
 # filter out unmapped reads
 use rule sam_filt_unmapped as filt_sam_blast with:

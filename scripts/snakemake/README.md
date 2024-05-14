@@ -38,6 +38,7 @@ snakemake \
   --cluster "sbatch \
   -q gp_bscls \
   -A bsc83 \
+  -c {resources.threads}  \
   --time=2:00:00" \
   -n
 ```
