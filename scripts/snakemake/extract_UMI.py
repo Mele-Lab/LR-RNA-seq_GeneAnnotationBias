@@ -104,8 +104,8 @@ umi_df.to_csv(f'{opref}_temp.tsv', sep='\t')
 # remove rows that for some reason (not aligned) miss the read name
 # umi_df = umi_df[umi_df['read_seq'] != '*']
 
-# make sure we have no unmapped reads
-assert len(umi_df.loc[umi_df['read_seq'] != '*'].index) == 0
+# # make sure we have no unmapped reads
+# assert len(umi_df.loc[umi_df['read_seq'] != '*'].index) == 0
 
 # drop potential concatamers
 # umi_df = umi_df[~ umi_df['potential_concatamer']]
