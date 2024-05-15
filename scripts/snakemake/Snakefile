@@ -23,7 +23,7 @@ def get_df_val(df, col, sample):
 
 rule all:
     input:
-        expand(config['data']['split']['mockout3'],
+        expand(config['data']['minimap']['bam_ind'],
                 sample=df['sample'].tolist())#,
 #        expand(config['data']['minimap']['bam_ind']
 #               sample=df['sample'].tolist())
@@ -72,7 +72,7 @@ use rule split_full_linker as second_split with:
     input:
         mockin2 = rules.first_split.output.mockout
     params:
-        fastqdir = config['data']['split']['mockout1'],
+        fastqdir = config['data']['split']['outdir1'],
         outdir = config['data']['split']['outdir2']
     output:
         mockout = config['data']['split']['mockout2']
@@ -85,8 +85,7 @@ use rule skip_multisplits as remove_multisplits with:
     input:
         mockinput = rules.second_split.output.mockout
     params:
-        splitdir = config['data']['split'],
-        sample = config['sample'],
+        splitdir = config['data']['split']['dirroot'],
         outdir = config['data']['split']['multiout']
     output:
         mockout = config['data']['split']['mockout3']

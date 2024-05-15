@@ -44,7 +44,7 @@ rule skip_multisplits:
         threads = 8
     shell:
         """
-        bash snakemake/skipMultiSplits.sh . {params.outdir} {params.splitdir} {params.sample} {resources.threads} {input.mockinput}
+        bash snakemake/skipMultiSplits.sh snakemake {params.outdir} {params.splitdir} {wildcards.sample} {resources.threads} {input.mockinput}
         cat {input.mockinput} >> {output.mockout}
         """
 
