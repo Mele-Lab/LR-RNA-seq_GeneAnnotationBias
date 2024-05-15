@@ -61,6 +61,7 @@ rule gtf_to_gt_map:
     run:
         import pyranges as pr
         df = pr.read_gtf(input.gtf).df
+        df = df.loc[df.transcript_id.notnull()]
         df = df[['gene_id', 'transcript_id']].drop_duplicates()
         df.to_csv(output.gt_map, header=None, index=False, sep='\t')
 
