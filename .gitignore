@@ -1,11 +1,10 @@
 scripts/data/
 scripts/slurm_logs/
-scripts/slurm_out/
+scripts/smk_out/
 scripts/slurm_scripts/
 scripts/testnanoplotdir/
 scripts/testnanoplot
 scripts/.snakemake/
-scripts/testnanoplot
 scripts/20240212_HS_16_CH4_GM18772_10percent_subsampling.fastq
-scripts/test/convertedto.fastq
-scripts/slurm_out/snakejob.first_split.12.sh_1736248.out
+scripts/testdata
+scripts/test

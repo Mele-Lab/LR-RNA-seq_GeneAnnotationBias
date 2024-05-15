@@ -11,5 +11,5 @@ snakemake \
   -q gp_bscls \
   -c 1 \
   -A bsc83 \
-  -o slurm_out/%x_%j.out \
+  -o smk_out/%x_%j.out \
   --time=2:00:00"
