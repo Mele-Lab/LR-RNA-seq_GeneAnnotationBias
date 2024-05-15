@@ -70,6 +70,8 @@ rule dedupe_umi:
         mem_gb = 32
     shell:
         """
+        module load miniconda
+        source activate sqanti3-snakemake
         umi_tools dedup \
             --extract-umi-method read_id \
             --umi-separator {params.sep} \
