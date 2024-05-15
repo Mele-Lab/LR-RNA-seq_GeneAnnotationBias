@@ -1,3 +1,4 @@
+
 import pysam
 
 def append_duplex_tag_read_name(infile, bamindex, outfile, threads):
@@ -21,6 +22,7 @@ def append_duplex_tag_read_name(infile, bamindex, outfile, threads):
         tag = read.get_tag('dx')
         new_qname = read.query_name+';'+str(tag)
         read.query_name = new_qname
+        print(read.query_name)
         output.write(read)
 
 # def get_duplex_tag_df(fname, threads):
