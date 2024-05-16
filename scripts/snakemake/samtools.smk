@@ -15,7 +15,37 @@ rule sam_filt_unmapped:
     shell:
         """
         module load samtools
-        samtools view -f 4 {input.align} --threads {resources.threads} > {output.align}
+        samtools view -F 4 {input.align} > {output.align}
+        """
+
+rule sam_get_read_ids:
+    resources:
+        threads = 1,
+        mem_gb = 16
+    shell:
+        """
+        module load samtools
+        samtools view {input.align} | cut -f1 > {output.txt}
+        """
+
+rule sam_filt_for_read_ids:
+    resources:
+        threads = 8,
+        mem_gb = 32
+    shell:
+        """
+        module load samtools
+        samtools view -N {input.read_ids} {input.align} > {output.align}
+        """
+
+rule sam_filt_for_primary:
+    resources:
+        threads = 8,
+        mem_gb = 32
+    shell:
+        """
+        module load samtools
+        samtools view -F 2048 -F 256 {input.align} > {output.align}
         """
 
 rule sam_to_fq:

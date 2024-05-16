@@ -1,3 +1,6 @@
+params:
+    duplex_sep: ':'
+    umi_sep: '_'
 
 bin:
   blast2bam: /gpfs/projects/bsc83/utils/Blast2Bam/bin/blast2bam
@@ -5,12 +8,13 @@ bin:
 ref:
   fa_ver: 'hg38'
   fa_link: https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_44/GRCh38.p14.genome.fa.gz
-  fa: /gpfs/projects/bsc83/Data/assemblies/GRCh38.p14/GRCh38.p14.genome.fa
+  fa: /gpfs/projects/bsc83/MN4/bsc83/Data/assemblies/gencode/GRCh38.p14/GRCh38.p14.genome.fa
   mmi: ref/ref.mmi
 
   gtf_link: https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_44/gencode.v44.chr_patch_hapl_scaff.annotation.gtf.gz
   gtf: /gpfs/projects/bsc83/Data/gene_annotations/gencode/v44/gencode.v44.chr_patch_hapl_scaff.annotation.gtf
-  junc_bed: /gpfs/projects/bsc83/Data/gene_annotations/gencode/v44/modified/gencode.v44.chr_patch_hapl_scaff.annotation_transcriptlevel.bed
+  junc_bed: /gpfs/projects/bsc83/MN4/bsc83/Data/gene_annotation/gencode/release_44/modified/gencode.v44.chr_patch_hapl_scaff.annotation_transcriptlevel.bed
+  gt_map: ref/gt_map.tsv
 
   linker_5_fa: snakemake/ref/linker_5.fa
 
@@ -19,34 +23,10 @@ data:
   #   fq: data/raw/{sample}.fq
   #   fa: data/raw/{sample}.fa
   duplex:
-    index: data/duplex/{sample}.bam.bai
-    bam: data/duplex/{sample}.bam
-    fastq: data/duplex/{sample}/{sample}.fastq
-    fa: data/duplex/{sample}.fa
-  split:
-    fastqdir1: data/duplex/{sample}
-    outdir1: data/split/{sample}_1step/
-    mockout1: data/split/mock1_{sample}
-    mockout2: data/split/mock2_{sample}
-    mockout3: data/split/mock3_{sample}
-    multiout: data/split/{sample}_postsplitting/
-    outdir2: data/split/{sample}_2step/
-    dirroot: data/split/{sample}
-    fastq_split: data/split/{sample}_postsplitting/splitReads.fastq.gz
-
-
-    #outsplit1_2: data/split/{sample}_1step/split_multiple_times.pkl
-    #outsplit1_3: data/split/{sample}_1step/unedited.pkl
-
-    #fastqdir2: data/split/{sample}_1step
-    # outsplit2_1: data/split/{sample}_2step/edited.pkl
-    # outsplit2_2: data/split/{sample}_2step/split_multiple_times.pkl
-    # outsplit2_3: data/split/{sample}_2step/unedited.pkl
-
-    # multisplitsID1: data/split/{sample}_1step/{sample}/detected_multiSPLIT_IDs.txt
-    # multisplitsID2: data/split/{sample}_2step/{sample}/detected_multiSPLIT_IDs.txt
-    # fastq_multisplit: data/split/{sample}_2step/multiSplitReads.fastq.gz
-
+      sam: data/duplex/{sample}.sam
+      read_ids: data/duplex/{sample}_read_ids.txt
+      fq: data/duplex/{sample}.fq.gz
+      fa: data/duplex/{sample}.fa
   blast:
       db: data/blast/5_linker_db
       nhr: data/blast/5_linker_db.nhr
@@ -56,13 +36,15 @@ data:
       xml: data/blast/{sample}.xml
       sam: data/blast/{sample}.sam
       sam_filt: data/blast/{sample}_filt.sam
+      sam_filt_2: data/blast/{sample}_filt2.sam
       bam: data/blast/{sample}.bam
       bam_sort: data/blast/{sample}_sorted.bam
       bam_ind: data/blast/{sample}_sorted.bam.bai
-
   umi:
     umis: data/umi/{sample}_extracted_UMI.tsv
     fa: data/umi/{sample}_with_extracted_UMI.fasta
+    read_ids: data/umi/{sample}_read_ids.txt
+    no_umi_read_ids: data/umi/{sample}_no_umi_read_ids.txt
 
   minimap:
     sam: data/minimap/{sample}.sam
@@ -70,3 +52,11 @@ data:
     bam: data/minimap/{sample}.bam
     bam_sort: data/minimap/{sample}_sorted.bam
     bam_ind: data/minimap/{sample}_sorted.bam.bai
+
+  umi_dedupe:
+    bam: data/umi_dedupe/{sample}.bam
+    log: data/umi_dedupe/{sample}.log
+    read_ids: data/umi_dedupe/{sample}_read_ids.txt
+  qc:
+    read_ids: data/qc/{sample}_read_ids.txt
+    bam: data/qc/{sample}.bam

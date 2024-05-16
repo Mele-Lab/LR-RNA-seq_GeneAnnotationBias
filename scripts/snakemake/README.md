@@ -21,12 +21,24 @@ bash /gpfs/projects/bsc83/utils/wrappers/Slurm-wrapper-Ruben-unstable_PauModifie
 # module load miniconda3/py39_4.10.3 && source activate snakemake
 conda activate pt_snakemake
 snakemake \
+  -s Snakefile \
+  -j 100 \
+  --latency-wait 120 \
+  --cluster "sbatch \
+    -A bsc83 \
+    -q debug \
+    -c {resources.threads}  \
+    --time=2:00:00" \
+    -n
+
+snakemake \
   -s snakemake/Snakefile \
   -j 10 \
   --latency-wait 120 \
   --cluster "sbatch \
   -q gp_bscls \
-  -c 1  \
   -A bsc83 \
-  --time=2:00:00"  
+  -c {resources.threads}  \
+  --time=2:00:00" \
+  -n
 ```

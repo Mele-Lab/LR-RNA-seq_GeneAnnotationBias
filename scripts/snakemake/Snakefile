@@ -11,9 +11,12 @@ include: 'formatting.smk'
 include: 'minimap.smk'
 include: 'splitting.smk'
 
-configfile: '/gpfs/projects/bsc83/Projects/pantranscriptome/pclavell/ONT_preprocessing/scripts/snakemake/config.yml'
+configfile: 'snakemake/config.yml'
+# df = pd.read_csv('test_data.tsv', sep='\t')
+df = pd.read_csv('snakemake/test_data_2.tsv', sep='\t')
 
-df = pd.read_csv('/gpfs/projects/bsc83/Projects/pantranscriptome/pclavell/ONT_preprocessing/scripts/snakemake/test_data_2.tsv', sep='\t')
+wildcard_constraints:
+    sample='|'.join([re.escape(x) for x in df['sample'].tolist()]),
 
 def get_df_val(df, col, sample):
     temp = df.loc[df['sample']==sample]
@@ -80,6 +83,13 @@ use rule split_full_linker as second_split with:
         #out2 = config['data']['split']['outsplit2_2'],
         #out3 = config['data']['split']['outsplit2_3']
 
+# get the read IDs of all reads
+use rule sam_get_read_ids as get_all_read_ids with:
+    input:
+        align = rules.basecall_add_duplex_status.output.align
+    output:
+        txt = config['data']['duplex']['read_ids']
+
 # Step 3 remove multisplits
 use rule skip_multisplits as remove_multisplits with:
     input:
@@ -130,14 +140,15 @@ use rule blast as blast_seq with:
 # corr to 01_blast/02_xml2sam
 use rule blast2bam as blast2bam_seq with:
     input:
-        ref_fa = config['ref']['fa'],
+        ref_fa = config['ref']['linker_5_fa'],
         fa = rules.blast_seq.input.fa,
         xml = rules.blast_seq.output.xml
     params:
         blast2bam = config['bin']['blast2bam']
     output:
-        sam = temporary(config['data']['blast']['sam'])
+        sam = config['data']['blast']['sam']
 
+# filter out unmapped reads
 use rule sam_filt_unmapped as filt_sam_blast with:
     input:
         align = rules.blast2bam_seq.output.sam
@@ -145,9 +156,16 @@ use rule sam_filt_unmapped as filt_sam_blast with:
         align = config['data']['blast']['sam_filt']
         # align = temporary(config['data']['blast']['sam_filt'])
 
-use rule sam_to_bam as sam_to_bam_blast with:
+# filter out supplementary and secondary reads (ie only primary)
+use rule sam_filt_for_primary as filt_sam_blast_2 with:
     input:
         align = rules.filt_sam_blast.output.align
+    output:
+        align = config['data']['blast']['sam_filt_2']
+
+use rule sam_to_bam as sam_to_bam_blast with:
+    input:
+        align = rules.filt_sam_blast_2.output.align
     output:
         align = temporary(config['data']['blast']['bam'])
 
@@ -168,10 +186,26 @@ use rule extract_umi as extract_umi_blast with:
     input:
         align = rules.filt_sam_blast.output.align
     params:
-        opref = config['data']['umi']['umis'].split('_extracted_UMI.tsv')[0]
+        opref = config['data']['umi']['umis'].split('_extracted_UMI.tsv')[0],
+        sep = config['params']['umi_sep']
     output:
         umis = config['data']['umi']['umis'],
         fa = config['data']['umi']['fa']
+
+use rule fasta_get_read_ids as get_umi_read_ids with:
+    input:
+        fa = rules.extract_umi_blast.output.fa
+    output:
+        txt = config['data']['umi']['read_ids']
+
+# get the read ids of reads that we didn't find UMIs for
+# by subtracting the reads with a UMI from the list of all reads
+use rule read_id_diff as get_non_umi_read_ids with:
+    input:
+        a = rules.get_all_read_ids.output.txt,
+        b = rules.get_umi_read_ids.output.txt
+    output:
+        txt = config['data']['umi']['no_umi_read_ids']
 
 # TODO this is where the duplex read recovery will happen
 
@@ -209,3 +243,45 @@ use rule bam_index as bam_index_map with:
         align = rules.bam_sort_map.output.align
     output:
         align = config['data']['minimap']['bam_ind']
+
+# rules below correspond to 05_deduplication/01_deduplication.sh
+use rule gtf_to_gt_map as get_gt_map with:
+    input:
+        gtf = config['ref']['gtf']
+    output:
+        gt_map = config['ref']['gt_map']
+
+use rule dedupe_umi as umi_dedupe_reads with:
+    input:
+        align = rules.bam_sort_map.output.align,
+        gt_map = config['ref']['gt_map']
+    params:
+        sep = config['params']['umi_sep'],
+        edit_dist = 2
+    output:
+        align = config['data']['umi_dedupe']['bam'],
+        log = config['data']['umi_dedupe']['log']
+
+# get read IDs of reads that we UMI deduplicate
+use rule sam_get_read_ids as get_umi_dedupe_read_ids with:
+    input:
+        align = rules.umi_dedupe_reads.output.align
+    output:
+        txt = config['data']['umi_dedupe']['read_ids']
+
+# get bam file of
+# 1. UMI deduplicated reads
+# 2. reads that we didn't find UMIs for
+use rule read_id_union as get_qc_reads with:
+    input:
+        a = rules.get_non_umi_read_ids.output.txt,
+        b = rules.get_umi_dedupe_read_ids.output.txt
+    output:
+        txt = config['data']['qc']['read_ids']
+
+use rule sam_filt_for_read_ids as make_qc_bam with:
+    input:
+        align = rules.get_all_read_ids.input.align,
+        read_ids = rules.get_qc_reads.output.txt
+    output:
+        align = config['data']['qc']['bam']

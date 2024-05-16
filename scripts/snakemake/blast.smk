@@ -15,7 +15,7 @@ rule make_blast_db:
 # probably make standalone
 rule blast:
     resources:
-        threads = 48,
+        threads = 25,
         mem_gb = 64
     shell:
         """

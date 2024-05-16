@@ -20,7 +20,7 @@ def append_duplex_tag_read_name(infile, bamindex, outfile, threads):
 
     for read in input.fetch():
         tag = read.get_tag('dx')
-        new_qname = read.query_name+';'+str(tag)
+        new_qname = read.query_name+sep+str(tag)
         read.query_name = new_qname
         print(read.query_name)
         output.write(read)
