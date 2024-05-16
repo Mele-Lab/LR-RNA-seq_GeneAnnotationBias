@@ -61,12 +61,17 @@ rule gtf_to_gt_map:
         mem_gb = 16
     shell:
         """
-        module load anaconda
-        conda init
-        source activate base
-        conda activate /gpfs/projects/bsc83/utils/conda_envs/duplextools_env
-        python snakemake/gtf2gtmap.py {input.gtf} {output.gt_map}
+        awk '/\ttranscript\t/{{OFS="\t"}}{{split($0, a, /"/); print a[2], a[4]}}' {input.gtf} |\
+         grep ENST | uniq> {output.gt_map}
         """
+    # shell:
+    #     """
+    #     module load anaconda
+    #     conda init
+    #     source activate base
+    #     conda activate /gpfs/projects/bsc83/utils/conda_envs/duplextools_env
+    #     python snakemake/gtf2gtmap.py {input.gtf} {output.gt_map}
+    #     """
 
 
 rule dedupe_umi:

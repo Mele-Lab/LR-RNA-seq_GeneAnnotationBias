@@ -6,3 +6,4 @@ scripts/slurm_scripts
 scripts/.snakemake
 scripts/smk_out
 scripts/test
+scripts/ref
