@@ -25,7 +25,7 @@ def get_df_val(df, col, sample):
 rule all:
     input:
         # expand(config['data']['qc']['bam'],
-        expand(config['data']['umi']['no_umi_read_ids'],
+        expand(config['data']['qc']['bam'],
                sample=df['sample'].tolist()),
         # expand(config['data']['qc']['read_ids'],
         #        sample=df['sample'].tolist())
@@ -232,6 +232,6 @@ use rule read_id_union as get_qc_reads with:
 use rule sam_filt_for_read_ids as make_qc_bam with:
     input:
         align = rules.get_all_read_ids.input.align,
-#         read_ids = rules.get_qc_reads.output.txt
+        read_ids = rules.get_qc_reads.output.txt
     output:
         align = config['data']['qc']['bam']

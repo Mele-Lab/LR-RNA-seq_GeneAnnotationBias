@@ -18,6 +18,7 @@ rule extract_umi:
         mem_gb = 16
     shell:
         """
+        module load hdf5 python/3.12.1
         python snakemake/extract_UMI.py {input.align} {params.opref} {params.sep}
         """
 
@@ -58,12 +59,15 @@ rule gtf_to_gt_map:
     resources:
         threads = 1,
         mem_gb = 16
-    run:
-        import pyranges as pr
-        df = pr.read_gtf(input.gtf).df
-        df = df.loc[df.transcript_id.notnull()]
-        df = df[['gene_id', 'transcript_id']].drop_duplicates()
-        df.to_csv(output.gt_map, header=None, index=False, sep='\t')
+    shell:
+        """
+        module load anaconda
+        conda init
+        source activate base
+        conda activate /gpfs/projects/bsc83/utils/conda_envs/duplextools_env
+        python snakemake/gtf2gtmap.py {input.gtf} {output.gt_map}
+        """
+
 
 rule dedupe_umi:
     resources:
