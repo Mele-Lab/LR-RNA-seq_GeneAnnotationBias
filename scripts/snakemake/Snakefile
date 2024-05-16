@@ -25,10 +25,10 @@ def get_df_val(df, col, sample):
 rule all:
     input:
         # expand(config['data']['qc']['bam'],
-        expand(config['data']['blast']['sam'],
+        expand(config['data']['umi']['no_umi_read_ids'],
                sample=df['sample'].tolist()),
-        expand(config['data']['qc']['read_ids'],
-               sample=df['sample'].tolist())
+        # expand(config['data']['qc']['read_ids'],
+        #        sample=df['sample'].tolist())
         # expand(config['data']['duplex']['sam'],
         #        sample=df['sample'].tolist())
 
