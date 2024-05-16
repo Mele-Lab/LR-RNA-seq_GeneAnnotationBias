@@ -1,7 +1,6 @@
 #!/bin/bash
 
 
-module load intel mkl impi gcc
 module load miniconda && source activate sqanti3-snakemake
 snakemake \
 -s Snakefile \

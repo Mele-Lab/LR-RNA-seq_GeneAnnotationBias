@@ -1,15 +1,15 @@
 #!/bin/bash
 
 
-module load intel mkl impi gcc
 module load miniconda && source activate sqanti3-snakemake
-snakemake --unlock
+#snakemake --unlock
 snakemake \
--s Snakefile \
--j 100 \
---latency-wait 120 \
---cluster "sbatch \
-  -q bsc_ls \
-  -c {resources.threads}  \
-  --time=2:00:00" \
-  -n
+  -s snakemake/Snakefile \
+  -j 1 \
+  --latency-wait 120 \
+  --cluster "sbatch \
+  -q gp_bscls \
+  -c 1 \
+  -A bsc83 \
+  -o smk_out/%x_%j.out \
+  --time=2:00:00"
