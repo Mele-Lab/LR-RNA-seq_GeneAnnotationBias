@@ -1,3 +1,8 @@
 data
 .gitignore
 *pycache*
+scripts/slurm_logs
+scripts/slurm_scripts
+scripts/.snakemake
+scripts/smk_out
+scripts/test
