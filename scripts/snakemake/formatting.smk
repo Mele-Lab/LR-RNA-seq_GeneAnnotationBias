@@ -62,7 +62,7 @@ rule gtf_to_gt_map:
     shell:
         """
         awk '/\ttranscript\t/{{OFS="\t"}}{{split($0, a, /"/); print a[2], a[4]}}' {input.gtf} |\
-         grep ENST | uniq> {output.gt_map}
+        grep ENST | uniq > {output.gt_map}
         """
     # shell:
     #     """

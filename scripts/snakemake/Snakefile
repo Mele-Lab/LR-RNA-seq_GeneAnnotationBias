@@ -29,7 +29,7 @@ def get_df_val(df, col, sample):
 
 rule all:
     input:
-        expand(config['data']['duplex']['bam'],
+        expand(config['data']['qc']['bam'],
                 sample=df['sample'].tolist())#,
 #        expand(config['data']['minimap']['bam_ind']
 #               sample=df['sample'].tolist())
@@ -96,7 +96,8 @@ use rule skip_multisplits as remove_multisplits with:
         splitdir = config['data']['split']['dirroot'],
         outdir = config['data']['split']['multiout']
     output:
-        mockout = config['data']['split']['mockout3']
+        mockout = config['data']['split']['mockout3'],
+        fq = config['data']['split']['fastq_split']
         #fastq_split = config['data']['split']['fastq_split']
         # fastq_multisplit = config['data']['split']['fastq_multisplit'],
         # multisplitsID1 = config['data']['split']['multisplitsID1'],
