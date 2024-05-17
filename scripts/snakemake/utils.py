@@ -1,7 +1,7 @@
 
 import pysam
 
-def append_duplex_tag_read_name(infile, bamindex, outfile, threads):
+def append_duplex_tag_read_name(infile, bamindex, outfile, sep, threads):
     if infile.endswith('.bam'):
         in_mode = 'rb'
     else:
@@ -12,11 +12,11 @@ def append_duplex_tag_read_name(infile, bamindex, outfile, threads):
         out_mode = 'w'
 
     # use header from prev. file as template
-    input = pysam.AlignmentFile(infile, in_mode,
+    input = pysam.AlignmentFile(infile, "rb",
                   check_header=False,
                   check_sq=False,
                   index_filename= bamindex)
-    output = pysam.AlignmentFile(outfile, out_mode, template=input)
+    output = pysam.AlignmentFile(outfile, "wb", template=input)
 
     for read in input.fetch():
         tag = read.get_tag('dx')

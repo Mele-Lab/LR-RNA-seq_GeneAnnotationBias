@@ -13,10 +13,13 @@ include: 'splitting.smk'
 
 configfile: 'snakemake/config.yml'
 # df = pd.read_csv('test_data.tsv', sep='\t')
-df = pd.read_csv('snakemake/test_data_2.tsv', sep='\t')
+#df = pd.read_csv('snakemake/test_data_2.tsv', sep='\t')
 
-wildcard_constraints:
-    sample='|'.join([re.escape(x) for x in df['sample'].tolist()]),
+
+# wildcard_constraints:
+#     sample='|'.join([re.escape(x) for x in df['sample'].tolist()]),
+
+df = pd.read_csv('/gpfs/projects/bsc83/Projects/pantranscriptome/pclavell/ONT_preprocessing/scripts/snakemake/test_data_2.tsv', sep=' ')
 
 def get_df_val(df, col, sample):
     temp = df.loc[df['sample']==sample]
@@ -26,25 +29,27 @@ def get_df_val(df, col, sample):
 
 rule all:
     input:
-        expand(config['data']['qc']['bam'],
+        expand(config['data']['duplex']['bam'],
                 sample=df['sample'].tolist())#,
 #        expand(config['data']['minimap']['bam_ind']
 #               sample=df['sample'].tolist())
 
 
 # index unaligned bam so next rule can work properly
-# use rule bamindex as index_unalignedbam with:
-#     input:
-#         bam = lambda wc: get_df_val(df, 'fname', wc.sample)
-#     output:
-#         index = config['data']['duplex']['index']
+use rule bamindex as index_unalignedbam with:
+    input:
+        bam = lambda wc: get_df_val(df, 'fname', wc.sample)
+    output:
+        index = config['data']['duplex']['index']
 
 # get duplex status of each read and record in new bam
 # corresponds to scripts/00.1_append_samtag.sh
 use rule add_duplex_status as basecall_add_duplex_status with:
     input:
         unbam = lambda wc: get_df_val(df, 'fname', wc.sample),
-        # index = rules.index_unalignedbam.output.index
+        index = rules.index_unalignedbam.output.index
+    params:
+        sep= ":"
     output:
         unbam = config['data']['duplex']['bam']
 
@@ -83,13 +88,6 @@ use rule split_full_linker as second_split with:
         #out2 = config['data']['split']['outsplit2_2'],
         #out3 = config['data']['split']['outsplit2_3']
 
-# get the read IDs of all reads
-use rule sam_get_read_ids as get_all_read_ids with:
-    input:
-        align = rules.basecall_add_duplex_status.output.align
-    output:
-        txt = config['data']['duplex']['read_ids']
-
 # Step 3 remove multisplits
 use rule skip_multisplits as remove_multisplits with:
     input:
@@ -104,13 +102,19 @@ use rule skip_multisplits as remove_multisplits with:
         # multisplitsID1 = config['data']['split']['multisplitsID1'],
         # multisplitsID2 = config['data']['split']['multisplitsID2']
 
-
+# get the read IDs of all reads
+use rule sam_get_read_ids as get_all_read_ids with:
+    input:
+        unbam = rules.basecall_add_duplex_status.output.unbam
+    output:
+        txt = config['data']['duplex']['read_ids']
 
 # START OF DEDUPLICATION
 # corr. to 00_fastq2fasta.sh
 use rule fq_to_fa as raw_fq_to_fa with:
     input:
-        fq = config['data']['split']['fastq_split']
+        fq = config['data']['split']['fastq_split'],
+        mockin= rules.remove_multisplits.output.mockout
         # fq = lambda wc: get_df_val(df, 'fname', wc.sample)
         # fq = config['raw']['fq']
     output:
@@ -281,7 +285,7 @@ use rule read_id_union as get_qc_reads with:
 
 use rule sam_filt_for_read_ids as make_qc_bam with:
     input:
-        align = rules.get_all_read_ids.input.align,
+        align = rules.get_all_read_ids.input.unbam,
         read_ids = rules.get_qc_reads.output.txt
     output:
         align = config['data']['qc']['bam']
