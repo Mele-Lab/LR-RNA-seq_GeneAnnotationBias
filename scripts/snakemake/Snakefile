@@ -33,18 +33,18 @@ rule all:
 
 
 # index unaligned bam so next rule can work properly
-use rule bamindex as index_unalignedbam with:
-    input:
-        bam = lambda wc: get_df_val(df, 'fname', wc.sample)
-    output:
-        index = config['data']['duplex']['index']
+# use rule bamindex as index_unalignedbam with:
+#     input:
+#         bam = lambda wc: get_df_val(df, 'fname', wc.sample)
+#     output:
+#         index = config['data']['duplex']['index']
 
 # get duplex status of each read and record in new bam
 # corresponds to scripts/00.1_append_samtag.sh
 use rule add_duplex_status as basecall_add_duplex_status with:
     input:
         unbam = lambda wc: get_df_val(df, 'fname', wc.sample),
-        index = rules.index_unalignedbam.output.index
+        # index = rules.index_unalignedbam.output.index
     output:
         unbam = config['data']['duplex']['bam']
 
@@ -54,7 +54,7 @@ use rule bam_to_fastq as unalignedbam_to_fastq with:
     input:
         unbam = rules.basecall_add_duplex_status.output.unbam
     output:
-        fastq = config['data']['duplex']['fastq']
+        fastq = config['data']['duplex']['fq']
 
 
 

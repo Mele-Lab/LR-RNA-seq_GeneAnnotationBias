@@ -23,10 +23,12 @@ data:
   #   fq: data/raw/{sample}.fq
   #   fa: data/raw/{sample}.fa
   duplex:
-      sam: data/duplex/{sample}.sam
+      # sam: data/duplex/{sample}.bam
+      bam: data/duplex/{sample}.bam
       read_ids: data/duplex/{sample}_read_ids.txt
       fq: data/duplex/{sample}.fq.gz
       fa: data/duplex/{sample}.fa
+      index: data/duplex/{sample}
   blast:
       db: data/blast/5_linker_db
       nhr: data/blast/5_linker_db.nhr
