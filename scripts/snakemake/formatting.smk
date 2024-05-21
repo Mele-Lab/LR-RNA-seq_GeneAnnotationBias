@@ -57,9 +57,9 @@ rule read_id_union:
         threads = 1,
         mem_gb = 4
     shell:
-    """
-    cat {input.a} {input.b} > {output.txt}
-    """
+        """
+        cat {input.a} {input.b} | grep -v ":-1"> {output.txt}
+        """
 
 # rule read_id_diff:
 #     resources:
@@ -140,8 +140,12 @@ rule fastqgz_filter:
         mem_gb = 32
     shell:
         """
+        mkdir data/temp
+        echo "test1#####################"
         zcat {input.fq} > "data/temp/{wildcards.sample}.fastq"
+        echo "test2 ##########################"
         grep -A 3 -Ff {input.read_ids} "data/temp/{wildcards.sample}.fastq" | grep -v "^--$" > {output.cleanfastq}
         rm "data/temp/{wildcards.sample}.fastq"
+        rm -r data/temp
         gzip {output.cleanfastq}
         """
