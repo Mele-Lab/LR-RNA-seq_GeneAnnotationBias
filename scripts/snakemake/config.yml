@@ -1,6 +1,6 @@
 params:
     duplex_sep: ':'
-    umi_sep: '_'
+    umi_sep: ','
 
 bin:
   blast2bam: /gpfs/projects/bsc83/utils/Blast2Bam/bin/blast2bam

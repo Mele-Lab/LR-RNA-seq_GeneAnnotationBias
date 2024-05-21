@@ -28,7 +28,7 @@ rule fasta_get_read_ids_rm_umi:
         mem_gb = 16
     shell:
         """
-        grep "^>" {input.fa} | cut -c 2- | sed 's/_.*//'> {output.txt}
+        grep "^>" {input.fa} | cut -c 2- | sed 's/,.*//'> {output.txt}
         """
 
 rule fastqgz_get_read_ids:
@@ -37,35 +37,52 @@ rule fastqgz_get_read_ids:
         mem_gb = 16
     shell:
         """
-        zcat {input.fq} | grep "^@" | cut -c 2- > {output.txt}
+        zcat {input.fq} | awk 'NR % 4 == 1 {{print substr($1, 2)}}' > {output.txt}
         """
+
+# rule read_id_union:
+#     resources:
+#         threads = 1,
+#         mem_gb = 4
+#     run:
+#         a = set(pd.read_csv(input.a, header=None)[0].tolist())
+#         b = set(pd.read_csv(input.b, header=None)[0].tolist())
+#         union = list(a|b)
+#         df = pd.DataFrame()
+#         df['read_id'] = union
+#         df.to_csv(output.txt, header=False)
 
 rule read_id_union:
     resources:
         threads = 1,
         mem_gb = 4
-    run:
-        a = set(pd.read_csv(input.a, header=None)[0].tolist())
-        b = set(pd.read_csv(input.b, header=None)[0].tolist())
-        union = list(a|b)
-        df = pd.DataFrame()
-        df['read_id'] = union
-        df.to_csv(output.txt, header=False)
+    shell:
+    """
+    cat {input.a} {input.b} > {output.txt}
+    """
 
+# rule read_id_diff:
+#     resources:
+#         threads = 1,
+#         mem_gb = 4
+#     run:
+#         a = set(pd.read_csv(input.a, header=None)[0].tolist())
+#         b = set(pd.read_csv(input.b, header=None)[0].tolist())
+#         diff = list(a-b)
+#         df = pd.DataFrame()
+#         df['read_id'] = diff
+#         df.to_csv(output.txt, header=False)
+
+# Finding Entries in file1.txt but Not in file2.txt:
 rule read_id_diff:
     resources:
         threads = 1,
         mem_gb = 4
-    run:
-        a = set(pd.read_csv(input.a, header=None)[0].tolist())
-        b = set(pd.read_csv(input.b, header=None)[0].tolist())
-        diff = list(a-b)
-        df = pd.DataFrame()
-        df['read_id'] = diff
-        df.to_csv(output.txt, header=False)
+    shell:
+        """
+        bash snakemake/diff.sh {input.a} {input.b} {output.txt}
 
-#diff file1.txt file2.txt | grep '^< ' | sed 's/^< //'
-
+        """
 
 rule gtf_to_gt_map:
     resources:

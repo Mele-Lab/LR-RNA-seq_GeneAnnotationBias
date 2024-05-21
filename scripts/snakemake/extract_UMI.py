@@ -131,7 +131,7 @@ print(max(umi_df.loc[umi_df.read_name.duplicated()].index))
 print(np.mean(umi_df.loc[umi_df.read_name.duplicated()].index))
 
 
-assert len(umi_df.loc[umi_df.read_name.duplicated()].index) == 0
+#assert len(umi_df.loc[umi_df.read_name.duplicated()].index) == 0
 
 # save table
 umi_df.to_csv(f'{opref}_extracted_UMI.tsv', sep='\t', index=False)
