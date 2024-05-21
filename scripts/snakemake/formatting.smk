@@ -124,15 +124,6 @@ rule dedupe_umi:
             --log {output.log}
         """
 
-rule bam_to_fastq:
-    resources:
-        threads = 8,
-        mem_gb = 32
-    shell:
-        """
-        module load bedtools
-        bedtools bamtofastq -i {input.unbam} -fq {output.fastq}
-        """
 
 rule fastqgz_filter:
     resources:

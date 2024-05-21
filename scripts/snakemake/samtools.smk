@@ -48,15 +48,25 @@ rule sam_filt_for_primary:
         samtools view -F 2048 -F 256 {input.align} > {output.align}
         """
 
-rule sam_to_fq:
+rule bam_to_fastq:
     resources:
         threads = 8,
         mem_gb = 32
     shell:
         """
         module load samtools
-        samtools fastq --threads {resources.threads} {input.align} | gzip > {output.fq}
+        samtools bam2fq --threads {resources.threads} {input.unbam} > {output.fastq}
         """
+
+# rule sam_to_fq:
+#     resources:
+#         threads = 8,
+#         mem_gb = 32
+#     shell:
+#         """
+#         module load samtools
+#         samtools fastq --threads {resources.threads} {input.align} | gzip > {output.fq}
+#         """
 
 rule sam_to_bam:
     resources:

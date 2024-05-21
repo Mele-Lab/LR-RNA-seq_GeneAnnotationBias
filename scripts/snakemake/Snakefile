@@ -31,7 +31,7 @@ rule all:
     input:
         expand(config['data']['qc']['fq'],
                 sample=df['sample'].tolist())#,
-#        expand(config['data']['minimap']['bam_ind']
+#        expand(config['data']['qc']['fq']
 #               sample=df['sample'].tolist())
 
 

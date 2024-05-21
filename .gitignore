@@ -10,3 +10,4 @@ scripts/ref
 scripts/snakemake/*pycache*
 scripts/snakemake/__pycache__/utils.cpython-310.pyc
 *pycache*
+scripts/test.fastq
