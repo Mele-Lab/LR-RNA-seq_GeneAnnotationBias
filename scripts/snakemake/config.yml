@@ -7,11 +7,11 @@ bin:
 
 ref:
   fa_ver: 'hg38'
-  fa_link: https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_44/GRCh38.p14.genome.fa.gz
+  fa_link: https:/ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_44/GRCh38.p14.genome.fa.gz
   fa:  /gpfs/projects/bsc83/Data/assemblies/GRCh38.p14/GRCh38.p14.genome.fa
   mmi: ref/ref.mmi
 
-  gtf_link: https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_44/gencode.v44.chr_patch_hapl_scaff.annotation.gtf.gz
+  gtf_link: https:/ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_44/gencode.v44.chr_patch_hapl_scaff.annotation.gtf.gz
   gtf: /gpfs/projects/bsc83/Data/gene_annotations/gencode/v44/gencode.v44.chr_patch_hapl_scaff.annotation.gtf
   junc_bed: /gpfs/projects/bsc83/MN4/bsc83/Data/gene_annotation/gencode/release_44/modified/gencode.v44.chr_patch_hapl_scaff.annotation_transcriptlevel.bed
   gt_map: ref/gt_map.tsv
@@ -23,12 +23,12 @@ data:
   #   fq: data/raw/{sample}.fq
   #   fa: data/raw/{sample}.fa
   duplex:
-      # sam: data/duplex/{sample}.bam
-      bam: data/duplex/{sample}.bam
-      read_ids: data/duplex/{sample}_read_ids.txt
-      fq: data/duplex/{sample}.fq.gz
-      fa: data/duplex/{sample}.fa
-      index: data/duplex/{sample}.bam.bai
+      # sam: data/duplex/{sample}/{sample}.bam
+      bam: data/duplex/{sample}/{sample}.bam
+      read_ids: data/duplex/{sample}/{sample}_read_ids.txt
+      fq: data/duplex/{sample}/{sample}.fastq
+      fa: data/duplex/{sample}/{sample}.fa
+      index: data/duplex/{sample}/{sample}.bam.bai
   split:
     fastqdir1: data/duplex/{sample}
     outdir1: data/split/{sample}_1step/
@@ -73,4 +73,4 @@ data:
     read_ids: data/umi_dedupe/{sample}_read_ids.txt
   qc:
     read_ids: data/qc/{sample}_read_ids.txt
-    bam: data/qc/{sample}.bam
+    fq: data/qc/{sample}.fastq

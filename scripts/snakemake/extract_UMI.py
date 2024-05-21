@@ -122,6 +122,15 @@ umi_df = umi_df[umi_df['umi_seq'].apply(len)==16]
 # make sure there are no secondary or supplementary alignments
 # keep only one alignment from multimapping reads
 # umi_df = umi_df[~umi_df['read_name'].duplicated()]
+print("##########TEST############")
+print(type(umi_df.read_name[0]))
+print(umi_df[~umi_df.read_name.duplicated()])
+print(len(umi_df.loc[umi_df.read_name.duplicated()].index))
+print(min(umi_df.loc[umi_df.read_name.duplicated()].index))
+print(max(umi_df.loc[umi_df.read_name.duplicated()].index))
+print(np.mean(umi_df.loc[umi_df.read_name.duplicated()].index))
+
+
 assert len(umi_df.loc[umi_df.read_name.duplicated()].index) == 0
 
 # save table

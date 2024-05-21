@@ -104,9 +104,9 @@ use rule skip_multisplits as remove_multisplits with:
         # multisplitsID2 = config['data']['split']['multisplitsID2']
 
 # get the read IDs of all reads
-use rule sam_get_read_ids as get_all_read_ids with:
+use rule fastqgz_get_read_ids as get_all_read_ids with:
     input:
-        unbam = rules.basecall_add_duplex_status.output.unbam
+        fq = rules.remove_multisplits.output.fq
     output:
         txt = config['data']['duplex']['read_ids']
 
@@ -197,7 +197,7 @@ use rule extract_umi as extract_umi_blast with:
         umis = config['data']['umi']['umis'],
         fa = config['data']['umi']['fa']
 
-use rule fasta_get_read_ids as get_umi_read_ids with:
+use rule fasta_get_read_ids_rm_umi as get_umi_read_ids with:
     input:
         fa = rules.extract_umi_blast.output.fa
     output:
@@ -270,7 +270,7 @@ use rule dedupe_umi as umi_dedupe_reads with:
 # get read IDs of reads that we UMI deduplicate
 use rule sam_get_read_ids as get_umi_dedupe_read_ids with:
     input:
-        align = rules.umi_dedupe_reads.output.align
+        bam = rules.umi_dedupe_reads.output.align
     output:
         txt = config['data']['umi_dedupe']['read_ids']
 
@@ -284,9 +284,10 @@ use rule read_id_union as get_qc_reads with:
     output:
         txt = config['data']['qc']['read_ids']
 
-use rule sam_filt_for_read_ids as make_qc_bam with:
+use rule fastqgz_filter as make_clean_fastq with:
     input:
-        align = rules.get_all_read_ids.input.unbam,
+        fq = rules.remove_multisplits.output.fq,
         read_ids = rules.get_qc_reads.output.txt
     output:
-        align = config['data']['qc']['bam']
+        cleanfastq = config['data']['qc']['fq']
+

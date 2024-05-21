@@ -22,13 +22,22 @@ rule extract_umi:
         python snakemake/extract_UMI.py {input.align} {params.opref} {params.sep}
         """
 
-rule fasta_get_read_ids:
+rule fasta_get_read_ids_rm_umi:
     resources:
         threads = 1,
         mem_gb = 16
     shell:
         """
-        grep "^>" {input.fa} | cut -c 2- > {output.txt}
+        grep "^>" {input.fa} | cut -c 2- | sed 's/_.*//'> {output.txt}
+        """
+
+rule fastqgz_get_read_ids:
+    resources:
+        threads = 1,
+        mem_gb = 16
+    shell:
+        """
+        zcat {input.fq} | grep "^@" | cut -c 2- > {output.txt}
         """
 
 rule read_id_union:
@@ -54,6 +63,9 @@ rule read_id_diff:
         df = pd.DataFrame()
         df['read_id'] = diff
         df.to_csv(output.txt, header=False)
+
+#diff file1.txt file2.txt | grep '^< ' | sed 's/^< //'
+
 
 rule gtf_to_gt_map:
     resources:
@@ -103,4 +115,16 @@ rule bam_to_fastq:
         """
         module load bedtools
         bedtools bamtofastq -i {input.unbam} -fq {output.fastq}
+        """
+
+rule fastqgz_filter:
+    resources:
+        threads = 8,
+        mem_gb = 32
+    shell:
+        """
+        zcat {input.fq} > "data/temp/{wildcards.sample}.fastq"
+        grep -A 3 -Ff {input.read_ids} "data/temp/{wildcards.sample}.fastq" | grep -v "^--$" > {output.cleanfastq}
+        rm "data/temp/{wildcards.sample}.fastq"
+        gzip {output.cleanfastq}
         """
