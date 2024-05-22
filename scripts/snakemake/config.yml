@@ -27,6 +27,7 @@ data:
       bam: data/duplex/{sample}/{sample}.bam
       read_ids: data/duplex/{sample}/{sample}_read_ids.txt
       fq: data/duplex/{sample}/{sample}.fastq
+      fqgz: data/duplex/{sample}/{sample}.fastq.gz
       fa: data/duplex/{sample}/{sample}.fa
       index: data/duplex/{sample}/{sample}.bam.bai
   split:
@@ -79,7 +80,20 @@ data:
     read_ids: data/qc/{sample}_read_ids.txt
     fq: data/qc/{sample}.fastq
     fqgz: data/qc/{sample}.fastq.gz
+    readnum1: data/qc/{sample}_readnum_track1.txt
+    readnum2: data/qc/{sample}_readnum_track2.txt
+    readnum3: data/qc/{sample}_readnum_track3.txt
+    readnum4: data/qc/{sample}_readnum_track4.txt
+    readnum5: data/qc/{sample}_readnum_track5.txt
+    readnum6: data/qc/{sample}_readnum_track6.txt
+    readnum7: data/qc/{sample}_readnum_track7.txt
+    readnum8: data/qc/{sample}_readnum_track8.txt
+    readnum9: data/qc/{sample}_readnum_track9.txt
+    readnum10: data/qc/{sample}_readnum_track10.txt
+    readnum11: data/qc/{sample}_readnum_track11.txt
+    readnum12: data/qc/{sample}_readnum_track12.txt
     readnum: data/qc/{sample}_readnum_track.txt
+
   count:
     unbam_duplex_tag: "1.bam_with_duplex_status"
     fastq_from_bam: "2.fastq_from_bam"

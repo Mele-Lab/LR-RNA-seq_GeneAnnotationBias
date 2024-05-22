@@ -55,7 +55,7 @@ rule bam_to_fastq:
     shell:
         """
         module load samtools
-        samtools bam2fq --threads {resources.threads} {input.unbam} > {output.fastq}
+        samtools bam2fq {input.unbam} | gzip -c> {output.fastqgz}
         """
 
 # rule sam_to_fq:
