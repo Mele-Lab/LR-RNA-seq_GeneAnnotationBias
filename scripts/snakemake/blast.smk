@@ -31,7 +31,7 @@ rule blast:
             -gapopen 2 \
             -gapextend 1 \
             -penalty -2 \
-            -reward 2
+            -reward 1
         """
 
 rule blast2bam:

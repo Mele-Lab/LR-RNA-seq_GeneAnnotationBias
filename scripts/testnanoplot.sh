@@ -1,6 +1,7 @@
 #!/bin/bash
 
 module load anaconda
+source activate base
 conda init bash
 conda activate /gpfs/projects/bsc83/utils/conda_envs/nanoplot
 /gpfs/projects/bsc83/utils/conda_envs/nanoplot/bin/NanoPlot \

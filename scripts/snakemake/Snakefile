@@ -362,6 +362,25 @@ use rule bam_index as bam_index_map with:
     output:
         align = config['data']['minimap']['bam_ind']
 
+# get read ID of reads with UMI but unmapped
+
+use rule bam_get_unmapped_read_ids as get_bam_get_unmapped_read_ids with:
+    input:
+        bam = rules.map.output.sam
+    output:
+        txt = config['data']['minimap']['read_ids']
+
+
+# Count 10_2 reads with UMI but unmapped
+
+use rule count_text_reads as count_reads_withUMI_non_deduped with:
+    input:
+        txt = rules.get_bam_get_unmapped_read_ids.output.txt
+    params:
+        text = config['data']['count']['reads_umi_non_deduped']
+    output:
+        txt = config['data']['qc']['readnum10_2']
+
 # rules below correspond to 05_deduplication/01_deduplication.sh
 use rule gtf_to_gt_map as get_gt_map with:
     input:
@@ -403,9 +422,18 @@ use rule count_text_reads as count_reads_potentially_dedup with:
 use rule read_id_union as get_qc_reads with:
     input:
         a = rules.get_non_umi_read_ids.output.txt,
-        b = rules.get_umi_dedupe_read_ids.output.txt
+        b = rules.get_umi_dedupe_read_ids.output.txt,
+        c = rules.get_bam_get_unmapped_read_ids.output.txt
     output:
         txt = config['data']['qc']['read_ids']
+
+use rule count_text_reads as get_reads_to_be_selected with:
+    input:
+        txt = rules.get_qc_reads.output.txt
+    params:
+        text = config['data']['count']['final_filtering']
+    output:
+        txt = config['data']['qc']['readnum11_2']
 
 use rule fastqgz_filter as make_clean_fastq with:
     input:
@@ -440,13 +468,15 @@ rule cat_all_counts:
         h = config['data']['qc']['readnum8'],
         i = config['data']['qc']['readnum9'],
         j = config['data']['qc']['readnum10'],
-        k = config['data']['qc']['readnum11'],
-        l = config['data']['qc']['readnum12']
+        k = config['data']['qc']['readnum10_2'],
+        l = config['data']['qc']['readnum11'],
+        m = config['data']['qc']['readnum11_2'],
+        n = config['data']['qc']['readnum12']
     output:
         txt = config['data']['qc']['readnum']
     shell:
         """
         cat {input.a} {input.b} {input.c} {input.d} {input.e} {input.f} {input.g} {input.h} {input.i}\
-        {input.j} {input.k} {input.l} > {output.txt}
+        {input.j} {input.k} {input.l} {input.m} {input.n}> {output.txt}
         """
 

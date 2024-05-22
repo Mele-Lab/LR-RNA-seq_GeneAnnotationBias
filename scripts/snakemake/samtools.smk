@@ -28,6 +28,16 @@ rule bam_get_read_ids:
         samtools view {input.bam} | cut -f1 | sort | uniq > {output.txt}
         """
 
+rule bam_get_unmapped_read_ids:
+    resources:
+        threads = 1,
+        mem_gb = 16
+    shell:
+        """
+        module load samtools
+        samtools view -f 4 {input.bam} | cut -f1 | sort | uniq > {output.txt}
+        """
+
 rule sam_filt_for_read_ids:
     resources:
         threads = 8,

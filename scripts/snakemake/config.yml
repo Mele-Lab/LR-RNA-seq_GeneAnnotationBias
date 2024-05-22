@@ -71,6 +71,7 @@ data:
     bam: data/minimap/{sample}.bam
     bam_sort: data/minimap/{sample}_sorted.bam
     bam_ind: data/minimap/{sample}_sorted.bam.bai
+    read_ids: data/minimap/{sample}_read_ids_unmapped_with_UMI.txt
 
   umi_dedupe:
     bam: data/umi_dedupe/{sample}.bam
@@ -90,7 +91,9 @@ data:
     readnum8: data/qc/{sample}_readnum_track8.txt
     readnum9: data/qc/{sample}_readnum_track9.txt
     readnum10: data/qc/{sample}_readnum_track10.txt
+    readnum10_2: data/qc/{sample}_readnum_track10_2.txt
     readnum11: data/qc/{sample}_readnum_track11.txt
+    readnum11_2: data/qc/{sample}_readnum_track11_2.txt
     readnum12: data/qc/{sample}_readnum_track12.txt
     readnum: data/qc/{sample}_readnum_track.txt
 
@@ -105,6 +108,8 @@ data:
     5linkerprimarymappings: "8.5linker_primary_mappings"
     reads_with_UMI: "9.reads_with_UMI"
     reads_without_UMI: "10.reads_without_UMI"
+    reads_umi_non_deduped: "10_2.reads_with_UMI_unmapped"
     reads_deduped: "11.reads_potentially_deduped"
+    final_filtering: "11_2.reads_to_be_kept"
     final_count: "12.final_count"
 
