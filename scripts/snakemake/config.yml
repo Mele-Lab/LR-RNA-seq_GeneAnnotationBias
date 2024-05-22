@@ -39,6 +39,10 @@ data:
     outdir2: data/split/{sample}_2step/
     dirroot: data/split/{sample}
     fastq_split: data/split/{sample}_postsplitting/splitReads.fastq.gz
+    fastqgz1: data/split/{sample}_1step/{sample}_split.fastq.gz
+    fastqgz2: data/split/{sample}_2step/{sample}_split_split.fastq.gz
+    fastqgz3: data/split/{sample}_postsplitting/splitReads.fastq.gz
+
 
 
   blast:
@@ -74,3 +78,19 @@ data:
   qc:
     read_ids: data/qc/{sample}_read_ids.txt
     fq: data/qc/{sample}.fastq
+    fqgz: data/qc/{sample}.fastq.gz
+    readnum: data/qc/{sample}_readnum_track.txt
+  count:
+    unbam_duplex_tag: "1.bam_with_duplex_status"
+    fastq_from_bam: "2.fastq_from_bam"
+    fastqgz_split1: "3.fastqgz_split_1"
+    fastqgz_split2: "4.fastqgz_split_2"
+    fastqgz_split3: "5.fastqgz_remove_multisplits"
+    fastafromfastq: "6.fasta_from_fastq"
+    5linkermappings: "7.5linker_mappings"
+    5linkerprimarymappings: "8.5linker_primary_mappings"
+    reads_with_UMI: "9.reads_with_UMI"
+    reads_without_UMI: "10.reads_without_UMI"
+    reads_deduped: "11.reads_potentially_deduped"
+    final_count: "12.final_count"
+

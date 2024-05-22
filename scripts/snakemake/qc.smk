@@ -1,32 +1,53 @@
-rule count_uniq_mapped_sam_reads:
+rule count_reads_with_primary_alignment:
     shell:
         """
         module load samtools
-        samtools view -F 4 {input.align} | cut -f1 | sort | uniq -c > {output.txt}
+        echo "{params.text}" $(samtools view -F 1060 {input.sam}) >> {output.txt}
+        """
+
+rule count_unbam_reads:
+    resources:
+        threads = 8
+    shell:
+        """
+        module load samtools
+        echo "{params.text}" $(samtools view {input.unbam} | wc -l)  >> {output.txt}
         """
 
 rule count_fq_reads:
     shell:
         """
-        echo $(cat {input.fq}|wc -l)/4|bc > {ouput.txt}
+        echo "{params.text}" $(( $(cat {input.fq}|wc -l)/4 )) >> {ouput.txt}
         """
 
 rule count_fq_gz_reads:
     shell:
         """
-        echo $(gzcat {input.fq}|wc -l)/4|bc > {ouput.txt}
+        echo "{params.text}" $(( $(gzcat {input.fqgz}|wc -l)/4 )) >> {ouput.txt}
         """
 
 rule count_fa_reads:
     shell:
         """
-        echo $(cat {input.fq}|wc -l)/2|bc > {ouput.txt}
+        echo "{params.text}" $(( $(cat {input.fa}|wc -l)/2 )) >> {ouput.txt}
         """
 
 rule count_fa_gz_reads:
     shell:
         """
-        echo $(gzcat {input.fq}|wc -l)/2|bc > {ouput.txt}
+        echo "{params.text}" $(( $(gzcat {input.fagz}|wc -l)/2 )) >> {ouput.txt}
+        """
+
+rule count_sam_mappings:
+    shell:
+        """
+        echo "{params.text}" $(cat {input.sam}|wc -l) >> {ouput.txt}
+        """
+
+rule count_text_reads:
+    shell:
+        """
+        echo "{params.text}" $(cat {input.txt}|wc -l) >> {ouput.txt}
         """
 
 rule nanoplot:

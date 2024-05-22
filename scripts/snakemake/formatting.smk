@@ -138,5 +138,6 @@ rule fastqgz_filter:
         grep -A 3 -Ff {input.read_ids} "data/temp/{wildcards.sample}.fastq" | grep -v "^--$" > {output.cleanfastq}
         rm "data/temp/{wildcards.sample}.fastq"
         rm -r data/temp
-        gzip {output.cleanfastq}
+        gzip -c {output.cleanfastq} > {output.cleanfastqgz} 
+        rm {output.cleanfastq}
         """
