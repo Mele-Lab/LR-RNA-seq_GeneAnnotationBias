@@ -25,7 +25,7 @@ rule bam_get_read_ids:
     shell:
         """
         module load samtools
-        samtools view {input.bam} | cut -f1 > {output.txt}
+        samtools view {input.bam} | cut -f1 | sort | uniq > {output.txt}
         """
 
 rule sam_filt_for_read_ids:

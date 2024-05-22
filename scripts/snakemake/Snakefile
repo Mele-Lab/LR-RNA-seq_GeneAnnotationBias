@@ -73,6 +73,8 @@ use rule bam_to_fastq as unalignedbam_to_fastq with:
 
 # Count 2: reads after bam2fastq
 use rule count_fq_gz_reads as count_bam2fastq with:
+    input:
+        mockin = config['data']['duplex']['fqgz']
     params:
         fqgz = rules.unalignedbam_to_fastq.output.fastqgz,
         text = config['data']['count']['fastq_from_bam']
@@ -145,6 +147,8 @@ use rule skip_multisplits as remove_multisplits with:
 
 # Count 5: reads after removemultisplit
 use rule count_fq_gz_reads as count_fastgz_split3 with:
+    input:
+        mockin = config['data']['split']['mockout3']
     params:
         fqgz = rules.remove_multisplits.output.fq,
         text = config['data']['count']['fastqgz_split3']
@@ -368,6 +372,7 @@ use rule gtf_to_gt_map as get_gt_map with:
 use rule dedupe_umi as umi_dedupe_reads with:
     input:
         align = rules.bam_sort_map.output.align,
+        mock = config['data']['minimap']['bam_ind'],
         gt_map = config['ref']['gt_map']
     params:
         sep = config['params']['umi_sep'],
@@ -410,8 +415,10 @@ use rule fastqgz_filter as make_clean_fastq with:
         cleanfastq = config['data']['qc']['fq'],
         cleanfastqgz = config['data']['qc']['fqgz']
 
-# Count 11: number of reads that could be potentially deduplicated
+# Count 12: number of reads that could be potentially deduplicated
 use rule count_fq_gz_reads as count_final_reads with:
+    input:
+        mockin = config['data']['qc']['fqgz']
     params:
         fqgz = rules.make_clean_fastq.output.cleanfastqgz,
         text = config['data']['count']['final_count']
@@ -421,7 +428,7 @@ use rule count_fq_gz_reads as count_final_reads with:
 # Count final: concatenate all files
 rule cat_all_counts:
     resources:
-        threads = 8
+        threads = 1
     input:
         a = config['data']['qc']['readnum1'],
         b = config['data']['qc']['readnum2'],
