@@ -13,10 +13,3 @@ rule minimap:
             {input.fa}
         """
 
-rule filt_minimap_reads:
-    resources:
-        threads = 2
-    shell:
-        """
-        module load samtools
-        """

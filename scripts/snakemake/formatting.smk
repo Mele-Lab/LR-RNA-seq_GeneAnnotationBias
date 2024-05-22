@@ -136,8 +136,9 @@ rule fastqgz_filter:
         zcat {input.fq} > "data/temp/{wildcards.sample}.fastq"
         echo "test2 ##########################"
         grep -A 3 -Ff {input.read_ids} "data/temp/{wildcards.sample}.fastq" | grep -v "^--$" > {output.cleanfastq}
+        echo "test3 ##########################"
+        gzip -c {output.cleanfastq} > {output.cleanfastqgz}
+        echo "test4 ##########################"
         rm "data/temp/{wildcards.sample}.fastq"
         rm -r data/temp
-        gzip -c {output.cleanfastq} > {output.cleanfastqgz} 
-        rm {output.cleanfastq}
         """

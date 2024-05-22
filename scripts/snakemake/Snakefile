@@ -249,7 +249,7 @@ use rule sam_to_bam as sam_to_bam_blast with:
     output:
         align = temporary(config['data']['blast']['bam'])
 
-use rule sam_sort as bam_sort_blast with:
+use rule bam_sort as bam_sort_blast with:
     input:
         align = rules.sam_to_bam_blast.output.align
     output:
@@ -307,12 +307,28 @@ use rule count_text_reads as count_reads_without_UMI with:
 
 # TODO this is where the duplex read recovery will happen
 
+rule minimap_index:
+    resources:
+        threads = 112
+    params:
+        ref = config['ref']['fa']
+    output:
+        index = config['ref']['mmi']
+    shell:
+        """
+        module load minimap2
+
+        minimap2 -t {resources.threads} -d {output.index} {params.ref}
+
+        """
+
+
 # corr. to 03_genome_mapping/01_minimap.sh
 use rule minimap as map with:
     input:
         junc_bed = config['ref']['junc_bed'],
         fa = rules.extract_umi_blast.output.fa,
-        ref_fa = config['ref']['fa']
+        ref_fa = config['ref']['mmi']
     output:
         sam = config['data']['minimap']['sam']
         # sam = temporary(config['data']['minimap']['sam'])
@@ -330,7 +346,7 @@ use rule sam_to_bam as sam_to_bam_map with:
     output:
         align = temporary(config['data']['minimap']['bam'])
 
-use rule sam_sort as bam_sort_map with:
+use rule bam_sort as bam_sort_map with:
     input:
         align = rules.sam_to_bam_map.output.align
     output:
@@ -361,7 +377,7 @@ use rule dedupe_umi as umi_dedupe_reads with:
         log = config['data']['umi_dedupe']['log']
 
 # get read IDs of reads that we UMI deduplicate
-use rule sam_get_read_ids as get_umi_dedupe_read_ids with:
+use rule bam_get_read_ids as get_umi_dedupe_read_ids with:
     input:
         bam = rules.umi_dedupe_reads.output.align
     output:
@@ -404,6 +420,8 @@ use rule count_fq_gz_reads as count_final_reads with:
 
 # Count final: concatenate all files
 rule cat_all_counts:
+    resources:
+        threads = 8
     input:
         a = config['data']['qc']['readnum1'],
         b = config['data']['qc']['readnum2'],

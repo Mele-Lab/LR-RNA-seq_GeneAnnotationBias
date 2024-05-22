@@ -50,7 +50,7 @@ rule count_fa_gz_reads:
         mem_gb = 32
     shell:
         """
-        echo "{params.text}" $(( $(gzcat {input.fagz}|wc -l)/2 )) >> {output.txt}
+        echo "{params.text}" $(( $(gzcat {input.fqgz}|wc -l)/2 )) >> {output.txt}
         """
 
 rule count_sam_mappings:
