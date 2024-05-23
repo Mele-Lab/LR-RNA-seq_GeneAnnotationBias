@@ -58,7 +58,7 @@ rule read_id_union:
         mem_gb = 4
     shell:
         """
-        cat {input.a} {input.b} {input.c} | grep -v ":-1"> {output.txt}
+        cat {input.a} {input.b} {input.c} | sort | uniq | grep -v ":-1"> {output.txt}
         """
 
 # rule read_id_diff:
