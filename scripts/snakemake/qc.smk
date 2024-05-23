@@ -14,7 +14,7 @@ rule count_unbam_reads:
     shell:
         """
         module load samtools
-        echo "{params.text}" $(samtools view {input.unbam} | wc -l)  >> {output.txt}
+        echo "{params.text}" $(samtools view -c {input.unbam} )  >> {output.txt}
         """
 
 rule count_fq_reads:
@@ -59,7 +59,8 @@ rule count_sam_mappings:
         mem_gb = 32
     shell:
         """
-        echo "{params.text}" $(cat {input.sam}|wc -l) >> {output.txt}
+        module load samtools
+        echo "{params.text}" $(samtools view -c {input.sam}) >> {output.txt}
         """
 
 rule count_text_reads:

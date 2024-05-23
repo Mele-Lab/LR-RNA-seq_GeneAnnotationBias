@@ -427,6 +427,7 @@ use rule read_id_union as get_qc_reads with:
     output:
         txt = config['data']['qc']['read_ids']
 
+# Count 11.2
 use rule count_text_reads as get_reads_to_be_selected with:
     input:
         txt = rules.get_qc_reads.output.txt
