@@ -7,9 +7,9 @@ rule minimap:
         minimap2 \
             -ax splice \
             --junc-bed {input.junc_bed} \
+            --MD \
             -t {resources.threads} \
             -o {output.sam} \
             {input.ref_fa} \
             {input.fa}
         """
-
