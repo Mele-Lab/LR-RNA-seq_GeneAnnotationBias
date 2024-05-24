@@ -88,3 +88,13 @@ rule nanoplot:
             -f png \
             --{params.filetype} {input.reads} #ubam or fastq
         """
+
+# compute read length, query coverage, and alignment identity
+# for each read in a given sam / bam file
+rule alignment_qc_id:
+    resources:
+        mem_gb = 32,
+        threads = 8
+    run:
+        df = compute_read_cov_id(input.align, resources.threads)
+        df.to_csv(output.tsv, sep='\t', index=False)
