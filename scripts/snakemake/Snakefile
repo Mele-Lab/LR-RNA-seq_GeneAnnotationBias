@@ -79,8 +79,8 @@ use rule bam_to_fastq as unalignedbam_to_fastq with:
 use rule count_fq_gz_reads as count_bam2fastq with:
     input:
         fqgz = rules.unalignedbam_to_fastq.output.fastqgz,
-    # params:
-    #     text = config['data']['count']['fastq_from_bam']
+    params:
+        text = config['data']['count']['fastq_from_bam']
     output:
         txt = temporary(config['data']['qc']['readnum2'])
 
@@ -100,7 +100,6 @@ use rule split_ONT_plus_full_linker as first_split with:
 # Count 3: reads after split1
 use rule count_fq_gz_reads as count_fastgz_split1 with:
     input:
-        mock = rules.first_split.output.mockout,
         fqgz = config['data']['split']['fastqgz1']
     params:
         text = config['data']['count']['fastqgz_split1']
@@ -124,9 +123,8 @@ use rule split_full_linker as second_split with:
 # Count 4: reads after split2
 use rule count_fq_gz_reads as count_fastgz_split2 with:
     input:
-        mock = rules.second_split.output.mockout
+        fqgz = config['data']['split']['fastqgz2']
     params:
-        fqgz = config['data']['split']['fastqgz2'],
         text = config['data']['count']['fastqgz_split2']
     output:
         txt = temporary(config['data']['qc']['readnum4'])
@@ -150,9 +148,8 @@ use rule skip_multisplits as remove_multisplits with:
 # Count 5: reads after removemultisplit
 use rule count_fq_gz_reads as count_fastgz_split3 with:
     input:
-        mockin = config['data']['split']['mockout3']
+        fqgz = rules.remove_multisplits.output.fq
     params:
-        fqgz = rules.remove_multisplits.output.fq,
         text = config['data']['count']['fastqgz_split3']
     output:
         txt = temporary(config['data']['qc']['readnum5'])
@@ -449,9 +446,8 @@ use rule fastqgz_filter as make_clean_fastq with:
 # Count 12: number of reads that could be potentially deduplicated
 use rule count_fq_gz_reads as count_final_reads with:
     input:
-        mockin = config['data']['qc']['fqgz']
+        fqgz = rules.make_clean_fastq.output.cleanfastqgz
     params:
-        fqgz = rules.make_clean_fastq.output.cleanfastqgz,
         text = config['data']['count']['final_count']
     output:
         txt = temporary(config['data']['qc']['readnum12'])
