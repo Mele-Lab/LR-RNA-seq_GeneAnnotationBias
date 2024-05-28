@@ -23,7 +23,7 @@ rule count_fq_reads:
         mem_gb = 32
     shell:
         """
-        echo "{params.text}" $(( $(cat {params.fq}|wc -l)/4 )) >> {output.txt}
+        echo "{params.text}" $(( $(cat {input.fq}|wc -l)/4 )) >> {output.txt}
         """
 
 rule count_fq_gz_reads:
@@ -32,7 +32,7 @@ rule count_fq_gz_reads:
         mem_gb = 32
     shell:
         """
-        echo "{params.text}" $(( $(zcat {params.fqgz}|wc -l)/4 )) >> {output.txt}
+        echo "{params.text}" $(( $(zcat {input.fqgz}|wc -l)/4 )) >> {output.txt}
         """
 
 rule count_fa_reads:

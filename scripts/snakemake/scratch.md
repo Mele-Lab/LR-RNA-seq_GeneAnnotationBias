@@ -15,19 +15,31 @@ Dealing with duplex relationships and putting them in read names
 import pysam
 ```
 
+```
+
+module load miniconda
+source activate sqanti3-snakemake
+
+align=/gpfs/projects/bsc83/Projects/pantranscriptome/fairlie/ONT_preprocessing/scripts/data/minimap/sample1_sorted.bam
+gt_map=/gpfs/projects/bsc83/Projects/pantranscriptome/fairlie/ONT_preprocessing/scripts/ref/gt_map.tsv
+out_align=/gpfs/projects/bsc83/Projects/pantranscriptome/fairlie/ONT_preprocessing/scripts/data/umi_dedupe/sample1.bam
+out_log=/gpfs/projects/bsc83/Projects/pantranscriptome/fairlie/ONT_preprocessing/scripts/data/umi_dedupesample1.log
+
+umi_tools dedup \
+    --extract-umi-method read_id \
+    --umi-separator _ \
+    --method adjacency \
+    --edit-distance-threshold 2 \
+    --per-contig \
+    --per-gene \
+    --gene-transcript-map ${gt_map} \
+    --stdin ${align} \
+    --stdout ${out_align} \
+    --log ${out_log}
+```
 
 ```bash
-conda install -n base -c conda-forge mamba
-
-conda create -c conda-forge -c bioconda -n rrna_snakemake python==3.9 pandas pysam
-conda activate rrna_snakemake
-
-conda install pyfaidx
-
-# conda install pandas
-# pip install numpy==1.23.5
-
-conda install -c conda-forge adjusttext
-conda install toposort==1.10
-conda install snakemake-minimal==7.32
+module load samtools
+samtools view -hb sample1.sam > ~/mele_lab/projects/ONT_preprocessing/scripts/data/minimap/sample1.bam
+samtools calmd -u sample1.bam /gpfs/projects/bsc83/Projects/pantranscriptome/fairlie/ONT_preprocessing/scripts/ref/transcripts.fa > sample1_md_tag.sam
 ```

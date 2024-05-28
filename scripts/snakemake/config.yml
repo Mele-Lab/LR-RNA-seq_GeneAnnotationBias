@@ -112,4 +112,3 @@ data:
     reads_deduped: "11.reads_potentially_deduped"
     final_filtering: "11_2.reads_to_be_kept"
     final_count: "12.final_count"
-

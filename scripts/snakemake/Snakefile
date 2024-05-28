@@ -13,6 +13,7 @@ include: 'splitting.smk'
 include: 'qc.smk'
 
 configfile: 'snakemake/config.yml'
+config_tsv = 'snakemake/test_data_2.tsv'
 # df = pd.read_csv('test_data.tsv', sep='\t')
 #df = pd.read_csv('snakemake/test_data_2.tsv', sep='\t')
 
@@ -20,7 +21,8 @@ configfile: 'snakemake/config.yml'
 # wildcard_constraints:
 #     sample='|'.join([re.escape(x) for x in df['sample'].tolist()]),
 
-df = pd.read_csv('/gpfs/projects/bsc83/Projects/pantranscriptome/pclavell/ONT_preprocessing/scripts/snakemake/test_data_2.tsv', sep=' ')
+
+df = pd.read_csv(config_tsv, sep='\t')
 
 def get_df_val(df, col, sample):
     temp = df.loc[df['sample']==sample]
@@ -34,6 +36,8 @@ rule all:
                 sample=df['sample'].tolist()),
         expand(config['data']['qc']['readnum'],
                 sample=df['sample'].tolist())
+        # expand(config['data']['duplex']['fqgz'],
+        #        sample=df['sample'].tolist())
 
 
 # index unaligned bam so next rule can work properly
@@ -74,13 +78,11 @@ use rule bam_to_fastq as unalignedbam_to_fastq with:
 # Count 2: reads after bam2fastq
 use rule count_fq_gz_reads as count_bam2fastq with:
     input:
-        mockin = config['data']['duplex']['fqgz']
-    params:
         fqgz = rules.unalignedbam_to_fastq.output.fastqgz,
-        text = config['data']['count']['fastq_from_bam']
+    # params:
+    #     text = config['data']['count']['fastq_from_bam']
     output:
         txt = temporary(config['data']['qc']['readnum2'])
-
 
 # Step 1 splitting reads with both ONT adapter and full CapTrap linkers
 use rule split_ONT_plus_full_linker as first_split with:
@@ -90,8 +92,8 @@ use rule split_ONT_plus_full_linker as first_split with:
         fastqdir = config['data']['split']['fastqdir1'],
         outdir = config['data']['split']['outdir1']
     output:
-        mockout = temporary(config['data']['split']['mockout1'])#,
-        #fqgz = config['data']['split']['fastqgz1']
+        mockout = temporary(config['data']['split']['mockout1']),
+        fqgz = config['data']['split']['fastqgz1']
         # out2 = config['data']['split']['outsplit1_2'],
         # out3 = config['data']['split']['outsplit1_3']
 
@@ -238,7 +240,7 @@ use rule sam_filt_unmapped as filt_sam_blast with:
         align = rules.blast2bam_seq.output.sam
     output:
         align = temporary(config['data']['blast']['sam_filt'])
-        # align = temporaryorary(config['data']['blast']['sam_filt'])
+        # align = temporary(config['data']['blast']['sam_filt'])
 
 # filter out supplementary and secondary reads (ie only primary)
 use rule sam_filt_for_primary as filt_sam_blast_2 with:
@@ -251,7 +253,7 @@ use rule sam_to_bam as sam_to_bam_blast with:
     input:
         align = rules.filt_sam_blast_2.output.align
     output:
-        align = temporaryorary(config['data']['blast']['bam'])
+        align = temporary(config['data']['blast']['bam'])
 
 use rule bam_sort as bam_sort_blast with:
     input:
@@ -335,7 +337,7 @@ use rule minimap as map with:
         ref_fa = config['ref']['mmi']
     output:
         sam = temporary(config['data']['minimap']['sam'])
-        # sam = temporaryorary(config['data']['minimap']['sam'])
+        # sam = temporary(config['data']['minimap']['sam'])
 
 # rules below corr. to 03_genome_mapping/02_filter_and_transform_results
 use rule align_filt_unmapped_supp as filt_sam_map with:
@@ -348,7 +350,7 @@ use rule sam_to_bam as sam_to_bam_map with:
     input:
         align = rules.filt_sam_map.output.align
     output:
-        align = temporaryorary(config['data']['minimap']['bam'])
+        align = temporary(config['data']['minimap']['bam'])
 
 use rule bam_sort as bam_sort_map with:
     input:
@@ -480,4 +482,3 @@ rule cat_all_counts:
         cat {input.a} {input.b} {input.c} {input.d} {input.e} {input.f} {input.g} {input.h} {input.i}\
         {input.j} {input.k} {input.l} {input.m} {input.n}> {output.txt}
         """
-
