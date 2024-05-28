@@ -100,9 +100,9 @@ use rule split_ONT_plus_full_linker as first_split with:
 # Count 3: reads after split1
 use rule count_fq_gz_reads as count_fastgz_split1 with:
     input:
-        mock = rules.first_split.output.mockout
+        mock = rules.first_split.output.mockout,
+        fqgz = config['data']['split']['fastqgz1']
     params:
-        fqgz = config['data']['split']['fastqgz1'],
         text = config['data']['count']['fastqgz_split1']
     output:
         txt = temporary(config['data']['qc']['readnum3'])
