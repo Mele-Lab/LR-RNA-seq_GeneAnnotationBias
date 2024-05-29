@@ -40,3 +40,4 @@ echo "gzipped"
 unzipped_lines=`zcat $outdir/splitReads.fastq.gz | wc -l`
 echo -e "${unzipped_lines}"
 
+rm -r $outdir/TEMP

@@ -81,22 +81,22 @@ rule count_text_reads:
         echo "{params.text}" $(cat {input.txt}|wc -l) >> {output.txt}
         """
 
-rule nanoplot:
-    resources:
-        threads = 8,
-        mem_gb = 32
-    shell:
-        """
-        module load anaconda
-        conda activate /gpfs/projects/bsc83/utils/conda_envs/nanoplot
-        /gpfs/projects/bsc83/utils/conda_envs/nanoplot/bin/NanoPlot \
-            -t {resources.threads} \
-            -o {params.outdir} \
-            -p {params.prefix} \
-            --tsv_stats \
-            -f png \
-            --{params.filetype} {input.reads} #ubam or fastq
-        """
+# rule nanoplot:
+#     resources:
+#         threads = 8,
+#         mem_gb = 32
+#     shell:
+#         """
+#         module load anaconda
+#         conda activate /gpfs/projects/bsc83/utils/conda_envs/nanoplot
+#         /gpfs/projects/bsc83/utils/conda_envs/nanoplot/bin/NanoPlot \
+#             -t {resources.threads} \
+#             -o {params.outdir} \
+#             -p {params.prefix} \
+#             --tsv_stats \
+#             -f png \
+#             --{params.filetype} {input.reads} #ubam or fastq
+#         """
 
 # compute read length, query coverage, and alignment identity
 # for each read in a given sam / bam file
@@ -107,3 +107,14 @@ rule alignment_qc_id:
     run:
         df = compute_read_cov_id(input.align, resources.threads)
         df.to_csv(output.tsv, sep='\t', index=False)
+
+
+# Nanoplot custom script (done by wcouster, nanoplot developer)
+rule pseudonanoplot:
+    resources:
+        threads = 1
+    run:
+        """
+        module load hdf5 python/3.12.1
+        python3 snakemake/fastq_to_tsv.py --fastq {input.fastq} -o {output.tsv}
+        """

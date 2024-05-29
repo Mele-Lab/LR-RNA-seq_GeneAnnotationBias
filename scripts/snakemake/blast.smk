@@ -29,9 +29,9 @@ rule blast:
             -strand 'both' \
             -task 'blastn' \
             -gapopen 2 \
-            -gapextend 1 \
-            -penalty -2 \
-            -reward 1
+            -gapextend 2 \
+            -penalty -3 \
+            -reward 2
         """
 
 rule blast2bam:

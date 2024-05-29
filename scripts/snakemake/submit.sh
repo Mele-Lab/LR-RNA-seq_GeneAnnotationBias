@@ -12,5 +12,4 @@ snakemake \
   -c {resources.threads} \
   -A bsc83 \
   -o smk_out/%j_%x.out \
-  --time=2:00:00" \
-  -n
+  --time=2:00:00"

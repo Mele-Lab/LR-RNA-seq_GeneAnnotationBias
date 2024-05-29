@@ -14,3 +14,5 @@ scripts/test.fastq
 scripts/workflow_dag.png
 scripts/testnanoplotdir
 scripts/testnewnano
+scripts/testnewnano_sub.tsv
+scripts/snakemake/data

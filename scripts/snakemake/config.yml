@@ -19,65 +19,62 @@ ref:
   linker_5_fa: snakemake/ref/linker_5.fa
 
 data:
-  # raw:
-  #   fq: data/raw/{sample}.fq
-  #   fa: data/raw/{sample}.fa
   duplex:
-      # sam: data/duplex/{sample}/{sample}.bam
-      bam: data/duplex/{sample}/{sample}.bam
-      read_ids: data/duplex/{sample}/{sample}_read_ids.txt
-      fq: data/duplex/{sample}/{sample}.fastq
-      fqgz: data/duplex/{sample}/{sample}.fastq.gz
-      fa: data/duplex/{sample}/{sample}.fa
-      index: data/duplex/{sample}/{sample}.bam.bai
+      bam: data/{sample}/duplex/{sample}/{sample}.bam
+      read_ids: data/{sample}/duplex/{sample}/{sample}_read_ids.txt
+      fq: data/{sample}/duplex/{sample}/{sample}.fastq
+      fqgz: data/{sample}/duplex/{sample}/{sample}.fastq.gz
+      fa: data/{sample}/duplex/{sample}/{sample}.fa
+      index: data/{sample}/duplex/{sample}/{sample}.bam.bai
   split:
-    fastqdir1: data/duplex/{sample}
-    outdir1: data/split/{sample}_1step/
-    mockout1: data/split/mock1_{sample}
-    mockout2: data/split/mock2_{sample}
-    mockout3: data/split/mock3_{sample}
-    multiout: data/split/{sample}_postsplitting/
-    outdir2: data/split/{sample}_2step/
-    dirroot: data/split/{sample}
-    fastq_split: data/split/{sample}_postsplitting/splitReads.fastq.gz
-    fastqgz1: data/split/{sample}_1step/{sample}_split.fastq.gz
-    fastqgz2: data/split/{sample}_2step/{sample}_split_split.fastq.gz
-    fastqgz3: data/split/{sample}_postsplitting/splitReads.fastq.gz
+    fastqdir1: data/{sample}/duplex/{sample}
+    outdir1: data/{sample}/split/{sample}_1step/
+    mockout1: data/{sample}/split/mock1_{sample}
+    mockout2: data/{sample}/split/mock2_{sample}
+    mockout3: data/{sample}/split/mock3_{sample}
+    multiout: data/{sample}/split/{sample}_postsplitting/
+    outdir2: data/{sample}/split/{sample}_2step/
+    dirroot: data/{sample}/split/{sample}
+    fastq_split: data/{sample}/split/{sample}_postsplitting/splitReads.fastq.gz
+    fastqgz1: data/{sample}/split/{sample}_1step/{sample}_split.fastq.gz
+    fastqgz2: data/{sample}/split/{sample}_2step/{sample}_split_split.fastq.gz
+    fastqgz3: data/{sample}/split/{sample}_postsplitting/splitReads.fastq.gz
 
 
 
   blast:
-      db: data/blast/5_linker_db
-      nhr: data/blast/5_linker_db.nhr
-      nin: data/blast/5_linker_db.nin
-      nsq: data/blast/5_linker_db.nsq
+      db: ref/5_linker_db
+      nhr: ref/5_linker_db.nhr
+      nin: ref/5_linker_db.nin
+      nsq: ref/5_linker_db.nsq
 
-      xml: data/blast/{sample}.xml
-      sam: data/blast/{sample}.sam
-      sam_filt: data/blast/{sample}_filt.sam
-      sam_filt_2: data/blast/{sample}_filt2.sam
-      bam: data/blast/{sample}.bam
-      bam_sort: data/blast/{sample}_sorted.bam
-      bam_ind: data/blast/{sample}_sorted.bam.bai
+      xml: data/{sample}/blast/{sample}.xml
+      sam: data/{sample}/blast/{sample}.sam
+      sam_filt: data/{sample}/blast/{sample}_filt.sam
+      sam_filt_2: data/{sample}/blast/{sample}_filt2.sam
+      bam: data/{sample}/blast/{sample}.bam
+      bam_sort: data/{sample}/blast/{sample}_sorted.bam
+      bam_ind: data/{sample}/blast/{sample}_sorted.bam.bai
   umi:
-    umis: data/umi/{sample}_extracted_UMI.tsv
-    fa: data/umi/{sample}_with_extracted_UMI.fasta
-    read_ids: data/umi/{sample}_read_ids.txt
-    no_umi_read_ids: data/umi/{sample}_no_umi_read_ids.txt
+    umis: data/{sample}/umi/{sample}_extracted_UMI.tsv
+    fa: data/{sample}/umi/{sample}_with_extracted_UMI.fasta
+    read_ids: data/{sample}/umi/{sample}_read_ids.txt
+    no_umi_read_ids: data/{sample}/umi/{sample}_no_umi_read_ids.txt
 
   minimap:
-    sam: data/minimap/{sample}.sam
-    sam_filt: data/minimap/{sample}_filt.sam
-    bam: data/minimap/{sample}.bam
-    bam_sort: data/minimap/{sample}_sorted.bam
-    bam_ind: data/minimap/{sample}_sorted.bam.bai
-    read_ids: data/minimap/{sample}_read_ids_unmapped_with_UMI.txt
+    sam: data/{sample}/minimap/{sample}.sam
+    sam_filt: data/{sample}/minimap/{sample}_filt.sam
+    bam: data/{sample}/minimap/{sample}.bam
+    bam_sort: data/{sample}/minimap/{sample}_sorted.bam
+    bam_ind: data/{sample}/minimap/{sample}_sorted.bam.bai
+    read_ids: data/{sample}/minimap/{sample}_read_ids_unmapped_with_UMI.txt
 
   umi_dedupe:
-    bam: data/umi_dedupe/{sample}.bam
-    log: data/umi_dedupe/{sample}.log
-    read_ids: data/umi_dedupe/{sample}_read_ids.txt
+    bam: data/{sample}/umi_dedupe/{sample}.bam
+    log: data/{sample}/umi_dedupe/{sample}.log
+    read_ids: data/{sample}/umi_dedupe/{sample}_read_ids.txt
   qc:
+    nanostats: data/{sample}/qc/{sample}_nanostats.tsv
     read_ids: data/{sample}/qc/{sample}_read_ids.txt
     fq: data/{sample}/qc/{sample}.fastq
     fqgz: data/{sample}/qc/{sample}.fastq.gz

@@ -35,9 +35,9 @@ rule all:
         expand(config['data']['qc']['fq'],
                 sample=df['sample'].tolist()),
         expand(config['data']['qc']['readnum'],
+                sample=df['sample'].tolist()),
+        expand(config['data']['qc']['nanostats'],
                 sample=df['sample'].tolist())
-        # expand(config['data']['duplex']['fqgz'],
-        #        sample=df['sample'].tolist())
 
 
 # index unaligned bam so next rule can work properly
@@ -93,10 +93,7 @@ use rule split_ONT_plus_full_linker as first_split with:
         fastqdir = config['data']['split']['fastqdir1'],
         outdir = config['data']['split']['outdir1']
     output:
-        mockout = temporary(config['data']['split']['mockout1']),
-        fqgz = config['data']['split']['fastqgz1']
-        # out2 = config['data']['split']['outsplit1_2'],
-        # out3 = config['data']['split']['outsplit1_3']
+        mockout = temporary(config['data']['split']['mockout1'])
 
 # Count 3: reads after split1
 use rule count_fq_gz_reads_from_params as count_fastgz_split1 with:
@@ -118,9 +115,7 @@ use rule split_full_linker as second_split with:
         fastqdir = config['data']['split']['outdir1'],
         outdir = config['data']['split']['outdir2']
     output:
-        mockout = temporary(config['data']['split']['mockout2'])        #out1 = config['data']['split']['outsplit2_1'],
-        #out2 = config['data']['split']['outsplit2_2'],
-        #out3 = config['data']['split']['outsplit2_3']
+        mockout = temporary(config['data']['split']['mockout2'])
 
 # Count 4: reads after split2
 use rule count_fq_gz_reads_from_params as count_fastgz_split2 with:
@@ -142,11 +137,8 @@ use rule skip_multisplits as remove_multisplits with:
         outdir = config['data']['split']['multiout']
     output:
         mockout = temporary(config['data']['split']['mockout3']),
-        fq = temporary(config['data']['split']['fastq_split'])
-        #fastq_split = config['data']['split']['fastq_split']
-        # fastq_multisplit = config['data']['split']['fastq_multisplit'],
-        # multisplitsID1 = config['data']['split']['multisplitsID1'],
-        # multisplitsID2 = config['data']['split']['multisplitsID2']
+        fq = config['data']['split']['fastq_split']
+
 
 # Count 5: reads after removemultisplit
 use rule count_fq_gz_reads_from_params as count_fastgz_split3 with:
@@ -171,8 +163,6 @@ use rule fq_to_fa as raw_fq_to_fa with:
     input:
         fq = config['data']['split']['fastq_split'],
         mockin= rules.remove_multisplits.output.mockout
-        # fq = lambda wc: get_df_val(df, 'fname', wc.sample)
-        # fq = config['raw']['fq']
     output:
         fa = temporary(config['data']['duplex']['fa'])
 
@@ -181,9 +171,9 @@ use rule count_fa_reads as count_fasta_reads with:
     input:
         fa = rules.raw_fq_to_fa.output.fa
     params:
-        text = temporary(config['data']['count']['fastafromfastq'])
+        text = config['data']['count']['fastafromfastq']
     output:
-        txt = config['data']['qc']['readnum6']
+        txt = temporary(config['data']['qc']['readnum6'])
 
 # corr. to 01_blast/00_create_db.sh
 use rule make_blast_db as blast_db with:
@@ -241,7 +231,6 @@ use rule sam_filt_unmapped as filt_sam_blast with:
         align = rules.blast2bam_seq.output.sam
     output:
         align = temporary(config['data']['blast']['sam_filt'])
-        # align = temporary(config['data']['blast']['sam_filt'])
 
 # filter out supplementary and secondary reads (ie only primary)
 use rule sam_filt_for_primary as filt_sam_blast_2 with:
@@ -338,7 +327,6 @@ use rule minimap as map with:
         ref_fa = config['ref']['mmi']
     output:
         sam = temporary(config['data']['minimap']['sam'])
-        # sam = temporary(config['data']['minimap']['sam'])
 
 # rules below corr. to 03_genome_mapping/02_filter_and_transform_results
 use rule align_filt_unmapped_supp as filt_sam_map with:
@@ -483,3 +471,9 @@ rule cat_all_counts:
         cat {input.a} {input.b} {input.c} {input.d} {input.e} {input.f} {input.g} {input.h} {input.i}\
         {input.j} {input.k} {input.l} {input.m} {input.n}> {output.txt}
         """
+
+use rule pseudonanoplot as nanostats with:
+    input:
+        fastq = rules.make_clean_fastq.output.cleanfastq
+    output:
+        tsv = config['data']['qc']['nanostats']
