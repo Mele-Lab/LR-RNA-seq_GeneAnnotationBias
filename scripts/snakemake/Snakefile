@@ -345,7 +345,7 @@ use rule bam_sort as bam_sort_map with:
     input:
         align = rules.sam_to_bam_map.output.align
     output:
-        align = temporary(config['data']['minimap']['bam_sort'])
+        align = config['data']['minimap']['bam_sort']
 
 use rule bam_index as bam_index_map with:
     input:
@@ -386,9 +386,10 @@ use rule dedupe_umi as umi_dedupe_reads with:
         gt_map = config['ref']['gt_map']
     params:
         sep = config['params']['umi_sep'],
-        edit_dist = 2
+        edit_dist = 2,
+        stats = config['data']['umi_dedupe']['stats']
     output:
-        align = temporary(config['data']['umi_dedupe']['bam']),
+        align = config['data']['umi_dedupe']['bam'],
         log = config['data']['umi_dedupe']['log']
 
 # get read IDs of reads that we UMI deduplicate
@@ -474,6 +475,14 @@ rule cat_all_counts:
 
 use rule pseudonanoplot as nanostats with:
     input:
-        fastq = rules.make_clean_fastq.output.cleanfastq
+        fastq = rules.make_clean_fastq.output.cleanfastqgz
     output:
         tsv = config['data']['qc']['nanostats']
+
+# use rule qcreport as create_qcreport with:
+#     input:
+#         nanooutput = rules.nanostats.output.tsv
+#         readcount = rules.cat_all_counts.output.txt
+#     output:
+#         pdf = config['data']['qc']['plotpdf']
+#         tsv = config['data']['qc']['reporttsv']

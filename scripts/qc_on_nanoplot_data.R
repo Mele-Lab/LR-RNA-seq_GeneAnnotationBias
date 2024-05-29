@@ -19,6 +19,10 @@ args <- commandArgs(trailingOnly=TRUE)
 if(length(args)>0){
   cat("CAPTURING ARGUMENTS...\n\n", sep= "")
   SAMPLE <- args[1]
+  NANOUTPUT <- args[2]
+  READCOUNT <- args[3]
+  OUTPDF <- args[4]
+  OUTTSV <- args[5]
 }
 
 
@@ -72,7 +76,7 @@ theme <- theme_minimal() + theme(axis.ticks = element_line(linewidth = 0.2, colo
 
 
 # Load data
-data <- fread("testnewnano_sub.tsv")
+data <- fread(NANOUTPUT)
 
 # Add metadata from readID
 data$duplex <- ifelse(grepl(":1", data$id), "Duplex", "Simplex")
@@ -121,9 +125,34 @@ b <- ggplot(data, aes(x=lengths, y=quals) ) +
   theme
 
 multiplot <-a+b+plot_layout(ncol=1, heights = c(0.5, 0.5), guides="collect")
-ggsave("testplot.pdf", multiplot, scale=4.5)
+ggsave(OUTPDF, multiplot, scale=4.5)
 
 
 # Reads that would be lost with Q10 filter
+percentage_reads_notfiltered <- nrow(data[quals>=10,]) / nrow(data) *100
+reads_notfiltered <- nrow(data[quals>=10,])
+reads_notfiltered <- data.table(matrix(c("Q10 filter", reads_notfiltered), byrow = TRUE, nrow = 1))
 # Medians
 # Reads in each step
+
+reads <- fread(READCOUNT, header=F)
+reads <- fread("data/fourkbam/qc/fourkbam_readnum_track.txt", header=F)
+
+newreads <- rbind(reads, reads_notfiltered)
+colnames(newreads) <- c("step", "number")
+newreads$number <- as.integer(newreads$number)
+
+newreads[, original := number[1]]
+newreads[, percentage := (number/original*100)]
+newreads[, percentage_diff := percentage-100]
+
+original <- newreads$number[1]
+after_split <- newreads$number[5]
+after_split <- newreads$number[5]
+reads_UMI_mapped <- newreads$number[9]-newreads$number[11]
+
+
+c("% duplex", "% concatamers", "% duplicates", )
+
+ggplot(newreads)+
+  geom_col(aes(x=step, y=percentage))

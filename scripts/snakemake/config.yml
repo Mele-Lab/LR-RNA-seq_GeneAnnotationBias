@@ -73,11 +73,14 @@ data:
     bam: data/{sample}/umi_dedupe/{sample}.bam
     log: data/{sample}/umi_dedupe/{sample}.log
     read_ids: data/{sample}/umi_dedupe/{sample}_read_ids.txt
+    stats: data/{sample}/umi_dedupe/{sample}_stats
   qc:
-    nanostats: data/{sample}/qc/{sample}_nanostats.tsv
+    nanostats: data/{sample}/qc/{sample}_nanostats.tsv.gz
     read_ids: data/{sample}/qc/{sample}_read_ids.txt
-    fq: data/{sample}/qc/{sample}.fastq
-    fqgz: data/{sample}/qc/{sample}.fastq.gz
+    fq: data/{sample}/{sample}.fastq
+    fqgz: data/{sample}/{sample}.fastq.gz
+    plotpfd: data/{sample}/qc/{sample}_qc.pdf
+    reporttsv: data/{sample}/qc/{sample}_qc_report.tsv.gz
     readnum1: data/{sample}/qc/{sample}_readnum_track1.txt
     readnum2: data/{sample}/qc/{sample}_readnum_track2.txt
     readnum3: data/{sample}/qc/{sample}_readnum_track3.txt

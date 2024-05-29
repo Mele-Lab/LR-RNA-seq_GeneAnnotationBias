@@ -121,7 +121,8 @@ rule dedupe_umi:
             --gene-transcript-map {input.gt_map} \
             --stdin {input.align} \
             --stdout {output.align} \
-            --log {output.log}
+            --log {output.log} \
+            --output-stats {params.stats}
         """
 
 

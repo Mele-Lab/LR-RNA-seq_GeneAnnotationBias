@@ -112,9 +112,22 @@ rule alignment_qc_id:
 # Nanoplot custom script (done by wcouster, nanoplot developer)
 rule pseudonanoplot:
     resources:
-        threads = 1
+        threads = 4
     run:
         """
-        module load hdf5 python/3.12.1
-        python3 snakemake/fastq_to_tsv.py --fastq {input.fastq} -o {output.tsv}
+        module load anaconda
+        conda init
+        source activate base
+        conda activate /gpfs/projects/bsc83/utils/conda_envs/nanoplot
+        python snakemake/fastq_to_tsv.py --fastq {input.fastq} -o {output.tsv}
+        """
+
+# Make QC report
+rule qcreport:
+    resources:
+        threads = 48
+    run:
+        """
+        module load R/4.3.2
+        Rscript snakemake/qc_on_nanoplot_data.R {wildcards.sample} {input.nanooutput} {input.readcount} {output.pdf} {output.tsv}
         """
