@@ -76,10 +76,11 @@ use rule bam_to_fastq as unalignedbam_to_fastq with:
         fastqgz = temporary(config['data']['duplex']['fqgz'])
 
 # Count 2: reads after bam2fastq
-use rule count_fq_gz_reads as count_bam2fastq with:
+use rule count_fq_gz_reads_from_params as count_bam2fastq with:
     input:
-        fqgz = rules.unalignedbam_to_fastq.output.fastqgz,
+        mockin = config['data']['duplex']['fqgz']
     params:
+        fqgz = rules.unalignedbam_to_fastq.output.fastqgz,
         text = config['data']['count']['fastq_from_bam']
     output:
         txt = temporary(config['data']['qc']['readnum2'])
@@ -98,10 +99,11 @@ use rule split_ONT_plus_full_linker as first_split with:
         # out3 = config['data']['split']['outsplit1_3']
 
 # Count 3: reads after split1
-use rule count_fq_gz_reads as count_fastgz_split1 with:
+use rule count_fq_gz_reads_from_params as count_fastgz_split1 with:
     input:
-        fqgz = config['data']['split']['fastqgz1']
+        mock = rules.first_split.output.mockout
     params:
+        fqgz = config['data']['split']['fastqgz1'],
         text = config['data']['count']['fastqgz_split1']
     output:
         txt = temporary(config['data']['qc']['readnum3'])
@@ -121,10 +123,11 @@ use rule split_full_linker as second_split with:
         #out3 = config['data']['split']['outsplit2_3']
 
 # Count 4: reads after split2
-use rule count_fq_gz_reads as count_fastgz_split2 with:
+use rule count_fq_gz_reads_from_params as count_fastgz_split2 with:
     input:
-        fqgz = config['data']['split']['fastqgz2']
+        mock = rules.second_split.output.mockout
     params:
+        fqgz = config['data']['split']['fastqgz2'],
         text = config['data']['count']['fastqgz_split2']
     output:
         txt = temporary(config['data']['qc']['readnum4'])
@@ -146,10 +149,11 @@ use rule skip_multisplits as remove_multisplits with:
         # multisplitsID2 = config['data']['split']['multisplitsID2']
 
 # Count 5: reads after removemultisplit
-use rule count_fq_gz_reads as count_fastgz_split3 with:
+use rule count_fq_gz_reads_from_params as count_fastgz_split3 with:
     input:
-        fqgz = rules.remove_multisplits.output.fq
+        mockin = config['data']['split']['mockout3']
     params:
+        fqgz = rules.remove_multisplits.output.fq,
         text = config['data']['count']['fastqgz_split3']
     output:
         txt = temporary(config['data']['qc']['readnum5'])
@@ -444,10 +448,11 @@ use rule fastqgz_filter as make_clean_fastq with:
         cleanfastqgz = config['data']['qc']['fqgz']
 
 # Count 12: number of reads that could be potentially deduplicated
-use rule count_fq_gz_reads as count_final_reads with:
+use rule count_fq_gz_reads_from_params as count_final_reads with:
     input:
-        fqgz = rules.make_clean_fastq.output.cleanfastqgz
+        mockin = config['data']['qc']['fqgz']
     params:
+        fqgz = rules.make_clean_fastq.output.cleanfastqgz,
         text = config['data']['count']['final_count']
     output:
         txt = temporary(config['data']['qc']['readnum12'])

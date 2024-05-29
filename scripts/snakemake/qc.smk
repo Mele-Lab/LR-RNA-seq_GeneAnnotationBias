@@ -26,6 +26,15 @@ rule count_fq_reads:
         echo "{params.text}" $(( $(cat {input.fq}|wc -l)/4 )) >> {output.txt}
         """
 
+rule count_fq_gz_reads_from_params:
+    resources:
+        threads = 8,
+        mem_gb = 32
+    shell:
+        """
+        echo "{params.text}" $(( $(zcat {params.fqgz}|wc -l)/4 )) >> {output.txt}
+        """
+
 rule count_fq_gz_reads:
     resources:
         threads = 8,
