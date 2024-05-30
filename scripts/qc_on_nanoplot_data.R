@@ -63,8 +63,9 @@ if(machine=="local"){setDTthreads(threads=4)}
 library(patchwork)
 
 library(ggside)
-
-
+data <- fread("data/fourkbam/qc/fourkbam_nanostats.tsv.gz")
+reads <- fread("data/fourkbam/qc/fourkbam_readnum_track.txt", header=F)
+SAMPLE <- "mocksample"
 # load theme
 theme <- theme_minimal() + theme(axis.ticks = element_line(linewidth = 0.2, color = "black"), axis.text = element_text(size = 11, color="black"),
                                  axis.title = element_text(size=12, vjust = -0.5, color = "black"),
@@ -96,11 +97,15 @@ duplex_median_length <- data[, .(median_lengths = median(lengths)), by=duplex]
 splitted_median_quals <- data[, .(median_quals = median(quals)), by=splitted]
 splitted_median_length <- data[, .(median_lengths = median(lengths)), by=splitted]
 
+ninetysevenpointfivebottomlength <- quantile(data$lengths, 0.975)
+
+
 # Plot by duplex status
 a <- ggplot(data, aes(x=lengths, y=quals) ) +
   geom_hex(bins = 100) +
   scale_fill_continuous(type = "viridis") +
   facet_wrap(~duplex)+
+  xlim(0, ninetysevenpointfivebottomlength)+
   ggtitle(SAMPLE, "Quality~Length by Duplex Status")+
   geom_hline(data = duplex_median_quals, aes(yintercept = median_quals), size=1.5, linetype=2, col="brown")+
   geom_vline(data = duplex_median_length, aes(xintercept = median_lengths), size=1.5, linetype=2, col="brown")+
@@ -115,6 +120,7 @@ b <- ggplot(data, aes(x=lengths, y=quals) ) +
   geom_hex(bins = 100) +
   scale_fill_continuous(type = "viridis") +
   facet_wrap(~splitted)+
+  xlim(0, ninetysevenpointfivebottomlength)+
   ggtitle(SAMPLE, "Quality~Length by Split Status")+
   geom_hline(data = splitted_median_quals, aes(yintercept = median_quals), size=1.5, linetype=2, col="brown")+
   geom_vline(data = splitted_median_length, aes(xintercept = median_lengths), size=1.5, linetype=2, col="brown")+
