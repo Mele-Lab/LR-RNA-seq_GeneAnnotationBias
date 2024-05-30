@@ -5,7 +5,7 @@ rule count_reads_with_primary_alignment:
     shell:
         """
         module load samtools
-        echo "{params.text}" $(samtools view -F 1060 {input.sam} | wc -l) >> {output.txt}
+        echo "{params.text}" $(samtools view -@ {resources.threads} -F 1060 {input.sam} | wc -l) >> {output.txt}
         """
 
 rule count_unbam_reads:
@@ -14,7 +14,7 @@ rule count_unbam_reads:
     shell:
         """
         module load samtools
-        echo "{params.text}" $(samtools view -c {input.unbam} )  >> {output.txt}
+        echo "{params.text}" $(samtools view -@ {resources.threads} -c {input.unbam} )  >> {output.txt}
         """
 
 rule count_fq_reads:
@@ -69,7 +69,7 @@ rule count_sam_mappings:
     shell:
         """
         module load samtools
-        echo "{params.text}" $(samtools view -c {input.sam}) >> {output.txt}
+        echo "{params.text}" $(samtools view -@ {resources.threads} -c {input.sam}) >> {output.txt}
         """
 
 rule count_text_reads:
@@ -113,7 +113,7 @@ rule alignment_qc_id:
 rule pseudonanoplot:
     resources:
         threads = 4
-    run:
+    shell:
         """
         module load anaconda
         conda init
@@ -126,7 +126,7 @@ rule pseudonanoplot:
 rule qcreport:
     resources:
         threads = 48
-    run:
+    shell:
         """
         module load R/4.3.2
         Rscript snakemake/qc_on_nanoplot_data.R {wildcards.sample} {input.nanooutput} {input.readcount} {output.pdf} {output.tsv}

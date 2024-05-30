@@ -14,7 +14,7 @@ rule fq_to_fa:
 
 rule extract_umi:
     resources:
-        threads = 1,
+        threads = 12,
         mem_gb = 16
     shell:
         """
@@ -52,6 +52,7 @@ rule fastqgz_get_read_ids:
 #         df['read_id'] = union
 #         df.to_csv(output.txt, header=False)
 
+# this rule ALSO REMOVES SIMPLEX
 rule read_id_union:
     resources:
         threads = 1,
