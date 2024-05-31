@@ -32,7 +32,7 @@ def get_df_val(df, col, sample):
 
 rule all:
     input:
-        expand(config['data']['qc']['fq'],
+        expand(config['data']['output']['q7fastqgz'],
                 sample=df['sample'].tolist()),
         expand(config['data']['qc']['readnum'],
                 sample=df['sample'].tolist()),
@@ -41,6 +41,8 @@ rule all:
         expand(config['data']['assess_umi_dedupe']['group'],
                 sample=df['sample'].tolist()),
         expand(config['data']['qc']['plotpdf'],
+                sample=df['sample'].tolist()),
+        expand(config['data']['qc']['fastqcreport'],
                 sample=df['sample'].tolist())
 
 
@@ -519,3 +521,12 @@ use rule fastqfilter as filterfastq with:
         phred = 7
     output:
         align = config['data']['output']['q7fastqgz']
+
+use rule fastqc as fastqcreport with:
+    input:
+        fastq = rules.filterfastq.output.align
+    params:
+        adapters = config['ref']['adapters'],
+        outdir = config['data']['qc']['fastqcreportdir']
+    output:
+        html = config['data']['qc']['fastqcreport']

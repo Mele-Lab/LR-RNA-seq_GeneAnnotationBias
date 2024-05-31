@@ -139,4 +139,11 @@ rule fastqc:
         threads = 48
     shell:
         """
+        module load fastqc
+        fastqc \
+            -o {params.outdir} \
+            -t {resources.threads} \
+            -a {params.adapters} \
+            -f fastq \
+            {input.fastq}
         """

@@ -188,7 +188,7 @@ rule fastqfilter:
 rule trimadaptors:
     resources:
         threads = 80,
-        queue = acc_bscls
+        queue = "acc_bscls"
     shell:
         """
         module load dorado
@@ -196,5 +196,5 @@ rule trimadaptors:
         dorado trim \
             --threads 80 \
             --emit-fastq \
-            {input.align} > {output.align}
+            {input.align} | gzip > {output.align}
         """
