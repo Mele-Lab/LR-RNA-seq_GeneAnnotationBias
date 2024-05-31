@@ -1,17 +1,13 @@
 #!/bin/bash
 
-module load anaconda
-source activate base
-conda init bash
-conda activate /gpfs/projects/bsc83/utils/conda_envs/nanoplot
-# /gpfs/projects/bsc83/utils/conda_envs/nanoplot/bin/NanoPlot \
-#             -t 112 \
-#             -o testnanoplotdir\
-#             -p test1 \
-#             --tsv_stats \
-#             --raw \
-#             --store \
-#             -f png \
-#             --ubam /gpfs/projects/bsc83/Projects/pantranscriptome/pclavell/01_basecalling/data/modifications/20240212_HS_16_CH4_GM18772_10percent_subsampling.bam
-
-python snakemake/fastq_to_tsv.py --fastq /gpfs/projects/bsc83/Projects/pantranscriptome/pclavell/01_basecalling/data/modifications/tests/20240212_HS_16_CH4_GM18772_40kreads.fastq -o testnewnano
+module load miniconda
+source activate sqanti3-snakemake
+umi_tools group \
+    --method adjacency \
+    --edit-distance-threshold=2 \
+    --umi-separator , \
+    --per-gene \
+    --per-contig \
+    -I data/tenpercentbam/minimap/tenpercentbam_sorted.bam \
+    --group-out umitest1_groupout \
+    --log umitest2_log

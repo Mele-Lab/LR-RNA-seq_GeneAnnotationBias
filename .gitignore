@@ -16,3 +16,5 @@ scripts/testnanoplotdir
 scripts/testnewnano
 scripts/testnewnano_sub.tsv
 scripts/snakemake/data
+scripts/umitest2_log
+scripts/umitest1_groupout
