@@ -37,8 +37,9 @@ rule all:
         expand(config['data']['qc']['readnum'],
                 sample=df['sample'].tolist()),
         expand(config['data']['qc']['nanostats'],
+                sample=df['sample'].tolist()),
+        expand(config['data']['assess_umi_dedupe']['group'],
                 sample=df['sample'].tolist())
-
 
 # index unaligned bam so next rule can work properly
 use rule bamindex as index_unalignedbam with:
@@ -392,6 +393,18 @@ use rule dedupe_umi as umi_dedupe_reads with:
         align = config['data']['umi_dedupe']['bam'],
         log = config['data']['umi_dedupe']['log']
 
+use rule assess_dedupe_umi as dedupe_assessment with:
+    input:
+        align = rules.bam_sort_map.output.align,
+        mock = config['data']['minimap']['bam_ind'],
+        gt_map = config['ref']['gt_map']
+    params:
+        sep = config['params']['umi_sep'],
+        edit_dist = 2
+    output:
+        log = config['data']['assess_umi_dedupe']['log'],
+        group = config['data']['assess_umi_dedupe']['group']
+
 # get read IDs of reads that we UMI deduplicate
 use rule bam_get_read_ids as get_umi_dedupe_read_ids with:
     input:
@@ -416,8 +429,12 @@ use rule read_id_union as get_qc_reads with:
         a = rules.get_non_umi_read_ids.output.txt,
         b = rules.get_umi_dedupe_read_ids.output.txt,
         c = rules.get_bam_get_unmapped_read_ids.output.txt
+    params:
+        temporalfile = config['data']['qc']['temporalfile'],
+        text = config['data']['count']['parent_simplex']
     output:
-        txt = config['data']['qc']['read_ids']
+        txt = config['data']['qc']['read_ids'],
+        count_parent_simplex = config['data']['qc']['count_parent_simplex']
 
 # Count 11.2
 use rule count_text_reads as get_reads_to_be_selected with:
@@ -461,6 +478,7 @@ rule cat_all_counts:
         h = config['data']['qc']['readnum8'],
         i = config['data']['qc']['readnum9'],
         j = config['data']['qc']['readnum10'],
+        z = config['data']['qc']['count_parent_simplex'],
         k = config['data']['qc']['readnum10_2'],
         l = config['data']['qc']['readnum11'],
         m = config['data']['qc']['readnum11_2'],
@@ -470,7 +488,7 @@ rule cat_all_counts:
     shell:
         """
         cat {input.a} {input.b} {input.c} {input.d} {input.e} {input.f} {input.g} {input.h} {input.i}\
-        {input.j} {input.k} {input.l} {input.m} {input.n}> {output.txt}
+        {input.j} {input.z} {input.k} {input.l} {input.m} {input.n}> {output.txt}
         """
 
 use rule pseudonanoplot as nanostats with:

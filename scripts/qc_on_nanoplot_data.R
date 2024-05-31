@@ -63,8 +63,8 @@ if(machine=="local"){setDTthreads(threads=4)}
 library(patchwork)
 
 library(ggside)
-data <- fread("data/fourkbam/qc/fourkbam_nanostats.tsv.gz")
-reads <- fread("data/fourkbam/qc/fourkbam_readnum_track.txt", header=F)
+data <- fread("data/tenpercentbam/qc/tenpercentbam_nanostats.tsv.gz")
+reads <- fread("data/tenpercentbam/qc/tenpercentbam_readnum_track.txt", header=F)
 SAMPLE <- "mocksample"
 # load theme
 theme <- theme_minimal() + theme(axis.ticks = element_line(linewidth = 0.2, color = "black"), axis.text = element_text(size = 11, color="black"),
@@ -111,6 +111,7 @@ a <- ggplot(data, aes(x=lengths, y=quals) ) +
   geom_vline(data = duplex_median_length, aes(xintercept = median_lengths), size=1.5, linetype=2, col="brown")+
   geom_xsidedensity(fill="grey")+
   geom_ysidedensity(fill="grey")+
+  xlab("lengths (top 2.5% skipped)")+
   geom_text(data = duplex_median_quals, aes(x = 0, y = median_quals, label = round(median_quals, 2)), vjust = -0.5, color = "brown") +
   geom_text(data = duplex_median_length, aes(x = median_lengths, y = 0, label = round(median_lengths, 2)), hjust = -0.5, color = "brown") +
   theme
@@ -126,23 +127,23 @@ b <- ggplot(data, aes(x=lengths, y=quals) ) +
   geom_vline(data = splitted_median_length, aes(xintercept = median_lengths), size=1.5, linetype=2, col="brown")+
   geom_xsidedensity(fill="grey")+
   geom_ysidedensity(fill="grey")+
+  xlab("lengths (top 2.5% skipped)")+
   geom_text(data = splitted_median_quals, aes(x = 0, y = median_quals, label = round(median_quals, 2)), vjust = -0.5, color = "brown") +
   geom_text(data = splitted_median_length, aes(x = median_lengths, y = 0, label = round(median_lengths, 2)), hjust = -0.5, color = "brown") +
   theme
 
-multiplot <-a+b+plot_layout(ncol=1, heights = c(0.5, 0.5), guides="collect")
-ggsave(OUTPDF, multiplot, scale=4.5)
 
 
 # Reads that would be lost with Q10 filter
 percentage_reads_notfiltered <- nrow(data[quals>=10,]) / nrow(data) *100
 reads_notfiltered <- nrow(data[quals>=10,])
+reads_filtered <- nrow(data[quals<10,])
+
 reads_notfiltered <- data.table(matrix(c("Q10 filter", reads_notfiltered), byrow = TRUE, nrow = 1))
 # Medians
 # Reads in each step
 
 reads <- fread(READCOUNT, header=F)
-reads <- fread("data/fourkbam/qc/fourkbam_readnum_track.txt", header=F)
 
 newreads <- rbind(reads, reads_notfiltered)
 colnames(newreads) <- c("step", "number")
@@ -152,13 +153,61 @@ newreads[, original := number[1]]
 newreads[, percentage := (number/original*100)]
 newreads[, percentage_diff := percentage-100]
 
-original <- newreads$number[1]
-after_split <- newreads$number[5]
-after_split <- newreads$number[5]
-reads_UMI_mapped <- newreads$number[9]-newreads$number[11]
+original <- newreads$number[1] # reads that have been basecalled
+after_split <- newreads$number[5] # reads that we have after splitting
+parent_simplex <- newreads$number[11] # amount of parent simplex
+final <- newreads$number[15] # final amount
+after_dedup <- newreads$number[13] # reads after deduplication
+reads_notUMI <- newreads$number[10]
+reads_UMI_unmapped <- newreads$number[12]
+reads_UMI <- newreads$number[9]
+
+# calculations
+reads_UMI_mapped <- reads_UMI-reads_UMI_unmapped
+removed_duplicate_reads <- reads_UMI_mapped-after_dedup
+split_won <- after_split-original
+# The reads after the splitting should be equal to the reads with UMI either mapped or unmapped and the reads without UMI
+after_split==reads_UMI_mapped+reads_UMI_unmapped+reads_notUMI
+
+# The missing reads between the final and the after splitting should be equal to those removed bc simplex parent or deduplicated
+after_split-final==parent_simplex+removed_duplicate_reads
 
 
-c("% duplex", "% concatamers", "% duplicates", )
+results_rel <- c(-parent_simplex/(after_split-removed_duplicate_reads)*100, +split_won/original*100, -removed_duplicate_reads/reads_UMI_mapped*100, -reads_filtered/final*100)
+results <- c(-parent_simplex, split_won, -removed_duplicate_reads, -reads_filtered)/original*100
+phenomena <-c("duplex", "concatamers", "duplicates", "Q<10")
 
-ggplot(newreads)+
-  geom_col(aes(x=step, y=percentage))
+finalstats <- data.frame(results, phenomena)
+
+c <-ggplot(finalstats,aes(x=phenomena, y=results, fill = results > 0))+
+  geom_col()+
+  scale_fill_manual(values = c("#8B232D", "#618E3B"))+
+  guides(fill = "none")+
+  ylab("% of original reads change")+
+  ggtitle("Relative to original reads")+
+  xlab("")+
+  geom_text(aes(label=round(results, digits=2), hjust=0.5-sign(results)/2))+
+  coord_flip()+
+  theme
+
+
+
+finalstats_rel <- data.frame(results_rel, phenomena)
+
+d <- ggplot(finalstats_rel,aes(x=phenomena, y=results_rel, fill = results > 0))+
+  geom_col()+
+  scale_fill_manual(values = c("#8B232D", "#618E3B"))+
+  guides(fill = "none")+
+  ylab("% of original reads change")+
+  xlab("")+
+  ggtitle("Relative to reads in each step")+
+  geom_text(aes(label=round(results_rel, digits=2), vjust=-sign(results_rel)*1.25))+
+  theme
+
+# save plots
+multiplot1 <-a+b+plot_layout(nrow=1, heights = c(0.5, 0.5), guides="collect")
+multiplot2 <-c+plot_layout(nrow=1, heights = c(0.5, 0.5), guides="collect")
+
+multiplot <-multiplot1 / multiplot2+plot_layout(ncol=2, widths = c(0.8, 0.2))
+
+ggsave(OUTPDF, multiplot, scale=4.5)

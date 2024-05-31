@@ -59,7 +59,9 @@ rule read_id_union:
         mem_gb = 4
     shell:
         """
-        cat {input.a} {input.b} {input.c} | sort | uniq | grep -v ":-1"> {output.txt}
+        cat {input.a} {input.b} {input.c} | sort | uniq > {params.temporalfile}
+        cat {params.temporalfile}| grep -v ":-1"> {output.txt}
+        echo "{params.text}" $(cat {params.temporalfile} | grep ":-1" | wc -l) > {output.count_parent_simplex}
         """
 
 # rule read_id_diff:
@@ -125,6 +127,27 @@ rule dedupe_umi:
             --log {output.log} \
             --output-stats {params.stats}
         """
+
+rule assess_dedupe_umi:
+    resources:
+        threads = 4,
+        mem_gb = 32
+    shell:
+        """ 
+        module load miniconda
+        source activate sqanti3-snakemake
+        umi_tools group \
+            --method adjacency \
+            --edit-distance-threshold=2 \
+            --umi-separator {params.sep} \
+            --per-gene \
+            --per-contig \
+            --gene-transcript-map {input.gt_map} \
+            -I {input.align} \
+            --group-out {output.group} \
+            --log {output.log}
+        """
+
 
 
 rule fastqgz_filter:
