@@ -10,8 +10,6 @@
 ##
 ## ---------------------------
 
-## DEFINE RELATIVE PATH (to projects/bsc83)
-relative_path <- "Projects/pantranscriptome/pclavell/ONT_preprocessing/scripts"
 
 ## DEFINE ARGUMENTS
 args <- commandArgs(trailingOnly=TRUE)
@@ -22,8 +20,13 @@ if(length(args)>0){
   NANOUTPUT <- args[2]
   READCOUNT <- args[3]
   OUTPDF <- args[4]
-  OUTTSV <- args[5]
+  OUTSTATS <- args[5]
+  OUTREADS <- args[6]
+  PATHWD <- args[7]
+  OUTREADS_2 <- args[8]
 }
+## DEFINE RELATIVE PATH (to projects/bsc83)
+relative_path <- PATHWD
 
 
 ## set working directory for local and mn5
@@ -62,10 +65,9 @@ if(machine=="local"){setDTthreads(threads=4)}
 ## 0---------END OF HEADER-------------------------------------------------------------------0 ##
 library(patchwork)
 
-library(ggside)
-data <- fread("data/tenpercentbam/qc/tenpercentbam_nanostats.tsv.gz")
-reads <- fread("data/tenpercentbam/qc/tenpercentbam_readnum_track.txt", header=F)
-SAMPLE <- "mocksample"
+library(ggside, lib.loc = "/gpfs/projects/bsc83/utils/Rpackages")
+library(hexbin, lib.loc = "/gpfs/projects/bsc83/utils/Rpackages")
+
 # load theme
 theme <- theme_minimal() + theme(axis.ticks = element_line(linewidth = 0.2, color = "black"), axis.text = element_text(size = 11, color="black"),
                                  axis.title = element_text(size=12, vjust = -0.5, color = "black"),
@@ -78,6 +80,10 @@ theme <- theme_minimal() + theme(axis.ticks = element_line(linewidth = 0.2, colo
 
 # Load data
 data <- fread(NANOUTPUT)
+# setwd("/home/pclavell/mounts/mn5/Projects/pantranscriptome/pclavell/ONT_preprocessing/scripts/")
+# data <- fread("data/tenpercentbam/qc/tenpercentbam_nanostats.tsv.gz")
+# reads <- fread("data/tenpercentbam/qc/tenpercentbam_readnum_track.txt", header=F)
+
 
 # Add metadata from readID
 data$duplex <- ifelse(grepl(":1", data$id), "Duplex", "Simplex")
@@ -97,54 +103,59 @@ duplex_median_length <- data[, .(median_lengths = median(lengths)), by=duplex]
 splitted_median_quals <- data[, .(median_quals = median(quals)), by=splitted]
 splitted_median_length <- data[, .(median_lengths = median(lengths)), by=splitted]
 
+# Compute bottom 97.5% lengths to exclude outliers in the plots
 ninetysevenpointfivebottomlength <- quantile(data$lengths, 0.975)
 
 
 # Plot by duplex status
 a <- ggplot(data, aes(x=lengths, y=quals) ) +
-  geom_hex(bins = 100) +
+  geom_hex(bins = 150) +
   scale_fill_continuous(type = "viridis") +
   facet_wrap(~duplex)+
   xlim(0, ninetysevenpointfivebottomlength)+
   ggtitle(SAMPLE, "Quality~Length by Duplex Status")+
-  geom_hline(data = duplex_median_quals, aes(yintercept = median_quals), size=1.5, linetype=2, col="brown")+
-  geom_vline(data = duplex_median_length, aes(xintercept = median_lengths), size=1.5, linetype=2, col="brown")+
+  geom_hline(data = duplex_median_quals, aes(yintercept = median_quals), linewidth=1.5, linetype=2, col="brown")+
+  geom_vline(data = duplex_median_length, aes(xintercept = median_lengths), linewidth=1.5, linetype=2, col="brown")+
   geom_xsidedensity(fill="grey")+
   geom_ysidedensity(fill="grey")+
   xlab("lengths (top 2.5% skipped)")+
-  geom_text(data = duplex_median_quals, aes(x = 0, y = median_quals, label = round(median_quals, 2)), vjust = -0.5, color = "brown") +
-  geom_text(data = duplex_median_length, aes(x = median_lengths, y = 0, label = round(median_lengths, 2)), hjust = -0.5, color = "brown") +
+  ylab("read quality")+
+  guides(fill = "none")+
+  geom_text(data = duplex_median_quals, aes(x = ninetysevenpointfivebottomlength, y = median_quals, label = round(median_quals, 2)), vjust = -0.5, hjust=1,color = "brown") +
+  geom_text(data = duplex_median_length, aes(x = median_lengths, y = 0, label = round(median_lengths, 2)), hjust = -0.5, vjust=0, color = "brown") +
   theme
 
 # Plot by splitting status
 b <- ggplot(data, aes(x=lengths, y=quals) ) +
-  geom_hex(bins = 100) +
+  geom_hex(bins = 150) +
   scale_fill_continuous(type = "viridis") +
   facet_wrap(~splitted)+
   xlim(0, ninetysevenpointfivebottomlength)+
   ggtitle(SAMPLE, "Quality~Length by Split Status")+
-  geom_hline(data = splitted_median_quals, aes(yintercept = median_quals), size=1.5, linetype=2, col="brown")+
-  geom_vline(data = splitted_median_length, aes(xintercept = median_lengths), size=1.5, linetype=2, col="brown")+
+  geom_hline(data = splitted_median_quals, aes(yintercept = median_quals), linewidth=1.5, linetype=2, col="brown")+
+  geom_vline(data = splitted_median_length, aes(xintercept = median_lengths), linewidth=1.5, linetype=2, col="brown")+
   geom_xsidedensity(fill="grey")+
   geom_ysidedensity(fill="grey")+
+  ylab("read quality")+
   xlab("lengths (top 2.5% skipped)")+
-  geom_text(data = splitted_median_quals, aes(x = 0, y = median_quals, label = round(median_quals, 2)), vjust = -0.5, color = "brown") +
-  geom_text(data = splitted_median_length, aes(x = median_lengths, y = 0, label = round(median_lengths, 2)), hjust = -0.5, color = "brown") +
+  guides(fill = "none")+
+  geom_text(data = splitted_median_quals, aes(x = ninetysevenpointfivebottomlength, y = median_quals, label = round(median_quals, 2)), vjust = -0.5, hjust=1,color = "brown") +
+  geom_text(data = splitted_median_length, aes(x = median_lengths, y = 0, label = round(median_lengths, 2)), hjust = -0.5, vjust=0, color = "brown") +
   theme
 
 
 
 # Reads that would be lost with Q10 filter
 percentage_reads_notfiltered <- nrow(data[quals>=10,]) / nrow(data) *100
-reads_notfiltered <- nrow(data[quals>=10,])
+reads_notfiltered_raw <- nrow(data[quals>=10,])
+reads_notQ7filtered_raw <- nrow(data[quals>=7,])
 reads_filtered <- nrow(data[quals<10,])
 
-reads_notfiltered <- data.table(matrix(c("Q10 filter", reads_notfiltered), byrow = TRUE, nrow = 1))
-# Medians
-# Reads in each step
+reads_notfiltered <- data.table(matrix(c("Q10 filter", reads_notfiltered_raw), byrow = TRUE, nrow = 1))
 
+# Count Reads in each step
 reads <- fread(READCOUNT, header=F)
-
+# Format data
 newreads <- rbind(reads, reads_notfiltered)
 colnames(newreads) <- c("step", "number")
 newreads$number <- as.integer(newreads$number)
@@ -153,6 +164,7 @@ newreads[, original := number[1]]
 newreads[, percentage := (number/original*100)]
 newreads[, percentage_diff := percentage-100]
 
+# Assign names to data
 original <- newreads$number[1] # reads that have been basecalled
 after_split <- newreads$number[5] # reads that we have after splitting
 parent_simplex <- newreads$number[11] # amount of parent simplex
@@ -165,49 +177,102 @@ reads_UMI <- newreads$number[9]
 # calculations
 reads_UMI_mapped <- reads_UMI-reads_UMI_unmapped
 removed_duplicate_reads <- reads_UMI_mapped-after_dedup
+duplicationper <- removed_duplicate_reads/reads_UMI_mapped*100
 split_won <- after_split-original
+
+## Make checks to see if numbers fit
 # The reads after the splitting should be equal to the reads with UMI either mapped or unmapped and the reads without UMI
 after_split==reads_UMI_mapped+reads_UMI_unmapped+reads_notUMI
 
 # The missing reads between the final and the after splitting should be equal to those removed bc simplex parent or deduplicated
 after_split-final==parent_simplex+removed_duplicate_reads
 
-
+# Compute interesing stats
 results_rel <- c(-parent_simplex/(after_split-removed_duplicate_reads)*100, +split_won/original*100, -removed_duplicate_reads/reads_UMI_mapped*100, -reads_filtered/final*100)
-results <- c(-parent_simplex, split_won, -removed_duplicate_reads, -reads_filtered)/original*100
-phenomena <-c("duplex", "concatamers", "duplicates", "Q<10")
 
+results <- c(-parent_simplex/(after_split-removed_duplicate_reads), 
+             split_won/original, 
+             -removed_duplicate_reads/after_split, 
+             -reads_filtered/final)*100
+phenomena <-c("duplex", 
+              "new splitted reads", 
+              "duplicates removed" ,
+              "Q<10")
 finalstats <- data.frame(results, phenomena)
+
+
+results2 <- c(removed_duplicate_reads/reads_UMI_mapped,
+              reads_UMI_mapped/after_split,
+              final/original,
+              reads_notQ7filtered_raw/original,
+              reads_notfiltered_raw/original)*100
+phenomena2 <- c("duplication\nrate", 
+                "reads\ndup-\nassessed", 
+                "reads kept\nno Q10\nfiltered",
+                "reads kept\nif Q7\nfiltered",
+                "reads kept\nif Q\nfiltered")
+finalstats2 <- data.frame(results2, phenomena2)
+
+
 
 c <-ggplot(finalstats,aes(x=phenomena, y=results, fill = results > 0))+
   geom_col()+
   scale_fill_manual(values = c("#8B232D", "#618E3B"))+
   guides(fill = "none")+
-  ylab("% of original reads change")+
-  ggtitle("Relative to original reads")+
+  ylab("% of reads change")+
   xlab("")+
+  scale_x_discrete(limits = c("Q<10",
+                              "duplicates removed", 
+                              "new splitted reads", 
+                              "duplex"
+                              ))+
+  scale_y_continuous(expand = c(0.3, 0))+
   geom_text(aes(label=round(results, digits=2), hjust=0.5-sign(results)/2))+
   coord_flip()+
   theme
 
-
-
-finalstats_rel <- data.frame(results_rel, phenomena)
-
-d <- ggplot(finalstats_rel,aes(x=phenomena, y=results_rel, fill = results > 0))+
+d <-ggplot(finalstats2,aes(x=phenomena2, y=results2))+
   geom_col()+
-  scale_fill_manual(values = c("#8B232D", "#618E3B"))+
   guides(fill = "none")+
-  ylab("% of original reads change")+
+  ylab("%")+
   xlab("")+
-  ggtitle("Relative to reads in each step")+
-  geom_text(aes(label=round(results_rel, digits=2), vjust=-sign(results_rel)*1.25))+
+  scale_y_continuous(expand = c(0.2, 0.2))+
+  geom_text(aes(label=round(results2, digits=2), vjust=-0.5))+
   theme
-
 # save plots
-multiplot1 <-a+b+plot_layout(nrow=1, heights = c(0.5, 0.5), guides="collect")
-multiplot2 <-c+plot_layout(nrow=1, heights = c(0.5, 0.5), guides="collect")
+multiplot1 <-a+b+plot_layout(nrow=1, heights = c(0.5, 0.5), guides="collect", axis_titles = "collect")
+multiplot2 <-c+d+plot_layout(nrow=1, widths = c(0.7, 0.3), guides="collect")
 
-multiplot <-multiplot1 / multiplot2+plot_layout(ncol=2, widths = c(0.8, 0.2))
+multiplot <-multiplot1 / multiplot2+plot_layout(ncol=1, heights = c(0.8, 0.2),tag_level="new")
 
+
+# Save medians in a tsv
+splitted_median_length
+splitted_median_quals
+duplex_median_length
+duplex_median_quals
+
+cbind(duplex_median_length, duplex_median_quals)
+
+duplexmerge <- duplex_median_length[duplex_median_quals, on="duplex"]
+colnames(duplexmerge)[1] <- "status"
+splittedmerge <- splitted_median_length[splitted_median_quals, on="splitted"]
+colnames(splittedmerge)[1] <- "status"
+
+allmerge <- rbind.data.frame(duplexmerge,splittedmerge)
+# compute global stats
+globalsstats<-data.frame(matrix(c("all", median(data$lengths), median(data$quals)), ncol=3))
+colnames(globalsstats) <- colnames(allmerge)
+allmerge <- rbind.data.frame(allmerge, globalsstats)
+
+allmerge$number <- c(sum(data[,duplex=="Duplex"]),
+                     sum(data[,duplex=="Simplex"]),
+                     sum(data[,splitted=="Not_Splitted"]),
+                     sum(data[,splitted=="Splitted"]),
+                     nrow(data))
+
+#### OUTPUTS
 ggsave(OUTPDF, multiplot, scale=4.5)
+fwrite(allmerge, OUTSTATS, quote = F, row.names = F, col.names = T, sep = "\t")
+fwrite(finalstats, OUTREADS, quote = F, row.names = F, col.names = T, sep = "\t")
+fwrite(finalstats2, OUTREADS_2, quote = F, row.names = F, col.names = T, sep = "\t")

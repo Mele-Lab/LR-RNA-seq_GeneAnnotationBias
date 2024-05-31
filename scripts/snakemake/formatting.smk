@@ -113,7 +113,9 @@ rule dedupe_umi:
     shell:
         """
         module load miniconda
-        source activate sqanti3-snakemake
+        source activate base
+        conda init
+        conda activate /gpfs/projects/bsc83/utils/conda_envs/umi_tools
         umi_tools dedup \
             --extract-umi-method read_id \
             --umi-separator {params.sep} \
@@ -135,7 +137,9 @@ rule assess_dedupe_umi:
     shell:
         """ 
         module load miniconda
-        source activate sqanti3-snakemake
+        source activate base
+        conda init
+        conda activate /gpfs/projects/bsc83/utils/conda_envs/umi_tools
         umi_tools group \
             --method adjacency \
             --edit-distance-threshold=2 \
@@ -166,4 +170,31 @@ rule fastqgz_filter:
         echo "test4 ##########################"
         rm "data/temp/{wildcards.sample}.fastq"
         rm -r data/temp
+        """
+
+rule fastqfilter:
+    resources:
+        threads=8
+    shell:
+        """
+        module load miniconda
+        source activate base
+        conda init
+        conda activate /gpfs/projects/bsc83/utils/conda_envs/fastqfilter #fastq-filter
+
+        fastq-filter -q {params.phred} {input.align} -o {output.align}
+        """
+
+rule trimadaptors:
+    resources:
+        threads = 80,
+        queue = acc_bscls
+    shell:
+        """
+        module load dorado
+
+        dorado trim \
+            --threads 80 \
+            --emit-fastq \
+            {input.align} > {output.align}
         """

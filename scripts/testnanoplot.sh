@@ -1,13 +1,7 @@
 #!/bin/bash
 
 module load miniconda
-source activate sqanti3-snakemake
-umi_tools group \
-    --method adjacency \
-    --edit-distance-threshold=2 \
-    --umi-separator , \
-    --per-gene \
-    --per-contig \
-    -I data/tenpercentbam/minimap/tenpercentbam_sorted.bam \
-    --group-out umitest1_groupout \
-    --log umitest2_log
+source activate base
+conda init
+conda activate /gpfs/projects/bsc83/utils/conda_envs/fastqfilter
+fastq-filter -q 7 data/tenpercentbam/tenpercentbam.fastq.gz -o filtered_tenpercen.fastq.gz

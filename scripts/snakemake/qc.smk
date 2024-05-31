@@ -129,5 +129,14 @@ rule qcreport:
     shell:
         """
         module load R/4.3.2
-        Rscript snakemake/qc_on_nanoplot_data.R {wildcards.sample} {input.nanooutput} {input.readcount} {output.pdf} {output.tsv}
+        Rscript snakemake/qc_on_nanoplot_data.R {wildcards.sample} {input.nanooutput} {input.readcount} {output.pdf} {output.globalstats} {output.reads} {params.path} {output.reads2}
+        """
+
+# Run fastQC
+
+rule fastqc:
+    resources:
+        threads = 48
+    shell:
+        """
         """

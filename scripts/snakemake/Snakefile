@@ -39,7 +39,10 @@ rule all:
         expand(config['data']['qc']['nanostats'],
                 sample=df['sample'].tolist()),
         expand(config['data']['assess_umi_dedupe']['group'],
+                sample=df['sample'].tolist()),
+        expand(config['data']['qc']['plotpdf'],
                 sample=df['sample'].tolist())
+
 
 # index unaligned bam so next rule can work properly
 use rule bamindex as index_unalignedbam with:
@@ -497,10 +500,22 @@ use rule pseudonanoplot as nanostats with:
     output:
         tsv = config['data']['qc']['nanostats']
 
-# use rule qcreport as create_qcreport with:
-#     input:
-#         nanooutput = rules.nanostats.output.tsv
-#         readcount = rules.cat_all_counts.output.txt
-#     output:
-#         pdf = config['data']['qc']['plotpdf']
-#         tsv = config['data']['qc']['reporttsv']
+use rule qcreport as create_qcreport with:
+    input:
+        nanooutput = rules.nanostats.output.tsv,
+        readcount = rules.cat_all_counts.output.txt
+    params:
+        path = config['params']['path']
+    output:
+        pdf = config['data']['qc']['plotpdf'],
+        globalstats = config['data']['qc']['reporttsv'],
+        reads = config['data']['qc']['readspercentage'],
+        reads2 = config['data']['qc']['readspercentage2']
+
+use rule fastqfilter as filterfastq with:
+    input:
+        align = rules.make_clean_fastq.output.cleanfastqgz
+    params:
+        phred = 7
+    output:
+        align = config['data']['output']['q7fastqgz']

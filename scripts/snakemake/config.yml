@@ -1,6 +1,8 @@
 params:
     duplex_sep: ':'
     umi_sep: ','
+    path: Projects/pantranscriptome/pclavell/ONT_preprocessing/scripts
+
 
 bin:
   blast2bam: /gpfs/projects/bsc83/utils/Blast2Bam/bin/blast2bam
@@ -84,8 +86,11 @@ data:
     read_ids: data/{sample}/qc/{sample}_read_ids.txt
     fq: data/{sample}/{sample}.fastq
     fqgz: data/{sample}/{sample}.fastq.gz
-    plotpfd: data/{sample}/qc/{sample}_qc.pdf
-    reporttsv: data/{sample}/qc/{sample}_qc_report.tsv.gz
+    plotpdf: data/{sample}/qc/{sample}_qc.pdf
+    reporttsv: data/{sample}/qc/{sample}_qualities_lengths.tsv
+    readspercentage: data/{sample}/qc/{sample}_reads_percentage_bystep.tsv
+    readspercentage2: data/{sample}/qc/{sample}_reads_assessed_filtered.tsv
+
     temporalfile: data/{sample}/qc/{sample}_temporalfile.txt
     count_parent_simplex: data/{sample}/qc/{sample}_count_parent_simplex.txt
     readnum1: data/{sample}/qc/{sample}_readnum_track1.txt
@@ -116,7 +121,10 @@ data:
     reads_with_UMI: "9.reads_with_UMI"
     reads_without_UMI: "10.reads_without_UMI"
     reads_umi_non_deduped: "10_2.reads_with_UMI_unmapped"
-    reads_deduped: "11.reads_potentially_deduped"
+    reads_deduped: "11.reads_after_deduped"
     final_filtering: "11_2.reads_to_be_kept"
     final_count: "12.final_count"
     parent_simplex: "11_1.parent_simplex"
+
+  output:
+    q7fastq: data/{sample}/{sample}_Q7filtered.fastq.gz
