@@ -20,3 +20,5 @@ scripts/umitest2_log
 scripts/umitest1_groupout
 scripts/outputtrim.fastq
 scripts/diffout
+scripts/testoutdir
+scripts/porechoptest.fastq.gz
