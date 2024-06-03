@@ -8,28 +8,36 @@
 # 	-v \
 #        data/tenpercentbam/tenpercentbam.fastq > outputtrim.fastq	
 
-module load fastqc
-fastqc \
-	-o testoutdir \
-	-t 112 \
-	-a snakemake/ref/adapters.tsv \
-	-f fastq \
-	porechoptest.fastq.gz
+# module load fastqc
+# fastqc \
+# 	-o testoutdir4 \
+# 	-t 112 \
+# 	-a snakemake/ref/adapters.tsv \
+# 	-f fastq \
+# 	porechoptest.fastq.gz 
 
 
 
 
 # IT RUNS
-# module load anaconda
-# source activate base
-# conda init
-# conda activate /gpfs/projects/bsc83/utils/conda_envs/porechop
+module load anaconda
+source activate base
+conda init
+conda activate /gpfs/projects/bsc83/utils/conda_envs/porechop
 
-# porechop \
-# 	-i data/tenpercentbam/tenpercentbam.fastq.gz \
-# 	-o porechoptest.fastq.gz \
-# 	--threads 112 \
-# 	--verbosity 20	
+porechop \
+	-i data/tenpercentbam/tenpercentbam.fastq.gz \
+	-o porechoptest.fastq.gz \
+	--threads 112 \
+	--verbosity 2	
+
+module load fastqc
+fastqc \
+	-o testoutdir4 \
+	-t 112 \
+	-a snakemake/ref/adapters.tsv \
+	-f fastq \
+	porechoptest.fastq.gz 
 
 # Change this in adapters.py
 # ADAPTERS = [Adapter('SQK-LSK114',

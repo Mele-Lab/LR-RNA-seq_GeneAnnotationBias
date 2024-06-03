@@ -198,3 +198,20 @@ rule trimadaptors:
             --emit-fastq \
             {input.align} | gzip > {output.align}
         """
+
+rule porechop:
+    resources:
+        threads = 112
+    shell:
+        """
+        module load anaconda
+        source activate base
+        conda init
+        conda activate /gpfs/projects/bsc83/utils/conda_envs/porechop
+
+        porechop \
+            -i {input.fastqgz} \
+            -o {output.fastqgz} \
+            --threads {resources.threads} \
+            --no_split
+        """

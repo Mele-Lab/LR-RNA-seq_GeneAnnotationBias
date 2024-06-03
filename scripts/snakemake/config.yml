@@ -127,8 +127,9 @@ data:
     reads_umi_non_deduped: "10_2.reads_with_UMI_unmapped"
     reads_deduped: "11.reads_after_deduped"
     final_filtering: "11_2.reads_to_be_kept"
-    final_count: "12.final_count"
+    final_count: "12.final_count_afterfiltering_trimmedQ7"
     parent_simplex: "11_1.parent_simplex"
 
   output:
-    q7fastqgz: data/{sample}/{sample}_Q7filtered.fastq.gz
+    trimmed: data/{sample}/{sample}_trimmed.fastq.gz
+    q7fastqgz: data/{sample}/{sample}_trimmed_Q7filtered.fastq.gz

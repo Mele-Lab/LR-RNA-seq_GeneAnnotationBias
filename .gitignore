@@ -22,3 +22,7 @@ scripts/outputtrim.fastq
 scripts/diffout
 scripts/testoutdir
 scripts/porechoptest.fastq.gz
+scripts/testoutdir1
+scripts/testoutdir2
+scripts/testoutdir3
+scripts/testoutdir4

@@ -426,6 +426,7 @@ use rule count_text_reads as count_reads_potentially_dedup with:
     output:
         txt = config['data']['qc']['readnum11']
 
+
 # get bam file of
 # 1. UMI deduplicated reads
 # 2. reads that we didn't find UMIs for
@@ -458,12 +459,29 @@ use rule fastqgz_filter as make_clean_fastq with:
         cleanfastq = config['data']['qc']['fq'],
         cleanfastqgz = config['data']['qc']['fqgz']
 
-# Count 12: number of reads that could be potentially deduplicated
+
+# Trim adapters
+use rule porechop as trimadapters with:
+    input:
+        fastqgz = rules.make_clean_fastq.output.cleanfastqgz
+    output:
+        fastqgz = config['data']['output']['trimmed']
+
+# Filter based on phred Q 7 =20% error rate
+use rule fastqfilter as filterfastq with:
+    input:
+        align = rules.trimadapters.output.fastqgz
+    params:
+        phred = 7
+    output:
+        align = config['data']['output']['q7fastqgz']
+
+# Count 12: number of reads after Q filter
 use rule count_fq_gz_reads_from_params as count_final_reads with:
     input:
         mockin = config['data']['qc']['fqgz']
     params:
-        fqgz = rules.make_clean_fastq.output.cleanfastqgz,
+        fqgz = rules.filterfastq.output.align,
         text = config['data']['count']['final_count']
     output:
         txt = config['data']['qc']['readnum12']
@@ -498,7 +516,7 @@ rule cat_all_counts:
 
 use rule pseudonanoplot as nanostats with:
     input:
-        fastq = rules.make_clean_fastq.output.cleanfastqgz
+        fastq = rules.filterfastq.output.align
     output:
         tsv = config['data']['qc']['nanostats']
 
@@ -513,14 +531,6 @@ use rule qcreport as create_qcreport with:
         globalstats = config['data']['qc']['reporttsv'],
         reads = config['data']['qc']['readspercentage'],
         reads2 = config['data']['qc']['readspercentage2']
-
-use rule fastqfilter as filterfastq with:
-    input:
-        align = rules.make_clean_fastq.output.cleanfastqgz
-    params:
-        phred = 7
-    output:
-        align = config['data']['output']['q7fastqgz']
 
 use rule fastqc as fastqcreport with:
     input:

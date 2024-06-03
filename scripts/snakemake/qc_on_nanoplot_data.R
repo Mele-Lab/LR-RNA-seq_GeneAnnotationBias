@@ -146,17 +146,12 @@ b <- ggplot(data, aes(x=lengths, y=quals) ) +
 
 
 # Reads that would be lost with Q10 filter
-percentage_reads_notfiltered <- nrow(data[quals>=10,]) / nrow(data) *100
-reads_notfiltered_raw <- nrow(data[quals>=10,])
-reads_notQ7filtered_raw <- nrow(data[quals>=7,])
-reads_filtered <- nrow(data[quals<10,])
-
-reads_notfiltered <- data.table(matrix(c("Q10 filter", reads_notfiltered_raw), byrow = TRUE, nrow = 1))
+reads_Q10kept <- nrow(data[quals>=10,])
+reads_Q10filtered <- nrow(data[quals<10,])
 
 # Count Reads in each step
-reads <- fread(READCOUNT, header=F)
+newreads <- fread(READCOUNT, header=F)
 # Format data
-newreads <- rbind(reads, reads_notfiltered)
 colnames(newreads) <- c("step", "number")
 newreads$number <- as.integer(newreads$number)
 
@@ -184,16 +179,13 @@ split_won <- after_split-original
 # The reads after the splitting should be equal to the reads with UMI either mapped or unmapped and the reads without UMI
 after_split==reads_UMI_mapped+reads_UMI_unmapped+reads_notUMI
 
-# The missing reads between the final and the after splitting should be equal to those removed bc simplex parent or deduplicated
-after_split-final==parent_simplex+removed_duplicate_reads
+
 
 # Compute interesing stats
-results_rel <- c(-parent_simplex/(after_split-removed_duplicate_reads)*100, +split_won/original*100, -removed_duplicate_reads/reads_UMI_mapped*100, -reads_filtered/final*100)
-
 results <- c(-parent_simplex/(after_split-removed_duplicate_reads), 
              split_won/original, 
              -removed_duplicate_reads/after_split, 
-             -reads_filtered/final)*100
+             -reads_Q10filtered/final)*100
 phenomena <-c("duplex", 
               "new splitted reads", 
               "duplicates removed" ,
@@ -203,14 +195,12 @@ finalstats <- data.frame(results, phenomena)
 
 results2 <- c(removed_duplicate_reads/reads_UMI_mapped,
               reads_UMI_mapped/after_split,
-              final/original,
-              reads_notQ7filtered_raw/original,
-              reads_notfiltered_raw/original)*100
+              nrow(data)/original,
+              reads_Q10kept/original)*100
 phenomena2 <- c("duplication\nrate", 
                 "reads\ndup-\nassessed", 
-                "reads kept\nno Q10\nfiltered",
-                "reads kept\nif Q7\nfiltered",
-                "reads kept\nif Q\nfiltered")
+                ">Q7",
+                ">Q10")
 finalstats2 <- data.frame(results2, phenomena2)
 
 
@@ -236,22 +226,17 @@ d <-ggplot(finalstats2,aes(x=phenomena2, y=results2))+
   guides(fill = "none")+
   ylab("%")+
   xlab("")+
-  scale_y_continuous(expand = c(0.2, 0.2))+
+  scale_y_continuous(expand = c(0.4, 0))+
   geom_text(aes(label=round(results2, digits=2), vjust=-0.5))+
   theme
 # save plots
 multiplot1 <-a+b+plot_layout(nrow=1, heights = c(0.5, 0.5), guides="collect", axis_titles = "collect")
-multiplot2 <-c+d+plot_layout(nrow=1, widths = c(0.7, 0.3), guides="collect")
+multiplot2 <-c+d+plot_layout(nrow=1, widths = c(0.6, 0.4), guides="collect")
 
 multiplot <-multiplot1 / multiplot2+plot_layout(ncol=1, heights = c(0.8, 0.2),tag_level="new")
 
 
 # Save medians in a tsv
-splitted_median_length
-splitted_median_quals
-duplex_median_length
-duplex_median_quals
-
 cbind(duplex_median_length, duplex_median_quals)
 
 duplexmerge <- duplex_median_length[duplex_median_quals, on="duplex"]

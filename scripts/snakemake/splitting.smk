@@ -1,7 +1,8 @@
 rule split_ONT_plus_full_linker:
     resources:
         threads = 112,
-        mem_gb = 32
+        mem_gb = 32,
+        runtime = 300
     shell:
         """
         module load anaconda
@@ -20,7 +21,8 @@ rule split_ONT_plus_full_linker:
 rule split_full_linker:
     resources:
         threads = 112,
-        mem_gb = 32
+        mem_gb = 32,
+        runtime = 300
     shell:
         """
         module load anaconda
@@ -41,7 +43,8 @@ rule split_full_linker:
 
 rule skip_multisplits:
     resources:
-        threads = 112
+        threads = 112,
+        runtime = 300
     shell:
         """
         bash snakemake/skipMultiSplits.sh snakemake {params.outdir} {params.splitdir} {wildcards.sample} {resources.threads} {input.mockinput}
