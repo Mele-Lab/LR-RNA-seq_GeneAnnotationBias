@@ -14,12 +14,6 @@ include: 'smkmod/qc.smk'
 
 configfile: 'snakemake/config.yml'
 config_tsv = 'snakemake/test_data_2.tsv'
-# df = pd.read_csv('test_data.tsv', sep='\t')
-#df = pd.read_csv('snakemake/test_data_2.tsv', sep='\t')
-
-
-# wildcard_constraints:
-#     sample='|'.join([re.escape(x) for x in df['sample'].tolist()]),
 
 
 df = pd.read_csv(config_tsv, sep='\t')
@@ -29,7 +23,7 @@ def get_df_val(df, col, sample):
     assert len(temp.index) == 1
     return temp[col].values[0]
 
-
+# HERE WE CHOOSE THE DESIRED FINAL OUTPUTS
 rule all:
     input:
         expand(config['data']['output']['q7fastqgz'],
@@ -37,8 +31,6 @@ rule all:
         expand(config['data']['qc']['readnum'],
                 sample=df['sample'].tolist()),
         expand(config['data']['qc']['nanostats'],
-                sample=df['sample'].tolist()),
-        expand(config['data']['assess_umi_dedupe']['group'],
                 sample=df['sample'].tolist()),
         expand(config['data']['qc']['plotpdf'],
                 sample=df['sample'].tolist()),
@@ -64,15 +56,6 @@ use rule add_duplex_status as basecall_add_duplex_status with:
     output:
         unbam = config['data']['duplex']['bam']
 
-# Count 1: how many reads do we start with
-use rule count_unbam_reads as count_unbam_duplex_tag with:
-    input:
-        unbam = rules.basecall_add_duplex_status.output.unbam
-    params:
-        text = config['data']['count']['unbam_duplex_tag']
-    output:
-        txt = config['data']['qc']['readnum1']
-
 
 # BAM to fastQ
 use rule bam_to_fastq as unalignedbam_to_fastq with:
@@ -81,15 +64,6 @@ use rule bam_to_fastq as unalignedbam_to_fastq with:
     output:
         fastqgz = config['data']['duplex']['fqgz']
 
-# Count 2: reads after bam2fastq
-use rule count_fq_gz_reads_from_params as count_bam2fastq with:
-    input:
-        mockin = config['data']['duplex']['fqgz']
-    params:
-        fqgz = rules.unalignedbam_to_fastq.output.fastqgz,
-        text = config['data']['count']['fastq_from_bam']
-    output:
-        txt = config['data']['qc']['readnum2']
 
 # Step 1 splitting reads with both ONT adapter and full CapTrap linkers
 use rule split_ONT_plus_full_linker as first_split with:
@@ -101,17 +75,6 @@ use rule split_ONT_plus_full_linker as first_split with:
     output:
         mockout = config['data']['split']['mockout1']
 
-# Count 3: reads after split1
-use rule count_fq_gz_reads_from_params as count_fastgz_split1 with:
-    input:
-        mock = rules.first_split.output.mockout
-    params:
-        fqgz = config['data']['split']['fastqgz1'],
-        text = config['data']['count']['fastqgz_split1']
-    output:
-        txt = config['data']['qc']['readnum3']
-
-
 
 # Step 2 splitting reads with full CapTrap linkers
 use rule split_full_linker as second_split with:
@@ -122,16 +85,6 @@ use rule split_full_linker as second_split with:
         outdir = config['data']['split']['outdir2']
     output:
         mockout = config['data']['split']['mockout2']
-
-# Count 4: reads after split2
-use rule count_fq_gz_reads_from_params as count_fastgz_split2 with:
-    input:
-        mock = rules.second_split.output.mockout
-    params:
-        fqgz = config['data']['split']['fastqgz2'],
-        text = config['data']['count']['fastqgz_split2']
-    output:
-        txt = config['data']['qc']['readnum4']
 
 
 # Step 3 remove multisplits
@@ -145,17 +98,6 @@ use rule skip_multisplits as remove_multisplits with:
         mockout = config['data']['split']['mockout3'],
         fq = config['data']['split']['fastq_split']
 
-
-# Count 5: reads after removemultisplit
-use rule count_fq_gz_reads_from_params as count_fastgz_split3 with:
-    input:
-        mockin = config['data']['split']['mockout3']
-    params:
-        fqgz = rules.remove_multisplits.output.fq,
-        text = config['data']['count']['fastqgz_split3']
-    output:
-        txt = config['data']['qc']['readnum5']
-
 # get the read IDs of all reads
 use rule fastqgz_get_read_ids as get_all_read_ids with:
     input:
@@ -163,7 +105,9 @@ use rule fastqgz_get_read_ids as get_all_read_ids with:
     output:
         txt = config['data']['duplex']['read_ids']
 
-# START OF DEDUPLICATION
+############ START OF DEDUPLICATION ##################################
+
+# convert to fasta so later we can blast
 # corr. to 00_fastq2fasta.sh
 use rule fq_to_fa as raw_fq_to_fa with:
     input:
@@ -172,15 +116,8 @@ use rule fq_to_fa as raw_fq_to_fa with:
     output:
         fa = config['data']['duplex']['fa']
 
-# Count 6: reads after fastq to fasta
-use rule count_fa_reads as count_fasta_reads with:
-    input:
-        fa = rules.raw_fq_to_fa.output.fa
-    params:
-        text = config['data']['count']['fastafromfastq']
-    output:
-        txt = config['data']['qc']['readnum6']
 
+# create blast database with 5'linker sequence
 # corr. to 01_blast/00_create_db.sh
 use rule make_blast_db as blast_db with:
     input:
@@ -192,6 +129,7 @@ use rule make_blast_db as blast_db with:
         nin = config['data']['blast']['nin'],
         nsq = config['data']['blast']['nsq']
 
+# blast our reads to the 5'linker database
 # corr to 01_blast/01_blast.sh
 use rule blast as blast_seq with:
     input:
@@ -202,6 +140,8 @@ use rule blast as blast_seq with:
     output:
         xml = config['data']['blast']['xml']
 
+# as the previous step generates an xml (so it can be converted to sam that is not corrupt)
+#   we convert the xml to sam
 # corr to 01_blast/02_xml2sam
 use rule blast2bam as blast2bam_seq with:
     input:
@@ -212,24 +152,6 @@ use rule blast2bam as blast2bam_seq with:
         blast2bam = config['bin']['blast2bam']
     output:
         sam = config['data']['blast']['sam']
-
-# Count 7: number of alignments to 5linker
-use rule count_sam_mappings as count_total_5linker_mappings with:
-    input:
-        sam = rules.blast2bam_seq.output.sam
-    params:
-        text = config['data']['count']['5linkermappings']
-    output:
-        txt = config['data']['qc']['readnum7']
-
-# Count 8: number of primary alignments
-use rule count_reads_with_primary_alignment as count_5linker_primary_alignments with:
-    input:
-        sam = rules.blast2bam_seq.output.sam
-    params:
-        text = config['data']['count']['5linkerprimarymappings']
-    output:
-        txt = config['data']['qc']['readnum8']
 
 # filter out unmapped reads
 use rule sam_filt_unmapped as filt_sam_blast with:
@@ -245,24 +167,28 @@ use rule sam_filt_for_primary as filt_sam_blast_2 with:
     output:
         align = config['data']['blast']['sam_filt_2']
 
+# convert sam to bam
 use rule sam_to_bam as sam_to_bam_blast with:
     input:
         align = rules.filt_sam_blast_2.output.align
     output:
         align = config['data']['blast']['bam']
 
+# sort the bam
 use rule bam_sort as bam_sort_blast with:
     input:
         align = rules.sam_to_bam_blast.output.align
     output:
         align = config['data']['blast']['bam_sort']
 
+# index the bam
 use rule bam_index as bam_index_blast with:
     input:
         align = rules.bam_sort_blast.output.align
     output:
         align = config['data']['blast']['bam_ind']
 
+# extract the UMIs
 # corr. to 02_extract_UMI/01_extract_UMI.sh
 use rule extract_umi as extract_umi_blast with:
     input:
@@ -274,23 +200,15 @@ use rule extract_umi as extract_umi_blast with:
         umis = config['data']['umi']['umis'],
         fa = config['data']['umi']['fa']
 
+# get the readID of reads with UMI
 use rule fasta_get_read_ids_rm_umi as get_umi_read_ids with:
     input:
         fa = rules.extract_umi_blast.output.fa
     output:
         txt = config['data']['umi']['read_ids']
 
-# Count 9: number of reads with UMI
-use rule count_text_reads as count_reads_with_UMI with:
-    input:
-        txt = rules.get_umi_read_ids.output.txt
-    params:
-        text = config['data']['count']['reads_with_UMI']
-    output:
-        txt = config['data']['qc']['readnum9']
-
 # get the read ids of reads that we didn't find UMIs for
-# by subtracting the reads with a UMI from the list of all reads
+#   by subtracting the reads with a UMI from the list of all reads
 use rule read_id_diff as get_non_umi_read_ids with:
     input:
         a = rules.get_all_read_ids.output.txt,
@@ -298,17 +216,8 @@ use rule read_id_diff as get_non_umi_read_ids with:
     output:
         txt = config['data']['umi']['no_umi_read_ids']
 
-# Count 10: number of reads without UMI
-use rule count_text_reads as count_reads_without_UMI with:
-    input:
-        txt = rules.get_non_umi_read_ids.output.txt
-    params:
-        text = config['data']['count']['reads_without_UMI']
-    output:
-        txt = config['data']['qc']['readnum10']
 
-# TODO this is where the duplex read recovery will happen
-
+# create an index for minimap mapping
 rule minimap_index:
     resources:
         threads = 112
@@ -324,7 +233,7 @@ rule minimap_index:
 
         """
 
-
+# map reads with UMI to the transcriptome whose transcriptID have been simplified to include only ENSEMBLcode.version
 # corr. to 03_genome_mapping/01_minimap.sh
 use rule minimap as map with:
     input:
@@ -334,6 +243,7 @@ use rule minimap as map with:
     output:
         sam = config['data']['minimap']['sam']
 
+# filter unmapped and supplementary alignemnts
 # rules below corr. to 03_genome_mapping/02_filter_and_transform_results
 use rule align_filt_unmapped_supp as filt_sam_map with:
     input:
@@ -341,18 +251,21 @@ use rule align_filt_unmapped_supp as filt_sam_map with:
     output:
         align = config['data']['minimap']['sam_filt']
 
+# convert sam to bam
 use rule sam_to_bam as sam_to_bam_map with:
     input:
         align = rules.filt_sam_map.output.align
     output:
         align = config['data']['minimap']['bam']
 
+# sort the bam
 use rule bam_sort as bam_sort_map with:
     input:
         align = rules.sam_to_bam_map.output.align
     output:
         align = config['data']['minimap']['bam_sort']
 
+# index the bam
 use rule bam_index as bam_index_map with:
     input:
         align = rules.bam_sort_map.output.align
@@ -367,17 +280,7 @@ use rule bam_get_unmapped_read_ids as get_bam_get_unmapped_read_ids with:
     output:
         txt = config['data']['minimap']['read_ids']
 
-
-# Count 10_2 reads with UMI but unmapped
-
-use rule count_text_reads as count_reads_withUMI_non_deduped with:
-    input:
-        txt = rules.get_bam_get_unmapped_read_ids.output.txt
-    params:
-        text = config['data']['count']['reads_umi_non_deduped']
-    output:
-        txt = config['data']['qc']['readnum10_2']
-
+# convert gtf to a gene to transcripts correspondence map
 # rules below correspond to 05_deduplication/01_deduplication.sh
 use rule gtf_to_gt_map as get_gt_map with:
     input:
@@ -385,6 +288,7 @@ use rule gtf_to_gt_map as get_gt_map with:
     output:
         gt_map = config['ref']['gt_map']
 
+# umi deduplication of reads aligned to the same gene and with concordant UMI
 use rule dedupe_umi as umi_dedupe_reads with:
     input:
         align = rules.bam_sort_map.output.align,
@@ -398,17 +302,6 @@ use rule dedupe_umi as umi_dedupe_reads with:
         align = config['data']['umi_dedupe']['bam'],
         log = config['data']['umi_dedupe']['log']
 
-# use rule assess_dedupe_umi as dedupe_assessment with:
-#     input:
-#         align = rules.bam_sort_map.output.align,
-#         mock = config['data']['minimap']['bam_ind'],
-#         gt_map = config['ref']['gt_map']
-#     params:
-#         sep = config['params']['umi_sep'],
-#         edit_dist = 2
-#     output:
-#         log = config['data']['assess_umi_dedupe']['log'],
-#         group = config['data']['assess_umi_dedupe']['group']
 
 # get read IDs of reads that we UMI deduplicate
 use rule bam_get_read_ids as get_umi_dedupe_read_ids with:
@@ -417,19 +310,12 @@ use rule bam_get_read_ids as get_umi_dedupe_read_ids with:
     output:
         txt = config['data']['umi_dedupe']['read_ids']
 
-# Count 11: number of reads that could be potentially deduplicated
-use rule count_text_reads as count_reads_potentially_dedup with:
-    input:
-        txt = rules.get_umi_dedupe_read_ids.output.txt
-    params:
-        text = config['data']['count']['reads_deduped']
-    output:
-        txt = config['data']['qc']['readnum11']
 
 
-# get bam file of
+
+# identify reads to create a new fastq containing:
 # 1. UMI deduplicated reads
-# 2. reads that we didn't find UMIs for
+# 2. reads that we didn't find UMIs for or were unmapped to transcriptome
 use rule read_id_union as get_qc_reads with:
     input:
         a = rules.get_non_umi_read_ids.output.txt,
@@ -442,14 +328,9 @@ use rule read_id_union as get_qc_reads with:
         txt = config['data']['qc']['read_ids'],
         count_parent_simplex = config['data']['qc']['count_parent_simplex']
 
-# Count 11.2
-use rule count_text_reads as get_reads_to_be_selected with:
-    input:
-        txt = rules.get_qc_reads.output.txt
-    params:
-        text = config['data']['count']['final_filtering']
-    output:
-        txt = config['data']['qc']['readnum11_2']
+#create a new fastq containing:
+# 1. UMI deduplicated reads
+# 2. reads that we didn't find UMIs for or were unmapped to transcriptome
 
 use rule fastqgz_filter as make_clean_fastq with:
     input:
@@ -476,15 +357,13 @@ use rule fastqfilter as filterfastq with:
     output:
         align = config['data']['output']['q7fastqgz']
 
-# Count 12: number of reads after Q filter
-use rule count_fq_gz_reads_from_params as count_final_reads with:
+# obtaing length and average quality of reads
+use rule pseudonanoplot as nanostats with:
     input:
-        mockin = config['data']['qc']['fqgz']
-    params:
-        fqgz = rules.filterfastq.output.align,
-        text = config['data']['count']['final_count']
+        fastq = rules.filterfastq.output.align
     output:
-        txt = config['data']['qc']['readnum12']
+        tsv = config['data']['qc']['nanostats']
+
 
 # Count final: concatenate all files
 rule cat_all_counts:
@@ -514,12 +393,7 @@ rule cat_all_counts:
         {input.j} {input.z} {input.k} {input.l} {input.m} {input.n}> {output.txt}
         """
 
-use rule pseudonanoplot as nanostats with:
-    input:
-        fastq = rules.filterfastq.output.align
-    output:
-        tsv = config['data']['qc']['nanostats']
-
+# create custom QC report with info like length and Q distributions
 use rule qcreport as create_qcreport with:
     input:
         nanooutput = rules.nanostats.output.tsv,
@@ -532,6 +406,7 @@ use rule qcreport as create_qcreport with:
         reads = config['data']['qc']['readspercentage'],
         reads2 = config['data']['qc']['readspercentage2']
 
+# create fastqc report
 use rule fastqc as fastqcreport with:
     input:
         fastq = rules.filterfastq.output.align
@@ -540,3 +415,130 @@ use rule fastqc as fastqcreport with:
         outdir = config['data']['qc']['fastqcreportdir']
     output:
         html = config['data']['qc']['fastqcreport']
+
+
+
+
+########## COUNTING #################################################
+
+# Count 1: how many reads do we start with
+use rule count_unbam_reads as count_unbam_duplex_tag with:
+    input:
+        unbam = rules.basecall_add_duplex_status.output.unbam
+    params:
+        text = config['data']['count']['unbam_duplex_tag']
+    output:
+        txt = config['data']['qc']['readnum1']
+# Count 2: reads after bam2fastq
+use rule count_fq_gz_reads_from_params as count_bam2fastq with:
+    input:
+        mockin = config['data']['duplex']['fqgz']
+    params:
+        fqgz = rules.unalignedbam_to_fastq.output.fastqgz,
+        text = config['data']['count']['fastq_from_bam']
+    output:
+        txt = config['data']['qc']['readnum2']
+# Count 3: reads after split1
+use rule count_fq_gz_reads_from_params as count_fastgz_split1 with:
+    input:
+        mock = rules.first_split.output.mockout
+    params:
+        fqgz = config['data']['split']['fastqgz1'],
+        text = config['data']['count']['fastqgz_split1']
+    output:
+        txt = config['data']['qc']['readnum3']
+# Count 4: reads after split2
+use rule count_fq_gz_reads_from_params as count_fastgz_split2 with:
+    input:
+        mock = rules.second_split.output.mockout
+    params:
+        fqgz = config['data']['split']['fastqgz2'],
+        text = config['data']['count']['fastqgz_split2']
+    output:
+        txt = config['data']['qc']['readnum4']
+# Count 5: reads after removemultisplit
+use rule count_fq_gz_reads_from_params as count_fastgz_split3 with:
+    input:
+        mockin = config['data']['split']['mockout3']
+    params:
+        fqgz = rules.remove_multisplits.output.fq,
+        text = config['data']['count']['fastqgz_split3']
+    output:
+        txt = config['data']['qc']['readnum5']
+# Count 6: reads after fastq to fasta
+use rule count_fa_reads as count_fasta_reads with:
+    input:
+        fa = rules.raw_fq_to_fa.output.fa
+    params:
+        text = config['data']['count']['fastafromfastq']
+    output:
+        txt = config['data']['qc']['readnum6']
+# Count 7: number of alignments to 5linker
+use rule count_sam_mappings as count_total_5linker_mappings with:
+    input:
+        sam = rules.blast2bam_seq.output.sam
+    params:
+        text = config['data']['count']['5linkermappings']
+    output:
+        txt = config['data']['qc']['readnum7']
+
+# Count 8: number of primary alignments
+use rule count_reads_with_primary_alignment as count_5linker_primary_alignments with:
+    input:
+        sam = rules.blast2bam_seq.output.sam
+    params:
+        text = config['data']['count']['5linkerprimarymappings']
+    output:
+        txt = config['data']['qc']['readnum8']
+
+# Count 9: number of reads with UMI
+use rule count_text_reads as count_reads_with_UMI with:
+    input:
+        txt = rules.get_umi_read_ids.output.txt
+    params:
+        text = config['data']['count']['reads_with_UMI']
+    output:
+        txt = config['data']['qc']['readnum9']
+# Count 10: number of reads without UMI
+use rule count_text_reads as count_reads_without_UMI with:
+    input:
+        txt = rules.get_non_umi_read_ids.output.txt
+    params:
+        text = config['data']['count']['reads_without_UMI']
+    output:
+        txt = config['data']['qc']['readnum10']
+# Count 10_2 reads with UMI but unmapped
+
+use rule count_text_reads as count_reads_withUMI_non_deduped with:
+    input:
+        txt = rules.get_bam_get_unmapped_read_ids.output.txt
+    params:
+        text = config['data']['count']['reads_umi_non_deduped']
+    output:
+        txt = config['data']['qc']['readnum10_2']
+# Count 11: number of reads that could be potentially deduplicated
+use rule count_text_reads as count_reads_potentially_dedup with:
+    input:
+        txt = rules.get_umi_dedupe_read_ids.output.txt
+    params:
+        text = config['data']['count']['reads_deduped']
+    output:
+        txt = config['data']['qc']['readnum11']
+
+# Count 11.2
+use rule count_text_reads as get_reads_to_be_selected with:
+    input:
+        txt = rules.get_qc_reads.output.txt
+    params:
+        text = config['data']['count']['final_filtering']
+    output:
+        txt = config['data']['qc']['readnum11_2']
+# Count 12: number of reads after Q filter
+use rule count_fq_gz_reads_from_params as count_final_reads with:
+    input:
+        mockin = config['data']['qc']['fqgz']
+    params:
+        fqgz = rules.filterfastq.output.align,
+        text = config['data']['count']['final_count']
+    output:
+        txt = config['data']['qc']['readnum12']

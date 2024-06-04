@@ -3,8 +3,9 @@ library(data.table)
 pre <- fread("/home/pclavell/mounts/mn5/Projects/pantranscriptome/pclavell/ONT_preprocessing/scripts/softclipping_pre.txt") 
 post <- fread("/home/pclavell/mounts/mn5/Projects/pantranscriptome/pclavell/ONT_preprocessing/scripts/softclipping_post.txt") 
 post_split <- fread("/home/pclavell/mounts/mn5/Projects/pantranscriptome/pclavell/ONT_preprocessing/scripts/softclipping_post_split.txt") 
+post_split_params <- fread("/home/pclavell/mounts/mn5/Projects/pantranscriptome/pclavell/ONT_preprocessing/scripts/softclipping_post_split_params.txt") 
 
-df <- data.frame(softclippedbases=c(pre$V1,post$V1, post_split$V1), Group=rep(c("pre","post", "post_split"), times=c(length(pre$V1), length(post$V1), length(post_split$V1))))
+df <- data.frame(softclippedbases=c(pre$V1,post$V1, post_split$V1, post_split_params$V1), Group=rep(c("pre","post", "post_split", "post_split_params"), times=c(length(pre$V1), length(post$V1), length(post_split$V1), length(post_split_params$V1))))
 
 
 theme <- theme_minimal() + theme(axis.ticks = element_line(linewidth = 0.2, color = "black"), axis.text = element_text(size = 11, color="black"),
@@ -17,5 +18,5 @@ theme <- theme_minimal() + theme(axis.ticks = element_line(linewidth = 0.2, colo
 
 ggplot(df,aes(y=softclippedbases, fill=Group, x=Group))+
   geom_boxplot(outliers=F)+
-  scale_x_discrete(limits=c("pre", "post", "post_split"))+
+  scale_x_discrete(limits=c("pre", "post", "post_split", "post_split_params"))+
   theme

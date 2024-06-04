@@ -7,7 +7,7 @@ import os
 
 os.getcwd()
 
-sam_path="/gpfs/projects/bsc83/Projects/pantranscriptome/pclavell/ONT_preprocessing/scripts/minimap_output_postporechop_split.sam"
+sam_path="/gpfs/projects/bsc83/Projects/pantranscriptome/pclavell/ONT_preprocessing/scripts/minimap_output_postporechop_split_params.sam"
 import pysam
 samfile = pysam.AlignmentFile(sam_path, "r")
 
@@ -19,4 +19,4 @@ for read in samfile:
         if i[0]==4:
             softclipping.append(i[1])
 
-np.savetxt('/gpfs/projects/bsc83/Projects/pantranscriptome/pclavell/ONT_preprocessing/scripts/softclipping_post_split.txt', softclipping, fmt='%d')
+np.savetxt('/gpfs/projects/bsc83/Projects/pantranscriptome/pclavell/ONT_preprocessing/scripts/softclipping_post_split_params.txt', softclipping, fmt='%d')
