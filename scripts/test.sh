@@ -19,7 +19,7 @@
 
 
 
-# IT RUNS
+# # IT RUNS
 module load anaconda
 source activate base
 conda init
@@ -29,15 +29,33 @@ porechop \
 	-i data/tenpercentbam/tenpercentbam.fastq.gz \
 	-o porechoptest.fastq.gz \
 	--threads 112 \
-	--verbosity 2	
+	--verbosity 2 \
+	--min_split_read_size 400 \
+	--extra_middle_trim_good_side 2 \
+	--extra_middle_trim_bad_side 5
 
-module load fastqc
-fastqc \
-	-o testoutdir4 \
+
+
+module load minimap2
+minimap2 \
+	-ax splice \
+	--junc-bed /gpfs/projects/bsc83/MN4/bsc83/Data/gene_annotation/gencode/release_44/modified/gencode.v44.chr_patch_hapl_scaff.annotation_transcriptlevel.bed \
+	--MD \
 	-t 112 \
-	-a snakemake/ref/adapters.tsv \
-	-f fastq \
-	porechoptest.fastq.gz 
+	-o minimap_output_postporechop_split.bam \
+	/gpfs/projects/bsc83/Data/gene_annotations/gencode/v44/modified/gencode.v44.transcripts_simpleID.fa \
+	porechoptest.fastq.gz
+
+
+
+# module load fastqc
+# fastqc \
+# 	-o testoutdiroriginalfastq \
+# 	-t 112 \
+# 	-a snakemake/ref/adapters.tsv \
+# 	-f fastq \
+# 	data/tenpercentbam/duplex/tenpercentbam/tenpercentbam.fastq.gz
+ 
 
 # Change this in adapters.py
 # ADAPTERS = [Adapter('SQK-LSK114',

@@ -25,4 +25,7 @@ scripts/porechoptest.fastq.gz
 scripts/testoutdir1
 scripts/testoutdir2
 scripts/testoutdir3
-scripts/testoutdir4
+scripts/testoutdir*
+scripts/snakemake/snakemake_dev.ipynb
+scripts/minimap_output*
+scripts/softclipping*

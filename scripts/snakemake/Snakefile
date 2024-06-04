@@ -5,12 +5,12 @@ sys.path.append(p)
 
 from utils import *
 
-include: 'blast.smk'
-include: 'samtools.smk'
-include: 'formatting.smk'
-include: 'minimap.smk'
-include: 'splitting.smk'
-include: 'qc.smk'
+include: 'smkmod/blast.smk'
+include: 'smkmod/samtools.smk'
+include: 'smkmod/formatting.smk'
+include: 'smkmod/minimap.smk'
+include: 'smkmod/splitting.smk'
+include: 'smkmod/qc.smk'
 
 configfile: 'snakemake/config.yml'
 config_tsv = 'snakemake/test_data_2.tsv'
@@ -398,17 +398,17 @@ use rule dedupe_umi as umi_dedupe_reads with:
         align = config['data']['umi_dedupe']['bam'],
         log = config['data']['umi_dedupe']['log']
 
-use rule assess_dedupe_umi as dedupe_assessment with:
-    input:
-        align = rules.bam_sort_map.output.align,
-        mock = config['data']['minimap']['bam_ind'],
-        gt_map = config['ref']['gt_map']
-    params:
-        sep = config['params']['umi_sep'],
-        edit_dist = 2
-    output:
-        log = config['data']['assess_umi_dedupe']['log'],
-        group = config['data']['assess_umi_dedupe']['group']
+# use rule assess_dedupe_umi as dedupe_assessment with:
+#     input:
+#         align = rules.bam_sort_map.output.align,
+#         mock = config['data']['minimap']['bam_ind'],
+#         gt_map = config['ref']['gt_map']
+#     params:
+#         sep = config['params']['umi_sep'],
+#         edit_dist = 2
+#     output:
+#         log = config['data']['assess_umi_dedupe']['log'],
+#         group = config['data']['assess_umi_dedupe']['group']
 
 # get read IDs of reads that we UMI deduplicate
 use rule bam_get_read_ids as get_umi_dedupe_read_ids with:
