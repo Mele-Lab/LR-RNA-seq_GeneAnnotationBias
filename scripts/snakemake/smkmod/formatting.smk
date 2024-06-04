@@ -213,5 +213,7 @@ rule porechop:
             -i {input.fastqgz} \
             -o {output.fastqgz} \
             --threads {resources.threads} \
-            --no_split
+            --min_split_read_size 200 \
+            --extra_middle_trim_good_side 2 \
+            --extra_middle_trim_bad_side 2
         """

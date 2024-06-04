@@ -4,12 +4,6 @@ pre <- fread("/home/pclavell/mounts/mn5/Projects/pantranscriptome/pclavell/ONT_p
 post <- fread("/home/pclavell/mounts/mn5/Projects/pantranscriptome/pclavell/ONT_preprocessing/scripts/softclipping_post.txt") 
 post_split <- fread("/home/pclavell/mounts/mn5/Projects/pantranscriptome/pclavell/ONT_preprocessing/scripts/softclipping_post_split.txt") 
 
-boxplot(c("pre"=pre$V1, "post"=post$V1, "split"=post_split$V1), outline = F)
-
-summary(pre)
-summary(post)
-summary(post_split)
-
 df <- data.frame(softclippedbases=c(pre$V1,post$V1, post_split$V1), Group=rep(c("pre","post", "post_split"), times=c(length(pre$V1), length(post$V1), length(post_split$V1))))
 
 

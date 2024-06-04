@@ -13,4 +13,3 @@ snakemake \
   --time=2:00:00" \
   -n \
   | dot -Tpng > "workflow_dag.png"
-
