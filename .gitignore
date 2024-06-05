@@ -31,3 +31,4 @@ scripts/minimap_output*
 scripts/softclipping*
 slurm_scripts/pipe.sh
 slurm*
+scripts/snakemake/.snakemake/
