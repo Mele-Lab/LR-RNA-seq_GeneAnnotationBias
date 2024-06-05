@@ -85,8 +85,8 @@ data:
   qc:
     nanostats: data/{sample}/qc/{sample}_nanostats.tsv.gz
     read_ids: data/{sample}/qc/{sample}_read_ids.txt
-    fq: data/{sample}/{sample}.fastq
-    fqgz: data/{sample}/{sample}.fastq.gz
+    fq: data/{sample}/final/{sample}.fastq
+    fqgz: data/{sample}/final/{sample}.fastq.gz
     plotpdf: data/{sample}/qc/{sample}_qc.pdf
     reporttsv: data/{sample}/qc/{sample}_qualities_lengths.tsv
     readspercentage: data/{sample}/qc/{sample}_reads_percentage_bystep.tsv
@@ -97,21 +97,21 @@ data:
 
     temporalfile: data/{sample}/qc/{sample}_temporalfile.txt
     count_parent_simplex: data/{sample}/qc/{sample}_count_parent_simplex.txt
-    readnum1: data/{sample}/qc/{sample}_readnum_track1.txt
-    readnum2: data/{sample}/qc/{sample}_readnum_track2.txt
-    readnum3: data/{sample}/qc/{sample}_readnum_track3.txt
-    readnum4: data/{sample}/qc/{sample}_readnum_track4.txt
-    readnum5: data/{sample}/qc/{sample}_readnum_track5.txt
-    readnum6: data/{sample}/qc/{sample}_readnum_track6.txt
-    readnum7: data/{sample}/qc/{sample}_readnum_track7.txt
-    readnum8: data/{sample}/qc/{sample}_readnum_track8.txt
-    readnum9: data/{sample}/qc/{sample}_readnum_track9.txt
-    readnum10: data/{sample}/qc/{sample}_readnum_track10.txt
-    readnum10_2: data/{sample}/qc/{sample}_readnum_track10_2.txt
-    readnum11: data/{sample}/qc/{sample}_readnum_track11.txt
-    readnum11_2: data/{sample}/qc/{sample}_readnum_track11_2.txt
-    readnum12: data/{sample}/qc/{sample}_readnum_track12.txt
-    readnum: data/{sample}/qc/{sample}_readnum_track.txt
+    readnum1: data/{sample}/qc/count/{sample}_readnum_track1.txt
+    readnum2: data/{sample}/qc/count/{sample}_readnum_track2.txt
+    readnum3: data/{sample}/qc/count/{sample}_readnum_track3.txt
+    readnum4: data/{sample}/qc/count/{sample}_readnum_track4.txt
+    readnum5: data/{sample}/qc/count/{sample}_readnum_track5.txt
+    readnum6: data/{sample}/qc/count/{sample}_readnum_track6.txt
+    readnum7: data/{sample}/qc/count/{sample}_readnum_track7.txt
+    readnum8: data/{sample}/qc/count/{sample}_readnum_track8.txt
+    readnum9: data/{sample}/qc/count/{sample}_readnum_track9.txt
+    readnum10: data/{sample}/qc/count/{sample}_readnum_track10.txt
+    readnum10_2: data/{sample}/qc/count/{sample}_readnum_track10_2.txt
+    readnum11: data/{sample}/qc/count/{sample}_readnum_track11.txt
+    readnum11_2: data/{sample}/qc/count/{sample}_readnum_track11_2.txt
+    readnum12: data/{sample}/qc/count/{sample}_readnum_track12.txt
+    readnum: data/{sample}/qc/count/{sample}_readnum_track.txt
 
   count:
     unbam_duplex_tag: "1.bam_with_duplex_status"
@@ -131,5 +131,5 @@ data:
     parent_simplex: "11_1.parent_simplex"
 
   output:
-    trimmed: data/{sample}/{sample}_trimmed.fastq.gz
-    q7fastqgz: data/{sample}/{sample}_trimmed_Q7filtered.fastq.gz
+    trimmed: data/{sample}/final/{sample}_trimmed.fastq.gz
+    q7fastqgz: data/{sample}/{sample}_preprocessed.fastq.gz

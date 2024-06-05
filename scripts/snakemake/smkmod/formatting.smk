@@ -40,17 +40,7 @@ rule fastqgz_get_read_ids:
         zcat {input.fq} | awk 'NR % 4 == 1 {{print substr($1, 2)}}' > {output.txt}
         """
 
-# rule read_id_union:
-#     resources:
-#         threads = 1,
-#         mem_gb = 4
-#     run:
-#         a = set(pd.read_csv(input.a, header=None)[0].tolist())
-#         b = set(pd.read_csv(input.b, header=None)[0].tolist())
-#         union = list(a|b)
-#         df = pd.DataFrame()
-#         df['read_id'] = union
-#         df.to_csv(output.txt, header=False)
+
 
 # this rule ALSO REMOVES SIMPLEX
 rule read_id_union:
@@ -62,6 +52,7 @@ rule read_id_union:
         cat {input.a} {input.b} {input.c} | sort | uniq > {params.temporalfile}
         cat {params.temporalfile}| grep -v ":-1"> {output.txt}
         echo "{params.text}" $(cat {params.temporalfile} | grep ":-1" | wc -l) > {output.count_parent_simplex}
+        rm {params.temporalfile}
         """
 
 # rule read_id_diff:
