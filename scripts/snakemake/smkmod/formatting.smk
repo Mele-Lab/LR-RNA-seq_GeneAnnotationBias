@@ -208,3 +208,32 @@ rule porechop:
             --extra_middle_trim_good_side 2 \
             --extra_middle_trim_bad_side 2
         """
+
+# Content of adapters.py from porechop
+# ADAPTERS = [Adapter('SQK-LSK114_HEAD',
+#              start_sequence=('HEAD_ADAPTER', 'AATGTACTTCGTTCAGTTACGTATTGCT'),
+#              end_sequence=('HEAD_ADAPTERrv', 'AGCAATACGTAACTGAACGAAGTACATT')),
+#             Adapter('SQK-LSK114_TAIL',
+#              start_sequence=('TAIL_ADAPTER', 'GCAATACGTAACTGAACGAAGT'),
+#              end_sequence=('TAIL_ADAPTERrv', 'ACTTCGTTCAGTTACGTATTGC')),
+#             Adapter('FwCapTrapPrimer',
+#              start_sequence=('FW_CAP_PRIMER', 'TCGTCGGCAGCGTC'),
+#              end_sequence=('FW_CAP_PRIMERrv', 'GACGCTGCCGACGA')),
+#             Adapter('RvCapTrapPrimer',
+#              start_sequence=('RV_CAP_PRIMER', 'GTCTCGTGGGCTCGG'),
+#              end_sequence=('RV_CAP_PRIMERrv', 'CCGAGCCCACGAGAC')),
+#             Adapter('FIVE_LINKER_1',
+#              start_sequence=('FIVE_LINKER_1', 'AGATGTGTATAAGAGACAG'),
+#              end_sequence=('FIVE_LINKER_1rv', 'CTGTCTCTTATACACATCT')),
+#             Adapter('FIVE_LINKER_2',
+#              start_sequence=('FIVE_LINKER_2', 'GTGGTATCAACGCAGAGTAC'),
+#              end_sequence=('FIVE_LINKER_2rv', 'GTACTCTGCGTTGATACCAC')),
+#             Adapter('THREE_LINKER',
+#              start_sequence=('THREE_LINKER', 'AGATGTGTATAAGAGACAGCGATGCTTTTTTTTTTTTTTTT'),
+#              end_sequence=('THREE_LINKERrv', 'AAAAAAAAAAAAAAAAGCATCGCTGTCTCTTATACACATCT')),
+#             Adapter('FULL_FIVE_LINKER_1',
+#              start_sequence=('FULL_FIVE_LINKER_1', 'TCGTCGGCAGCGTCAGATGTGTATAAGAGACAG'),
+#              end_sequence=('FULL_FIVE_LINKER_1rv', 'CTGTCTCTTATACACATCTGACGCTGCCGACGA')),
+#             Adapter('FULL_THREE_LINKER',
+#              start_sequence=('FULL_THREE_LINKER', 'GTCTCGTGGGCTCGGAGATGTGTATAAGAGACAGCGATGCTTTTTTTTTTTTTTTT'),
+#              end_sequence=('FULL_THREE_LINKERrv', 'AAAAAAAAAAAAAAAAGCATCGCTGTCTCTTATACACATCTCCGAGCCCACGAGAC'))]

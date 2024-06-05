@@ -15,7 +15,7 @@ rule sam_filt_unmapped:
     shell:
         """
         module load samtools
-        samtools view -F 4 -@ {resources.threads} {input.align} > {output.align}
+        samtools view -h -F 4 -@ {resources.threads} {input.align} > {output.align}
         """
 
 rule bam_get_read_ids:
@@ -55,7 +55,7 @@ rule sam_filt_for_primary:
     shell:
         """
         module load samtools
-        samtools view -F 2048 -F 256 -@ {resources.threads} {input.align} > {output.align}
+        samtools view -h -F 2048 -F 256 -@ {resources.threads} {input.align} > {output.align}
         """
 
 rule bam_to_fastq:

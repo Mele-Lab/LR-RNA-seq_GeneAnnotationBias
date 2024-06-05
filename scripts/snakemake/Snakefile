@@ -110,8 +110,7 @@ use rule fastqgz_get_read_ids as get_all_read_ids with:
 # corr. to 00_fastq2fasta.sh
 use rule fq_to_fa as raw_fq_to_fa with:
     input:
-        fq = config['data']['split']['fastq_split'],
-        mockin= rules.remove_multisplits.output.mockout
+        fq = config['data']['split']['fastq_split']
     output:
         fa = temporary(config['data']['duplex']['fa'])
 
@@ -191,8 +190,8 @@ use rule bam_index as bam_index_blast with:
 # corr. to 02_extract_UMI/01_extract_UMI.sh
 use rule extract_umi as extract_umi_blast with:
     input:
-        align = rules.filt_sam_blast.output.align
-        index = rules.bam_index_blast_output.align
+        align = rules.filt_sam_blast.output.align,
+        index = rules.bam_index_blast.output.align
     params:
         opref = config['data']['umi']['umis'].split('_extracted_UMI.tsv')[0],
         sep = config['params']['umi_sep']
@@ -459,7 +458,7 @@ use rule count_fq_gz_reads_from_params as count_fastgz_split2 with:
 # Count 5: reads after removemultisplit
 use rule count_fq_gz_reads_from_params as count_fastgz_split3 with:
     input:
-        mockin = config['data']['split']['mockout3']
+        fqgz = rules.remove_multisplits.output.fq
     params:
         fqgz = rules.remove_multisplits.output.fq,
         text = config['data']['count']['fastqgz_split3']
