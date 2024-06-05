@@ -117,31 +117,30 @@ rule dedupe_umi:
             --gene-transcript-map {input.gt_map} \
             --stdin {input.align} \
             --stdout {output.align} \
-            --log {output.log} \
-            --output-stats {params.stats}
+            --log {output.log} 
         """
 
-rule assess_dedupe_umi:
-    resources:
-        threads = 4,
-        mem_gb = 32
-    shell:
-        """ 
-        module load miniconda
-        source activate base
-        conda init
-        conda activate /gpfs/projects/bsc83/utils/conda_envs/umi_tools
-        umi_tools group \
-            --method adjacency \
-            --edit-distance-threshold=2 \
-            --umi-separator {params.sep} \
-            --per-gene \
-            --per-contig \
-            --gene-transcript-map {input.gt_map} \
-            -I {input.align} \
-            --group-out {output.group} \
-            --log {output.log}
-        """
+# rule assess_dedupe_umi:
+#     resources:
+#         threads = 4,
+#         mem_gb = 32
+#     shell:
+#         """ 
+#         module load miniconda
+#         source activate base
+#         conda init
+#         conda activate /gpfs/projects/bsc83/utils/conda_envs/umi_tools
+#         umi_tools group \
+#             --method adjacency \
+#             --edit-distance-threshold=2 \
+#             --umi-separator {params.sep} \
+#             --per-gene \
+#             --per-contig \
+#             --gene-transcript-map {input.gt_map} \
+#             -I {input.align} \
+#             --group-out {output.group} \
+#             --log {output.log}
+#         """
 
 
 

@@ -11,9 +11,12 @@ include: 'smkmod/formatting.smk'
 include: 'smkmod/minimap.smk'
 include: 'smkmod/splitting.smk'
 include: 'smkmod/qc.smk'
+include: 'smkmod/clean.smk'
 
 configfile: 'snakemake/config.yml'
-config_tsv = 'snakemake/test_data_2.tsv'
+#config_tsv = 'snakemake/test_data_2.tsv'
+config_tsv = '/gpfs/projects/bsc83/Projects/pantranscriptome/pclavell/ONT_preprocessing/test_data_2.tsv'
+
 
 
 df = pd.read_csv(config_tsv, sep='\t')
@@ -35,6 +38,8 @@ rule all:
         expand(config['data']['qc']['plotpdf'],
                 sample=df['sample'].tolist()),
         expand(config['data']['qc']['fastqcreport'],
+                sample=df['sample'].tolist()),
+        expand(config['clean']['clean_split3'],
                 sample=df['sample'].tolist())
 
 
@@ -295,8 +300,7 @@ use rule dedupe_umi as umi_dedupe_reads with:
         gt_map = config['ref']['gt_map']
     params:
         sep = config['params']['umi_sep'],
-        edit_dist = 2,
-        stats = config['data']['umi_dedupe']['stats']
+        edit_dist = 2
     output:
         align = temporary(config['data']['umi_dedupe']['bam']),
         log = config['data']['umi_dedupe']['log']
@@ -414,8 +418,6 @@ use rule fastqc as fastqcreport with:
         outdir = config['data']['qc']['fastqcreportdir']
     output:
         html = config['data']['qc']['fastqcreport']
-
-
 
 
 ########## COUNTING #################################################
@@ -541,3 +543,31 @@ use rule count_fq_gz_reads_from_params as count_final_reads with:
         text = config['data']['count']['final_count']
     output:
         txt = temporary(config['data']['qc']['readnum12'])
+
+
+########## CLEANING STEPS ##########################################
+use rule cleandir as clean_split1 with:
+    input:
+        mock = rules.count_fastgz_split1.output.txt
+    params:
+        inputdir = config['data']['split']['outdir1']
+    output:
+        cleanmock = config['clean']['clean_split1']
+
+use rule cleandir as clean_split2 with:
+    input:
+        mock = rules.count_fastgz_split2.output.txt,
+        mock2 = rules.clean_split1.output.cleanmock
+    params:
+        inputdir = config['data']['split']['outdir2']
+    output:
+        cleanmock = config['clean']['clean_split2']
+
+use rule cleandir as clean_removemultisplits with:
+    input:
+        mock = rules.count_fastgz_split3.output.txt,
+        mock2 = rules.clean_split2.output.cleanmock
+    params:
+        inputdir = config['data']['split']['multiout']
+    output:
+        cleanmock = config['clean']['clean_split3']

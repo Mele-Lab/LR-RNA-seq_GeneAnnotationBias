@@ -11,12 +11,12 @@ ref:
   fa_ver: 'hg38'
   fa_link: https:/ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_44/GRCh38.p14.genome.fa.gz
   fa:  /gpfs/projects/bsc83/Data/gene_annotations/gencode/v44/modified/gencode.v44.transcripts_simpleID.fa
-  mmi: ref/gencodev44_transcriptome.mmi
+  mmi: data/ref/gencodev44_transcriptome.mmi
 
   gtf_link: https:/ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_44/gencode.v44.chr_patch_hapl_scaff.annotation.gtf.gz
   gtf: /gpfs/projects/bsc83/Data/gene_annotations/gencode/v44/gencode.v44.chr_patch_hapl_scaff.annotation.gtf
   junc_bed: /gpfs/projects/bsc83/MN4/bsc83/Data/gene_annotation/gencode/release_44/modified/gencode.v44.chr_patch_hapl_scaff.annotation_transcriptlevel.bed
-  gt_map: ref/gt_map.tsv
+  gt_map: data/ref/gt_map.tsv
 
   linker_5_fa: snakemake/ref/linker_5.fa
   adapters: snakemake/ref/adapters.tsv
@@ -46,10 +46,10 @@ data:
 
 
   blast:
-      db: ref/5_linker_db
-      nhr: ref/5_linker_db.nhr
-      nin: ref/5_linker_db.nin
-      nsq: ref/5_linker_db.nsq
+      db: data/ref/5_linker_db
+      nhr: data/ref/5_linker_db.nhr
+      nin: data/ref/5_linker_db.nin
+      nsq: data/ref/5_linker_db.nsq
 
       xml: data/{sample}/blast/{sample}.xml
       sam: data/{sample}/blast/{sample}.sam
@@ -133,3 +133,8 @@ data:
   output:
     trimmed: data/{sample}/final/{sample}_trimmed.fastq.gz
     q7fastqgz: data/{sample}/{sample}_preprocessed.fastq.gz
+
+clean:
+  clean_split1: data/{sample}/qc/cleaning_split1
+  clean_split2: data/{sample}/qc/cleaning_split2
+  clean_split3: data/{sample}/qc/cleaning_split3

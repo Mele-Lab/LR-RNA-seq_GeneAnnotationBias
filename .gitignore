@@ -29,3 +29,5 @@ scripts/testoutdir*
 scripts/snakemake/snakemake_dev.ipynb
 scripts/minimap_output*
 scripts/softclipping*
+slurm_scripts/pipe.sh
+slurm*
