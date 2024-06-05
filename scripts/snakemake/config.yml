@@ -93,7 +93,7 @@ data:
     readspercentage2: data/{sample}/qc/{sample}_reads_assessed_filtered.tsv
 
     fastqcreportdir: data/{sample}/qc/fastqc/
-    fastqcreport: data/{sample}/qc/fastqc/{sample}_fastqc.html
+    fastqcreport: data/{sample}/qc/fastqc/{sample}_trimmed_Q7filtered_fastqc.html
 
     temporalfile: data/{sample}/qc/{sample}_temporalfile.txt
     count_parent_simplex: data/{sample}/qc/{sample}_count_parent_simplex.txt

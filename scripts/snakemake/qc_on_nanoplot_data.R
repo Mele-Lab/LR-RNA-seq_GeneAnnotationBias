@@ -81,8 +81,8 @@ theme <- theme_minimal() + theme(axis.ticks = element_line(linewidth = 0.2, colo
 # Load data
 data <- fread(NANOUTPUT)
 # setwd("/home/pclavell/mounts/mn5/Projects/pantranscriptome/pclavell/ONT_preprocessing/scripts/")
-# data <- fread("data/tenpercentbam/qc/tenpercentbam_nanostats.tsv.gz")
-# reads <- fread("data/tenpercentbam/qc/tenpercentbam_readnum_track.txt", header=F)
+# data <- fread("data/4kbam/qc/4kbam_nanostats.tsv.gz")
+# newreads <- fread("data/4kbam/qc/4kbam_readnum_track.txt", header=F)
 
 
 # Add metadata from readID
@@ -123,7 +123,8 @@ a <- ggplot(data, aes(x=lengths, y=quals) ) +
   guides(fill = "none")+
   geom_text(data = duplex_median_quals, aes(x = ninetysevenpointfivebottomlength, y = median_quals, label = round(median_quals, 2)), vjust = -0.5, hjust=1,color = "brown") +
   geom_text(data = duplex_median_length, aes(x = median_lengths, y = 0, label = round(median_lengths, 2)), hjust = -0.5, vjust=0, color = "brown") +
-  theme
+  theme+
+  theme(axis.text.x = element_text(angle =45, hjust = 1))
 
 # Plot by splitting status
 b <- ggplot(data, aes(x=lengths, y=quals) ) +
@@ -141,7 +142,8 @@ b <- ggplot(data, aes(x=lengths, y=quals) ) +
   guides(fill = "none")+
   geom_text(data = splitted_median_quals, aes(x = ninetysevenpointfivebottomlength, y = median_quals, label = round(median_quals, 2)), vjust = -0.5, hjust=1,color = "brown") +
   geom_text(data = splitted_median_length, aes(x = median_lengths, y = 0, label = round(median_lengths, 2)), hjust = -0.5, vjust=0, color = "brown") +
-  theme
+  theme+
+  theme(axis.text.x = element_text(angle =45, hjust = 1))
 
 
 
@@ -168,7 +170,7 @@ after_dedup <- newreads$number[13] # reads after deduplication
 reads_notUMI <- newreads$number[10]
 reads_UMI_unmapped <- newreads$number[12]
 reads_UMI <- newreads$number[9]
-
+preQ7filter <- newreads$number[14]
 # calculations
 reads_UMI_mapped <- reads_UMI-reads_UMI_unmapped
 removed_duplicate_reads <- reads_UMI_mapped-after_dedup
@@ -184,11 +186,13 @@ after_split==reads_UMI_mapped+reads_UMI_unmapped+reads_notUMI
 # Compute interesing stats
 results <- c(-parent_simplex/(after_split-removed_duplicate_reads), 
              split_won/original, 
-             -removed_duplicate_reads/after_split, 
+             -removed_duplicate_reads/after_split,
+             (final-preQ7filter)/preQ7filter,
              -reads_Q10filtered/final)*100
 phenomena <-c("duplex", 
-              "new splitted reads", 
-              "duplicates removed" ,
+              "new_splitted_reads", 
+              "duplicates_removed" ,
+              "Q<7",
               "Q<10")
 finalstats <- data.frame(results, phenomena)
 
@@ -196,11 +200,13 @@ finalstats <- data.frame(results, phenomena)
 results2 <- c(removed_duplicate_reads/reads_UMI_mapped,
               reads_UMI_mapped/after_split,
               nrow(data)/original,
-              reads_Q10kept/original)*100
-phenomena2 <- c("duplication\nrate", 
-                "reads\ndup-\nassessed", 
+              reads_Q10kept/original,
+              sum(grepl(":1", data$id))/nrow(data))*100
+phenomena2 <- c("duplication_rate", 
+                "reads_dup-assessed", 
                 ">Q7",
-                ">Q10")
+                ">Q10",
+                "final_duplex_%")
 finalstats2 <- data.frame(results2, phenomena2)
 
 
@@ -212,12 +218,13 @@ c <-ggplot(finalstats,aes(x=phenomena, y=results, fill = results > 0))+
   ylab("% of reads change")+
   xlab("")+
   scale_x_discrete(limits = c("Q<10",
-                              "duplicates removed", 
-                              "new splitted reads", 
+                              "Q<7",
+                              "duplicates_removed", 
+                              "new_splitted_reads", 
                               "duplex"
                               ))+
   scale_y_continuous(expand = c(0.3, 0))+
-  geom_text(aes(label=round(results, digits=2), hjust=0.5-sign(results)/2))+
+  geom_text(aes(label=round(results, digits=1), hjust=0.5-sign(results)/2))+
   coord_flip()+
   theme
 
@@ -226,9 +233,16 @@ d <-ggplot(finalstats2,aes(x=phenomena2, y=results2))+
   guides(fill = "none")+
   ylab("%")+
   xlab("")+
-  scale_y_continuous(expand = c(0.4, 0))+
-  geom_text(aes(label=round(results2, digits=2), vjust=-0.5))+
-  theme
+  scale_y_continuous(expand = expansion(mult = c(0, .3)))+
+  scale_x_discrete(limits = c("duplication_rate",
+                              "reads_dup-assessed",
+                              "final_duplex_%", 
+                              ">Q7", 
+                              ">Q10"
+  ))+
+  geom_text(aes(label=round(results2, digits=1), vjust=-0.5))+
+  theme+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 # save plots
 multiplot1 <-a+b+plot_layout(nrow=1, heights = c(0.5, 0.5), guides="collect", axis_titles = "collect")
 multiplot2 <-c+d+plot_layout(nrow=1, widths = c(0.6, 0.4), guides="collect")
@@ -261,3 +275,4 @@ ggsave(OUTPDF, multiplot, scale=4.5)
 fwrite(allmerge, OUTSTATS, quote = F, row.names = F, col.names = T, sep = "\t")
 fwrite(finalstats, OUTREADS, quote = F, row.names = F, col.names = T, sep = "\t")
 fwrite(finalstats2, OUTREADS_2, quote = F, row.names = F, col.names = T, sep = "\t")
+
