@@ -537,7 +537,7 @@ use rule count_text_reads as get_reads_to_be_selected with:
 # Count 12: number of reads after Q filter
 use rule count_fq_gz_reads_from_params as count_final_reads with:
     input:
-        mockin = config['data']['qc']['fqgz']
+        mockin = config['data']['output']['q7fastqgz']
     params:
         fqgz = rules.filterfastq.output.align,
         text = config['data']['count']['final_count']

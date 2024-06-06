@@ -165,7 +165,7 @@ newreads[, percentage_diff := percentage-100]
 original <- newreads$number[1] # reads that have been basecalled
 after_split <- newreads$number[5] # reads that we have after splitting
 parent_simplex <- newreads$number[11] # amount of parent simplex
-final <- newreads$number[15] # final amount
+final <- nrow(data) # final amount
 after_dedup <- newreads$number[13] # reads after deduplication
 reads_notUMI <- newreads$number[10]
 reads_UMI_unmapped <- newreads$number[12]
