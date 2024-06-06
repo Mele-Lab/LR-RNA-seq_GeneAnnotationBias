@@ -1,5 +1,6 @@
 rule count_reads_with_primary_alignment:
     resources:
+        runtime = 60,
         threads = 8,
         mem_gb = 32
     shell:
@@ -10,6 +11,7 @@ rule count_reads_with_primary_alignment:
 
 rule count_unbam_reads:
     resources:
+        runtime = 60,
         threads = 8
     shell:
         """
@@ -19,6 +21,7 @@ rule count_unbam_reads:
 
 rule count_fq_reads:
     resources:
+        runtime = 60,
         threads = 8,
         mem_gb = 32
     shell:
@@ -28,6 +31,7 @@ rule count_fq_reads:
 
 rule count_fq_gz_reads_from_params:
     resources:
+        runtime = 60,
         threads = 8,
         mem_gb = 32
     shell:
@@ -37,6 +41,7 @@ rule count_fq_gz_reads_from_params:
 
 rule count_fq_gz_reads:
     resources:
+        runtime = 60,
         threads = 8,
         mem_gb = 32
     shell:
@@ -46,6 +51,7 @@ rule count_fq_gz_reads:
 
 rule count_fa_reads:
     resources:
+        runtime = 60,
         threads = 8,
         mem_gb = 32
     shell:
@@ -55,6 +61,7 @@ rule count_fa_reads:
 
 rule count_fa_gz_reads:
     resources:
+        runtime = 60,
         threads = 8,
         mem_gb = 32
     shell:
@@ -64,6 +71,7 @@ rule count_fa_gz_reads:
 
 rule count_sam_mappings:
     resources:
+        runtime = 60,
         threads = 8,
         mem_gb = 32
     shell:
@@ -74,6 +82,7 @@ rule count_sam_mappings:
 
 rule count_text_reads:
     resources:
+        runtime = 60,
         threads = 8,
         mem_gb = 32
     shell:
@@ -83,6 +92,7 @@ rule count_text_reads:
 
 # rule nanoplot:
 #     resources:
+        runtime = 60,
 #         threads = 8,
 #         mem_gb = 32
 #     shell:
@@ -102,6 +112,7 @@ rule count_text_reads:
 # for each read in a given sam / bam file
 rule alignment_qc_id:
     resources:
+        runtime = 60,
         mem_gb = 32,
         threads = 8
     run:
@@ -112,6 +123,7 @@ rule alignment_qc_id:
 # Nanoplot custom script (done by wcouster, nanoplot developer)
 rule pseudonanoplot:
     resources:
+        runtime = 60,
         threads = 4
     shell:
         """
@@ -125,6 +137,7 @@ rule pseudonanoplot:
 # Make QC report
 rule qcreport:
     resources:
+        runtime = 60,
         threads = 48
     shell:
         """
@@ -136,6 +149,7 @@ rule qcreport:
 
 rule fastqc:
     resources:
+        runtime = 60,
         threads = 48
     shell:
         """

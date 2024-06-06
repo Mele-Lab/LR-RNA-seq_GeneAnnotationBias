@@ -1,5 +1,6 @@
 rule add_duplex_status:
     resources:
+        runtime = 60,
         mem_gb = 16,
         threads = 8
     run:
@@ -7,6 +8,7 @@ rule add_duplex_status:
 
 rule fq_to_fa:
     resources:
+        runtime = 60,
         mem_gb = 4,
         threads = 1
     shell:
@@ -14,6 +16,7 @@ rule fq_to_fa:
 
 rule extract_umi:
     resources:
+        runtime = 60,
         threads = 12,
         mem_gb = 16
     shell:
@@ -24,6 +27,7 @@ rule extract_umi:
 
 rule fasta_get_read_ids_rm_umi:
     resources:
+        runtime = 60,
         threads = 1,
         mem_gb = 16
     shell:
@@ -33,6 +37,7 @@ rule fasta_get_read_ids_rm_umi:
 
 rule fastqgz_get_read_ids:
     resources:
+        runtime = 60,
         threads = 1,
         mem_gb = 16
     shell:
@@ -45,6 +50,7 @@ rule fastqgz_get_read_ids:
 # this rule ALSO REMOVES SIMPLEX
 rule read_id_union:
     resources:
+        runtime = 60,
         threads = 1,
         mem_gb = 4
     shell:
@@ -57,6 +63,7 @@ rule read_id_union:
 
 # rule read_id_diff:
 #     resources:
+        runtime = 60,
 #         threads = 1,
 #         mem_gb = 4
 #     run:
@@ -70,6 +77,7 @@ rule read_id_union:
 # Finding Entries in file1.txt but Not in file2.txt:
 rule read_id_diff:
     resources:
+        runtime = 60,
         threads = 1,
         mem_gb = 4
     shell:
@@ -80,6 +88,7 @@ rule read_id_diff:
 
 rule gtf_to_gt_map:
     resources:
+        runtime = 60,
         threads = 1,
         mem_gb = 16
     shell:
@@ -99,6 +108,7 @@ rule gtf_to_gt_map:
 
 rule dedupe_umi:
     resources:
+        runtime = 60,
         threads = 4,
         mem_gb = 32
     shell:
@@ -122,6 +132,7 @@ rule dedupe_umi:
 
 # rule assess_dedupe_umi:
 #     resources:
+        runtime = 60,
 #         threads = 4,
 #         mem_gb = 32
 #     shell:
@@ -146,6 +157,7 @@ rule dedupe_umi:
 
 rule fastqgz_filter:
     resources:
+        runtime = 60,
         threads = 8,
         mem_gb = 32
     shell:
@@ -164,6 +176,7 @@ rule fastqgz_filter:
 
 rule fastqfilter:
     resources:
+        runtime = 60,
         threads=8
     shell:
         """
@@ -177,6 +190,7 @@ rule fastqfilter:
 
 rule trimadaptors:
     resources:
+        runtime = 60,
         threads = 80,
         queue = "acc_bscls"
     shell:
@@ -191,6 +205,7 @@ rule trimadaptors:
 
 rule porechop:
     resources:
+        runtime = 60,
         threads = 112
     shell:
         """

@@ -1,5 +1,6 @@
 rule minimap:
     resources:
+        runtime = 300,
         threads = 112
     shell:
         """

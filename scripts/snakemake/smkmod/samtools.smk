@@ -1,5 +1,6 @@
 rule bamindex:
     resources:
+        runtime = 120,
         threads = 112,
         mem_gb = 32
     shell:
@@ -10,6 +11,7 @@ rule bamindex:
 
 rule sam_filt_unmapped:
     resources:
+        runtime = 120,
         threads = 112,
         mem_gb = 32
     shell:
@@ -20,6 +22,7 @@ rule sam_filt_unmapped:
 
 rule bam_get_read_ids:
     resources:
+        runtime = 120,
         threads = 112,
         mem_gb = 16
     shell:
@@ -30,6 +33,7 @@ rule bam_get_read_ids:
 
 rule bam_get_unmapped_read_ids:
     resources:
+        runtime = 120,
         threads = 112,
         mem_gb = 16
     shell:
@@ -40,6 +44,7 @@ rule bam_get_unmapped_read_ids:
 
 rule sam_filt_for_read_ids:
     resources:
+        runtime = 120,
         threads = 112,
         mem_gb = 32
     shell:
@@ -50,6 +55,7 @@ rule sam_filt_for_read_ids:
 
 rule sam_filt_for_primary:
     resources:
+        runtime = 120,
         threads = 112,
         mem_gb = 32
     shell:
@@ -60,6 +66,7 @@ rule sam_filt_for_primary:
 
 rule bam_to_fastq:
     resources:
+        runtime = 120,
         threads = 112,
         mem_gb = 32
     shell:
@@ -70,6 +77,7 @@ rule bam_to_fastq:
 
 # rule sam_to_fq:
 #     resources:
+        runtime = 120,
 #         threads = 112,
 #         mem_gb = 32
 #     shell:
@@ -80,6 +88,7 @@ rule bam_to_fastq:
 
 rule sam_to_bam:
     resources:
+        runtime = 120,
         threads = 112,
         mem_gb = 32
     shell:
@@ -90,6 +99,7 @@ rule sam_to_bam:
 
 rule bam_sort:
     resources:
+        runtime = 120,
         threads = 112,
         mem_gb = 32
     shell:
@@ -100,6 +110,7 @@ rule bam_sort:
 
 rule bam_index:
     resources:
+        runtime = 120,
         threads = 112,
         mem_gb = 32
     shell:
@@ -110,6 +121,7 @@ rule bam_index:
 
 rule align_filt_unmapped_supp:
     resources:
+        runtime = 120,
         threads = 112,
         mem_gb = 32
     shell:
