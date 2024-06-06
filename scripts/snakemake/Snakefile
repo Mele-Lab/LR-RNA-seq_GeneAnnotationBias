@@ -39,7 +39,7 @@ rule all:
                 sample=df['sample'].tolist()),
         expand(config['data']['qc']['fastqcreport'],
                 sample=df['sample'].tolist()),
-        expand(config['clean']['clean_split3'],
+        expand(config['clean']['clean_split2'],
                 sample=df['sample'].tolist())
 
 
@@ -260,7 +260,7 @@ use rule sam_to_bam as sam_to_bam_map with:
     input:
         align = rules.filt_sam_map.output.align
     output:
-        align = temporary(config['data']['minimap']['bam'])
+        align = config['data']['minimap']['bam']
 
 # sort the bam
 use rule bam_sort as bam_sort_map with:
@@ -548,7 +548,8 @@ use rule count_fq_gz_reads_from_params as count_final_reads with:
 ########## CLEANING STEPS ##########################################
 use rule cleandir as clean_split1 with:
     input:
-        mock = rules.count_fastgz_split1.output.txt
+        mock = rules.count_fastgz_split1.output.txt,
+        mock2 = config['data']['blast']['sam_filt']
     params:
         inputdir = config['data']['split']['outdir1']
     output:
@@ -563,11 +564,11 @@ use rule cleandir as clean_split2 with:
     output:
         cleanmock = config['clean']['clean_split2']
 
-use rule cleandir as clean_removemultisplits with:
-    input:
-        mock = rules.count_fastgz_split3.output.txt,
-        mock2 = rules.clean_split2.output.cleanmock
-    params:
-        inputdir = config['data']['split']['multiout']
-    output:
-        cleanmock = config['clean']['clean_split3']
+# use rule cleandir as clean_removemultisplits with:
+#     input:
+#         mock = rules.count_fastgz_split3.output.txt,
+#         mock2 = rules.clean_split2.output.cleanmock
+#     params:
+#         inputdir = config['data']['split']['multiout']
+#     output:
+#         cleanmock = config['clean']['clean_split3']
