@@ -75,16 +75,6 @@ rule bam_to_fastq:
         samtools bam2fq -@ {resources.threads} {input.unbam} | gzip -c> {output.fastqgz}
         """
 
-# rule sam_to_fq:
-#     resources:
-        runtime = 120,
-#         threads = 112,
-#         mem_gb = 32
-#     shell:
-#         """
-#         module load samtools
-#         samtools fastq --threads {resources.threads} {input.align} | gzip > {output.fq}
-#         """
 
 rule sam_to_bam:
     resources:

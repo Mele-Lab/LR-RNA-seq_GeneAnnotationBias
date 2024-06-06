@@ -90,23 +90,7 @@ rule count_text_reads:
         echo "{params.text}" $(cat {input.txt}|wc -l) >> {output.txt}
         """
 
-# rule nanoplot:
-#     resources:
-        runtime = 60,
-#         threads = 8,
-#         mem_gb = 32
-#     shell:
-#         """
-#         module load anaconda
-#         conda activate /gpfs/projects/bsc83/utils/conda_envs/nanoplot
-#         /gpfs/projects/bsc83/utils/conda_envs/nanoplot/bin/NanoPlot \
-#             -t {resources.threads} \
-#             -o {params.outdir} \
-#             -p {params.prefix} \
-#             --tsv_stats \
-#             -f png \
-#             --{params.filetype} {input.reads} #ubam or fastq
-#         """
+
 
 # compute read length, query coverage, and alignment identity
 # for each read in a given sam / bam file

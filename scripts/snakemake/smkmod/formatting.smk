@@ -61,18 +61,6 @@ rule read_id_union:
         rm {params.temporalfile}
         """
 
-# rule read_id_diff:
-#     resources:
-        runtime = 60,
-#         threads = 1,
-#         mem_gb = 4
-#     run:
-#         a = set(pd.read_csv(input.a, header=None)[0].tolist())
-#         b = set(pd.read_csv(input.b, header=None)[0].tolist())
-#         diff = list(a-b)
-#         df = pd.DataFrame()
-#         df['read_id'] = diff
-#         df.to_csv(output.txt, header=False)
 
 # Finding Entries in file1.txt but Not in file2.txt:
 rule read_id_diff:
@@ -129,30 +117,6 @@ rule dedupe_umi:
             --stdout {output.align} \
             --log {output.log} 
         """
-
-# rule assess_dedupe_umi:
-#     resources:
-        runtime = 60,
-#         threads = 4,
-#         mem_gb = 32
-#     shell:
-#         """ 
-#         module load miniconda
-#         source activate base
-#         conda init
-#         conda activate /gpfs/projects/bsc83/utils/conda_envs/umi_tools
-#         umi_tools group \
-#             --method adjacency \
-#             --edit-distance-threshold=2 \
-#             --umi-separator {params.sep} \
-#             --per-gene \
-#             --per-contig \
-#             --gene-transcript-map {input.gt_map} \
-#             -I {input.align} \
-#             --group-out {output.group} \
-#             --log {output.log}
-#         """
-
 
 
 rule fastqgz_filter:

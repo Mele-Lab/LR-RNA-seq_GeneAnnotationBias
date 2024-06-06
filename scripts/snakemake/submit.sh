@@ -5,6 +5,7 @@ module load miniconda && source activate sqanti3-snakemake
 #snakemake --unlock
 snakemake \
   -s $PWD/scripts/snakemake/Snakefile \
+  --unlock \
   -j 100 \
   --configfile $PWD/scripts/snakemake/config.yml \
   --directory $PWD/scripts \
