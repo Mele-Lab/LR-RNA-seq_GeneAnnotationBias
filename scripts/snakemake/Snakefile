@@ -78,7 +78,7 @@ use rule split_ONT_plus_full_linker as first_split with:
         fastqdir = config['data']['split']['fastqdir1'],
         outdir = config['data']['split']['outdir1']
     output:
-        mockout = temporary(config['data']['split']['mockout1'])
+        mockout = config['data']['split']['mockout1']
 
 
 # Step 2 splitting reads with full CapTrap linkers
@@ -89,7 +89,7 @@ use rule split_full_linker as second_split with:
         fastqdir = config['data']['split']['outdir1'],
         outdir = config['data']['split']['outdir2']
     output:
-        mockout = temporary(config['data']['split']['mockout2'])
+        mockout = config['data']['split']['mockout2']
 
 
 # Step 3 remove multisplits
@@ -429,7 +429,7 @@ use rule count_unbam_reads as count_unbam_duplex_tag with:
     params:
         text = config['data']['count']['unbam_duplex_tag']
     output:
-        txt = temporary(config['data']['qc']['readnum1'])
+        txt = config['data']['qc']['readnum1']
 # Count 2: reads after bam2fastq
 use rule count_fq_gz_reads_from_params as count_bam2fastq with:
     input:
@@ -438,7 +438,7 @@ use rule count_fq_gz_reads_from_params as count_bam2fastq with:
         fqgz = rules.unalignedbam_to_fastq.output.fastqgz,
         text = config['data']['count']['fastq_from_bam']
     output:
-        txt = temporary(config['data']['qc']['readnum2'])
+        txt = config['data']['qc']['readnum2']
 # Count 3: reads after split1
 use rule count_fq_gz_reads_from_params as count_fastgz_split1 with:
     input:
@@ -447,7 +447,7 @@ use rule count_fq_gz_reads_from_params as count_fastgz_split1 with:
         fqgz = config['data']['split']['fastqgz1'],
         text = config['data']['count']['fastqgz_split1']
     output:
-        txt = temporary(config['data']['qc']['readnum3'])
+        txt = config['data']['qc']['readnum3']
 # Count 4: reads after split2
 use rule count_fq_gz_reads_from_params as count_fastgz_split2 with:
     input:
@@ -456,7 +456,7 @@ use rule count_fq_gz_reads_from_params as count_fastgz_split2 with:
         fqgz = config['data']['split']['fastqgz2'],
         text = config['data']['count']['fastqgz_split2']
     output:
-        txt = temporary(config['data']['qc']['readnum4'])
+        txt = config['data']['qc']['readnum4']
 # Count 5: reads after removemultisplit
 use rule count_fq_gz_reads_from_params as count_fastgz_split3 with:
     input:
@@ -465,7 +465,7 @@ use rule count_fq_gz_reads_from_params as count_fastgz_split3 with:
         fqgz = rules.remove_multisplits.output.fq,
         text = config['data']['count']['fastqgz_split3']
     output:
-        txt = temporary(config['data']['qc']['readnum5'])
+        txt = config['data']['qc']['readnum5']
 # Count 6: reads after fastq to fasta
 use rule count_fa_reads as count_fasta_reads with:
     input:
@@ -473,7 +473,7 @@ use rule count_fa_reads as count_fasta_reads with:
     params:
         text = config['data']['count']['fastafromfastq']
     output:
-        txt = temporary(config['data']['qc']['readnum6'])
+        txt = config['data']['qc']['readnum6']
 # Count 7: number of alignments to 5linker
 use rule count_sam_mappings as count_total_5linker_mappings with:
     input:
@@ -481,7 +481,7 @@ use rule count_sam_mappings as count_total_5linker_mappings with:
     params:
         text = config['data']['count']['5linkermappings']
     output:
-        txt = temporary(config['data']['qc']['readnum7'])
+        txt = config['data']['qc']['readnum7']
 
 # Count 8: number of primary alignments
 use rule count_reads_with_primary_alignment as count_5linker_primary_alignments with:
@@ -490,7 +490,7 @@ use rule count_reads_with_primary_alignment as count_5linker_primary_alignments 
     params:
         text = config['data']['count']['5linkerprimarymappings']
     output:
-        txt = temporary(config['data']['qc']['readnum8'])
+        txt = config['data']['qc']['readnum8']
 
 # Count 9: number of reads with UMI
 use rule count_text_reads as count_reads_with_UMI with:
@@ -499,7 +499,7 @@ use rule count_text_reads as count_reads_with_UMI with:
     params:
         text = config['data']['count']['reads_with_UMI']
     output:
-        txt = temporary(config['data']['qc']['readnum9'])
+        txt = config['data']['qc']['readnum9']
 # Count 10: number of reads without UMI
 use rule count_text_reads as count_reads_without_UMI with:
     input:
@@ -507,7 +507,7 @@ use rule count_text_reads as count_reads_without_UMI with:
     params:
         text = config['data']['count']['reads_without_UMI']
     output:
-        txt = temporary(config['data']['qc']['readnum10'])
+        txt = config['data']['qc']['readnum10']
 # Count 10_2 reads with UMI but unmapped
 
 use rule count_text_reads as count_reads_withUMI_non_deduped with:
@@ -516,7 +516,7 @@ use rule count_text_reads as count_reads_withUMI_non_deduped with:
     params:
         text = config['data']['count']['reads_umi_non_deduped']
     output:
-        txt = temporary(config['data']['qc']['readnum10_2'])
+        txt = config['data']['qc']['readnum10_2']
 # Count 11: number of reads that could be potentially deduplicated
 use rule count_text_reads as count_reads_potentially_dedup with:
     input:
@@ -524,7 +524,7 @@ use rule count_text_reads as count_reads_potentially_dedup with:
     params:
         text = config['data']['count']['reads_deduped']
     output:
-        txt = temporary(config['data']['qc']['readnum11'])
+        txt = config['data']['qc']['readnum11']
 
 # Count 11.2
 use rule count_text_reads as get_reads_to_be_selected with:
@@ -533,7 +533,7 @@ use rule count_text_reads as get_reads_to_be_selected with:
     params:
         text = config['data']['count']['final_filtering']
     output:
-        txt = temporary(config['data']['qc']['readnum11_2'])
+        txt = config['data']['qc']['readnum11_2']
 # Count 12: number of reads after Q filter
 use rule count_fq_gz_reads_from_params as count_final_reads with:
     input:
@@ -542,7 +542,7 @@ use rule count_fq_gz_reads_from_params as count_final_reads with:
         fqgz = rules.filterfastq.output.align,
         text = config['data']['count']['final_count']
     output:
-        txt = temporary(config['data']['qc']['readnum12'])
+        txt = config['data']['qc']['readnum12']
 
 
 ########## CLEANING STEPS ##########################################
