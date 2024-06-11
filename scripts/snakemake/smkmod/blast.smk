@@ -1,7 +1,7 @@
 rule make_blast_db:
     resources:
         runtime = 60,
-        threads = 8,
+        threads = 112,
         mem_gb = 16
     shell:
         """
@@ -16,8 +16,8 @@ rule make_blast_db:
 # probably make standalone
 rule blast:
     resources:
-        runtime = 60,
-        threads = 25,
+        runtime = 300,
+        threads = 112,
         mem_gb = 64
     shell:
         """
@@ -39,7 +39,7 @@ rule blast:
 rule blast2bam:
     resources:
         runtime = 60,
-        threads = 8,
+        threads = 112,
         mem_gb = 16
     shell:
         """

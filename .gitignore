@@ -32,3 +32,7 @@ scripts/softclipping*
 slurm_scripts/pipe.sh
 slurm*
 scripts/snakemake/.snakemake/
+multiqc_data
+multiqc_report.html
+preprocessed_samples_37.tsv
+workflow*

@@ -38,9 +38,9 @@ rule all:
         expand(config['data']['qc']['plotpdf'],
                 sample=df['sample'].tolist()),
         expand(config['data']['qc']['fastqcreport'],
-                sample=df['sample'].tolist()),
-        expand(config['clean']['clean_split2'],
-                sample=df['sample'].tolist())
+                sample=df['sample'].tolist())#,
+        # expand(config['clean']['clean_split2'],
+        #         sample=df['sample'].tolist())
 
 
 # index unaligned bam so next rule can work properly
@@ -224,7 +224,8 @@ use rule read_id_diff as get_non_umi_read_ids with:
 # create an index for minimap mapping
 rule minimap_index:
     resources:
-        threads = 112
+        threads = 112,
+        runtime= 200
     params:
         ref = config['ref']['fa']
     output:
@@ -340,14 +341,14 @@ use rule fastqgz_filter as make_clean_fastq with:
         fq = rules.remove_multisplits.output.fq,
         read_ids = rules.get_qc_reads.output.txt
     output:
-        cleanfastq = temporary(config['data']['qc']['fq']),
-        cleanfastqgz = config['data']['qc']['fqgz']
+        cleanfastq = temporary(config['data']['qc']['fq'])
+        #cleanfastqgz = config['data']['qc']['fqgz']
 
 
 # Trim adapters
 use rule porechop as trimadapters with:
     input:
-        fastqgz = rules.make_clean_fastq.output.cleanfastqgz
+        fastq = rules.make_clean_fastq.output.cleanfastq
     output:
         fastqgz = temporary(config['data']['output']['trimmed'])
 
@@ -371,7 +372,8 @@ use rule pseudonanoplot as nanostats with:
 # Count final: concatenate all files
 rule cat_all_counts:
     resources:
-        threads = 1
+        threads = 1,
+        runtime = 60
     input:
         a = config['data']['qc']['readnum1'],
         b = config['data']['qc']['readnum2'],

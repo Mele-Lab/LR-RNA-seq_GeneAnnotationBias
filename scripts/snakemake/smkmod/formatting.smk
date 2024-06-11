@@ -17,7 +17,7 @@ rule fq_to_fa:
 rule extract_umi:
     resources:
         runtime = 60,
-        threads = 12,
+        threads = 112,
         mem_gb = 16
     shell:
         """
@@ -96,8 +96,8 @@ rule gtf_to_gt_map:
 
 rule dedupe_umi:
     resources:
-        runtime = 60,
-        threads = 4,
+        runtime = 1440,
+        threads = 112,
         mem_gb = 32
     shell:
         """
@@ -122,26 +122,22 @@ rule dedupe_umi:
 rule fastqgz_filter:
     resources:
         runtime = 60,
-        threads = 8,
+        threads = 112,
         mem_gb = 32
     shell:
         """
-        mkdir data/temp
         echo "test1#####################"
-        zcat {input.fq} > "data/temp/{wildcards.sample}.fastq"
+        zcat {input.fq} > $TMPDIR/{wildcards.sample}.fastq
         echo "test2 ##########################"
-        grep -A 3 -Ff {input.read_ids} "data/temp/{wildcards.sample}.fastq" | grep -v "^--$" > {output.cleanfastq}
-        echo "test3 ##########################"
-        gzip -c {output.cleanfastq} > {output.cleanfastqgz}
-        echo "test4 ##########################"
-        rm "data/temp/{wildcards.sample}.fastq"
-        rm -r data/temp
+        grep -A 3 -Ff {input.read_ids} $TMPDIR/{wildcards.sample}.fastq | grep -v "^--$" > {output.cleanfastq}
+        echo "DONE ##########################"
+
         """
 
 rule fastqfilter:
     resources:
         runtime = 60,
-        threads=8
+        threads=112
     shell:
         """
         module load miniconda
@@ -152,24 +148,24 @@ rule fastqfilter:
         fastq-filter -q {params.phred} {input.align} -o {output.align}
         """
 
-rule trimadaptors:
-    resources:
-        runtime = 60,
-        threads = 80,
-        queue = "acc_bscls"
-    shell:
-        """
-        module load dorado
+# rule trimadaptors:
+#     resources:
+#         runtime = 60,
+#         threads = 80,
+#         queue = "acc_bscls"
+#     shell:
+#         """
+#         module load dorado
 
-        dorado trim \
-            --threads 80 \
-            --emit-fastq \
-            {input.align} | gzip > {output.align}
-        """
+#         dorado trim \
+#             --threads 80 \
+#             --emit-fastq \
+#             {input.align} | gzip > {output.align}
+#         """
 
 rule porechop:
     resources:
-        runtime = 60,
+        runtime = 500,
         threads = 112
     shell:
         """
@@ -179,7 +175,7 @@ rule porechop:
         conda activate /gpfs/projects/bsc83/utils/conda_envs/porechop
 
         porechop \
-            -i {input.fastqgz} \
+            -i {input.fastq} \
             -o {output.fastqgz} \
             --threads {resources.threads} \
             --min_split_read_size 200 \
