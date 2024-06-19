@@ -147,6 +147,7 @@ data:
       sam: data/{sample}/variants/minimap/{sample}.sam
       sam_filt: data/{sample}/variants/minimap/{sample}_filt.sam
       bam_rg: data/{sample}/variants/minimap/{sample}_rg.bam
+      bam_split: data/{sample}/variants/minimap/{sample}_split.bam
       bam_sort: data/{sample}/variants/minimap/{sample}_sort.bam
       bam_sort_ind: data/{sample}/variants/minimap/{sample}_sort.bam.bai
     gatk:

@@ -41,9 +41,17 @@ use rule add_rg as vc_add_rg with:
     output:
         align = temporary(config['data']['vc']['minimap']['bam_rg'])
 
+# TODO actually write this rule, there's nothing underneath ATM
+# split reads based on where introns are because we have spliced data
+use rule split_spliced_reads as vc_split_spliced_reads with:
+    input:
+        align = rules.vc_add_rg.output.align
+    output:
+        align = temporary(config['data']['vc']['minimap']['bam_split'])
+
 use rule sort_bam as vc_sort_bam with:
     input:
-        bam = rules.vc_add_rg.output.align
+        bam = rules.vc_split_spliced_reads.output.align
     output:
         bam = config['data']['vc']['minimap']['bam_sort']
 
