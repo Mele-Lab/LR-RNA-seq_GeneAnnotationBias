@@ -89,8 +89,6 @@ rule merge_variants:
     resources:
         threads = 1,
         nodes = 1
-    conda:
-        'base'
     shell:
         """
         bcftools merge \
@@ -102,8 +100,6 @@ rule bgzip:
     resources:
         threads = 1,
         nodes = 1
-    conda:
-        'htslib'
     shell:
         """
         bgzip -c {input.ifile} > {output.gz}
@@ -113,8 +109,6 @@ rule vcf_index:
     resources:
         threads = 1,
         nodes = 1
-    conda:
-        'base'
     shell:
         """
         tabix -p vcf {input.vcf}
@@ -126,8 +120,6 @@ rule vcf_rm_PL:
     resources:
         threads = 1,
         nodes = 1
-    conda:
-        'base'
     shell:
         """
         if [ -s "{input.vcf}" ]; then
@@ -143,8 +135,6 @@ rule vcf_norm:
     resources:
         threads = 1,
         nodes = 2
-    conda:
-        'base'
     shell:
         """
         if [ -s "{input.vcf}" ]; then
