@@ -15,7 +15,7 @@ include: 'smkmod/clean.smk'
 
 configfile: 'snakemake/config.yml'
 #config_tsv = 'snakemake/test_data_2.tsv'
-config_tsv = '/gpfs/projects/bsc83/Projects/pantranscriptome/pclavell/01_basecalling/data/data_array.tsv'
+config_tsv = '/gpfs/projects/bsc83/Projects/pantranscriptome/pclavell/01_basecalling/data/array10.tsv'
 
 
 
@@ -366,7 +366,7 @@ use rule pseudonanoplot as nanostats with:
     input:
         fastq = rules.filterfastq.output.align
     output:
-        tsv = temporary(config['data']['qc']['nanostats'])
+        tsv = config['data']['qc']['nanostats']
 
 
 # Count final: concatenate all files

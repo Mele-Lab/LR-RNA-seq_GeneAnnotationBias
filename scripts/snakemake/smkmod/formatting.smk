@@ -16,7 +16,7 @@ rule fq_to_fa:
 
 rule extract_umi:
     resources:
-        runtime = 60,
+        runtime = 120,
         threads = 112,
         mem_gb = 16
     shell:
