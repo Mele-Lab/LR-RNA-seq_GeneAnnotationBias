@@ -115,7 +115,7 @@ rule dedupe_umi:
             --gene-transcript-map {input.gt_map} \
             --stdin {input.align} \
             --stdout {output.align} \
-            --log {output.log} 
+            --log {output.log}
         """
 
 
@@ -182,6 +182,16 @@ rule porechop:
             --extra_middle_trim_good_side 2 \
             --extra_middle_trim_bad_side 2
         """
+
+rule gunzip:
+    resources:
+        threads = 1,
+        nodes = 1
+    shell:
+        """
+        gunzip -c {input.ifile} > {output.ofile}
+        """
+
 
 # Content of adapters.py from porechop
 # ADAPTERS = [Adapter('SQK-LSK114_HEAD',

@@ -9,9 +9,16 @@ bin:
 
 ref:
   fa_ver: 'hg38'
+
+  # this is the transcriptome
   fa_link: https:/ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_44/GRCh38.p14.genome.fa.gz
   fa:  /gpfs/projects/bsc83/Data/gene_annotations/gencode/v44/modified/gencode.v44.transcripts_simpleID.fa
   mmi: data/ref/gencodev44_transcriptome.mmi
+
+  # this is the genome
+  fa_full: /gpfs/projects/bsc83/Data/assemblies/GRCh38/GRCh38.primary_assembly.genome.fa
+  fa_dict: data/ref/hg38.dict
+  fa_full_ind: /gpfs/projects/bsc83/Data/assemblies/GRCh38/GRCh38.primary_assembly.genome.fa.fai
 
   gtf_link: https:/ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_44/gencode.v44.chr_patch_hapl_scaff.annotation.gtf.gz
   gtf: /gpfs/projects/bsc83/Data/gene_annotations/gencode/v44/gencode.v44.chr_patch_hapl_scaff.annotation.gtf
@@ -77,7 +84,7 @@ data:
     log: data/{sample}/umi_dedupe/{sample}.log
     read_ids: data/{sample}/umi_dedupe/{sample}_read_ids.txt
     stats: data/{sample}/umi_dedupe/{sample}_stats
-  
+
   assess_umi_dedupe:
     log: data/{sample}/assess_dedupe/{sample}.log
     group: data/{sample}/assess_dedupe/{sample}_group.tsv
@@ -133,6 +140,21 @@ data:
   output:
     trimmed: data/{sample}/final/{sample}_trimmed.fastq.gz
     q7fastqgz: data/{sample}/{sample}_preprocessed.fastq.gz
+
+
+  vc:
+    map:
+      sam: data/{sample}/variants/minimap/{sample}.sam
+      sam_filt: data/{sample}/variants/minimap/{sample}_filt.sam
+      bam_rg: data/{sample}/variants/minimap/{sample}_rg.bam
+      bam_split: data/{sample}/variants/minimap/{sample}_split.bam
+      bam_sort: data/{sample}/variants/minimap/{sample}_sort.bam
+      bam_sort_ind: data/{sample}/variants/minimap/{sample}_sort.bam.bai
+    gatk:
+      vcf_gz: data/{sample}/variants/gatk/{sample}.vcf.gz
+      bam: data/{sample}/variants/gatk/{sample}.bam
+      vcf_gz: data/{sample}/variants/gatk/{sample}.vcf
+      vcf_norm: data/{sample}/variants/gatk/{sample}_norm.vcf
 
 clean:
   clean_split1: data/{sample}/qc/cleaning_split1

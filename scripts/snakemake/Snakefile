@@ -12,6 +12,7 @@ include: 'smkmod/minimap.smk'
 include: 'smkmod/splitting.smk'
 include: 'smkmod/qc.smk'
 include: 'smkmod/clean.smk'
+include: 'smkmod/variant_calling.smk'
 
 configfile: 'snakemake/config.yml'
 #config_tsv = 'snakemake/test_data_2.tsv'

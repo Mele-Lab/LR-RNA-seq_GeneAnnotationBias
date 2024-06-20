@@ -119,3 +119,19 @@ rule align_filt_unmapped_supp:
         module load samtools
         samtools view -@ {resources.threads} -h -F 4 -F 2048 {input.align} > {output.align}
         """
+
+rule add_rg:
+    resources:
+        threads = 4,
+        nodes = 1
+    shell:
+        """
+        module load samtools
+        samtools addreplacerg \
+            -r "SM:{wildcards.sample}" \
+            -r "ID:{wildcards.sample}" \
+            -m overwrite_all \
+            -@ {resources.threads} \
+            -o {output.align} \
+            {input.align}
+        """
