@@ -16,9 +16,9 @@ ref:
   mmi: data/ref/gencodev44_transcriptome.mmi
 
   # this is the genome
-  fa_full: /gpfs/projects/bsc83/Data/assemblies/GRCh38/GRCh38.primary_assembly.genome.fa
+  fa_full: /gpfs/projects/bsc83/Data/assemblies/GRCh38/modified/GRCh38.primary_assembly.sirvset4.genome.fa
   fa_dict: data/ref/hg38.dict
-  fa_full_ind: /gpfs/projects/bsc83/Data/assemblies/GRCh38/GRCh38.primary_assembly.genome.fa.fai
+  fa_full_ind: /gpfs/projects/bsc83/Data/assemblies/GRCh38/modified/GRCh38.primary_assembly.sirvset4.genome.fa.fai
 
   gtf_link: https:/ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_44/gencode.v44.chr_patch_hapl_scaff.annotation.gtf.gz
   gtf: /gpfs/projects/bsc83/Data/gene_annotations/gencode/v44/gencode.v44.chr_patch_hapl_scaff.annotation.gtf
@@ -144,10 +144,12 @@ data:
 
   vc:
     map:
-      sam: data/{sample}/variants/minimap/{sample}.sam
-      sam_filt: data/{sample}/variants/minimap/{sample}_filt.sam
+      bam: /gpfs/projects/bsc83/Projects/pantranscriptome/pclavell/03_mapping/data/genomic/{sample}.bam
+      # sam: data/{sample}/variants/minimap/{sample}.sam
+      # sam_filt: data/{sample}/variants/minimap/{sample}_filt.sam
       bam_rg: data/{sample}/variants/minimap/{sample}_rg.bam
       bam_split: data/{sample}/variants/minimap/{sample}_split.bam
+      bam_split_flag: data/{sample}/variants/minimap/{sample}_split_flag.bam
       bam_sort: data/{sample}/variants/minimap/{sample}_sort.bam
       bam_sort_ind: data/{sample}/variants/minimap/{sample}_sort.bam.bai
     gatk:

@@ -18,36 +18,53 @@ configfile: 'snakemake/config.yml'
 #config_tsv = 'snakemake/test_data_2.tsv'
 config_tsv = '/gpfs/projects/bsc83/Projects/pantranscriptome/pclavell/01_basecalling/data/data_array.tsv'
 
-# TODO map reads to the genome (NOT transcriptome)
-use rule minimap_fq as vc_map_genome with:
-    input:
-        junc_bed = config['ref']['junc_bed'],
-        fq = # TODO fill in fastq,
-        ref_fa = config['ref']['fa_full']
-    output:
-        sam = temporary(config['data']['vc']['minimap']['sam'])
+df = pd.read_csv(config_tsv, sep='\t')
+samples = df['sample'].tolist()
 
-# filter reads for primary mappings
-use rule sam_filt_for_primary as vc_filt_mappings with:
+rule all:
     input:
-        align = rules.vc_map_genome.output.sam
-    output:
-        align = temporary(config['data']['vc']['minimap']['sam_filt'])
+        expand(config['data']['vc']['gatk']['vcf_norm'],
+               sample=samples)
+
+# # TODO map reads to the genome (NOT transcriptome)
+# use rule minimap_fq as vc_map_genome with:
+#     input:
+#         junc_bed = config['ref']['junc_bed'],
+#         fq = # TODO fill in fastq,
+#         ref_fa = config['ref']['fa_full']
+#     output:
+#         sam = temporary(config['data']['vc']['minimap']['sam'])
+
+# # filter reads for primary mappings
+# use rule sam_filt_for_primary as vc_filt_mappings with:
+#     input:
+#         align = rules.vc_map_genome.output.sam
+#     output:
+#         align = temporary(config['data']['vc']['minimap']['sam_filt'])
 
 # add rg tag because gatk throws an absolute fit if not
 use rule add_rg as vc_add_rg with:
     input:
-        align = rules.vc_filt_mappings.output.align
+        align = config['vc']['map']['bam']
     output:
         align = temporary(config['data']['vc']['minimap']['bam_rg'])
 
 # TODO actually write this rule, there's nothing underneath ATM
 # split reads based on where introns are because we have spliced data
-use rule split_spliced_reads as vc_split_spliced_reads with:
+use rule gatk_split_reads as vc_split_spliced_reads with:
     input:
+        fa = rules.vc_make_dict.input.fa,
         align = rules.vc_add_rg.output.align
     output:
         align = temporary(config['data']['vc']['minimap']['bam_split'])
+
+use rule fix_read_flags as vc_fix_flags with:
+    input:
+        fa = rules.vc_make_dict.input.fa,
+        align = rules.vc_add_rg.output.align,
+        split_align = rules.vc_split_spliced_reads.output.align
+    output:
+        align = temporary(config['data']['vc']['minimap']['bam_split_flag'])
 
 use rule sort_bam as vc_sort_bam with:
     input:

@@ -148,3 +148,33 @@ rule vcf_norm:
             touch {output.vcf}
         fi
         """
+
+rule gatk_split_reads:
+    resources:
+        threads = 112,
+        nodes = 10
+    shell:
+        """
+        module load java-openjdk/22.0.1
+        module load gatk
+        gatk --java-options "-Xmx4G -XX:+UseParallelGC -XX:ParallelGCThreads=$THREADS" SplitNCigarReads \
+          -R {input.fa} \
+          -I {input.align} \
+          -O {output.align}
+        """
+
+rule fix_read_flags:
+    resources:
+        threads = 112,
+        nodes = 10
+    shell:
+        """
+        module load minimap2 samtools \
+            gatk R/4.3.2 vcftools bcftools \
+            oneapi/2024.1 htslib/1.19.1 tabixpp/1.1.2
+        Rscript /gpfs/projects/bsc83/utils/lrRNAseqVariantCalling/tools/flagCorrection.r \
+          {input.align} \
+          {input.split_align} \
+          {output.align} \
+          {resources.threads}
+        """
