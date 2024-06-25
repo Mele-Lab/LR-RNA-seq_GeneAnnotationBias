@@ -1,145 +1,145 @@
-params:
-    duplex_sep: ':'
-    umi_sep: ','
-    path: Projects/pantranscriptome/pclavell/ONT_preprocessing/scripts
+# params:
+#     # duplex_sep: ':'
+#     # umi_sep: ','
+#     # path: Projects/pantranscriptome/pclavell/ONT_preprocessing/scripts
 
 
-bin:
-  blast2bam: /gpfs/projects/bsc83/utils/Blast2Bam/bin/blast2bam
+# bin:
+#   # blast2bam: /gpfs/projects/bsc83/utils/Blast2Bam/bin/blast2bam
 
 ref:
   fa_ver: 'hg38'
 
   # this is the transcriptome
-  fa_link: https:/ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_44/GRCh38.p14.genome.fa.gz
-  fa:  /gpfs/projects/bsc83/Data/gene_annotations/gencode/v44/modified/gencode.v44.transcripts_simpleID.fa
-  mmi: data/ref/gencodev44_transcriptome.mmi
+  # fa_link: https:/ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_44/GRCh38.p14.genome.fa.gz
+  # fa:  /gpfs/projects/bsc83/Data/gene_annotations/gencode/v44/modified/gencode.v44.transcripts_simpleID.fa
+  # mmi: data/ref/gencodev44_transcriptome.mmi
 
   # this is the genome
   fa_full: /gpfs/projects/bsc83/Data/assemblies/GRCh38/modified/GRCh38.primary_assembly.sirvset4.genome.fa
   fa_dict: data/ref/hg38.dict
   fa_full_ind: /gpfs/projects/bsc83/Data/assemblies/GRCh38/modified/GRCh38.primary_assembly.sirvset4.genome.fa.fai
 
-  gtf_link: https:/ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_44/gencode.v44.chr_patch_hapl_scaff.annotation.gtf.gz
-  gtf: /gpfs/projects/bsc83/Data/gene_annotations/gencode/v44/gencode.v44.chr_patch_hapl_scaff.annotation.gtf
-  junc_bed: /gpfs/projects/bsc83/MN4/bsc83/Data/gene_annotation/gencode/release_44/modified/gencode.v44.chr_patch_hapl_scaff.annotation_transcriptlevel.bed
-  gt_map: data/ref/gt_map.tsv
+  # gtf_link: https:/ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_44/gencode.v44.chr_patch_hapl_scaff.annotation.gtf.gz
+  # gtf: /gpfs/projects/bsc83/Data/gene_annotations/gencode/v44/gencode.v44.chr_patch_hapl_scaff.annotation.gtf
+  # junc_bed: /gpfs/projects/bsc83/MN4/bsc83/Data/gene_annotation/gencode/release_44/modified/gencode.v44.chr_patch_hapl_scaff.annotation_transcriptlevel.bed
+  # gt_map: data/ref/gt_map.tsv
 
-  linker_5_fa: snakemake/ref/linker_5.fa
-  adapters: snakemake/ref/adapters.tsv
+  # linker_5_fa: snakemake/ref/linker_5.fa
+  # adapters: snakemake/ref/adapters.tsv
 
 data:
-  duplex:
-      bam: data/{sample}/duplex/{sample}/{sample}.bam
-      read_ids: data/{sample}/duplex/{sample}/{sample}_read_ids.txt
-      fq: data/{sample}/duplex/{sample}/{sample}.fastq
-      fqgz: data/{sample}/duplex/{sample}/{sample}.fastq.gz
-      fa: data/{sample}/duplex/{sample}/{sample}.fa
-      index: data/{sample}/duplex/{sample}/{sample}.bam.bai
-  split:
-    fastqdir1: data/{sample}/duplex/{sample}
-    outdir1: data/{sample}/split/{sample}_1step/
-    mockout1: data/{sample}/split/mock1_{sample}
-    mockout2: data/{sample}/split/mock2_{sample}
-    mockout3: data/{sample}/split/mock3_{sample}
-    multiout: data/{sample}/split/{sample}_postsplitting/
-    outdir2: data/{sample}/split/{sample}_2step/
-    dirroot: data/{sample}/split/{sample}
-    fastq_split: data/{sample}/split/{sample}_postsplitting/splitReads.fastq.gz
-    fastqgz1: data/{sample}/split/{sample}_1step/{sample}_split.fastq.gz
-    fastqgz2: data/{sample}/split/{sample}_2step/{sample}_split_split.fastq.gz
-    fastqgz3: data/{sample}/split/{sample}_postsplitting/splitReads.fastq.gz
+  # duplex:
+  #     bam: data/{sample}/duplex/{sample}/{sample}.bam
+  #     read_ids: data/{sample}/duplex/{sample}/{sample}_read_ids.txt
+  #     fq: data/{sample}/duplex/{sample}/{sample}.fastq
+  #     fqgz: data/{sample}/duplex/{sample}/{sample}.fastq.gz
+  #     fa: data/{sample}/duplex/{sample}/{sample}.fa
+  #     index: data/{sample}/duplex/{sample}/{sample}.bam.bai
+  # split:
+  #   fastqdir1: data/{sample}/duplex/{sample}
+  #   outdir1: data/{sample}/split/{sample}_1step/
+  #   mockout1: data/{sample}/split/mock1_{sample}
+  #   mockout2: data/{sample}/split/mock2_{sample}
+  #   mockout3: data/{sample}/split/mock3_{sample}
+  #   multiout: data/{sample}/split/{sample}_postsplitting/
+  #   outdir2: data/{sample}/split/{sample}_2step/
+  #   dirroot: data/{sample}/split/{sample}
+  #   fastq_split: data/{sample}/split/{sample}_postsplitting/splitReads.fastq.gz
+  #   fastqgz1: data/{sample}/split/{sample}_1step/{sample}_split.fastq.gz
+  #   fastqgz2: data/{sample}/split/{sample}_2step/{sample}_split_split.fastq.gz
+  #   fastqgz3: data/{sample}/split/{sample}_postsplitting/splitReads.fastq.gz
 
 
 
-  blast:
-      db: data/ref/5_linker_db
-      nhr: data/ref/5_linker_db.nhr
-      nin: data/ref/5_linker_db.nin
-      nsq: data/ref/5_linker_db.nsq
+  # blast:
+  #     db: data/ref/5_linker_db
+  #     nhr: data/ref/5_linker_db.nhr
+  #     nin: data/ref/5_linker_db.nin
+  #     nsq: data/ref/5_linker_db.nsq
 
-      xml: data/{sample}/blast/{sample}.xml
-      sam: data/{sample}/blast/{sample}.sam
-      sam_filt: data/{sample}/blast/{sample}_filt.sam
-      sam_filt_2: data/{sample}/blast/{sample}_filt2.sam
-      bam: data/{sample}/blast/{sample}.bam
-      bam_sort: data/{sample}/blast/{sample}_sorted.bam
-      bam_ind: data/{sample}/blast/{sample}_sorted.bam.bai
-  umi:
-    umis: data/{sample}/umi/{sample}_extracted_UMI.tsv
-    fa: data/{sample}/umi/{sample}_with_extracted_UMI.fasta
-    read_ids: data/{sample}/umi/{sample}_read_ids.txt
-    no_umi_read_ids: data/{sample}/umi/{sample}_no_umi_read_ids.txt
+  #     xml: data/{sample}/blast/{sample}.xml
+  #     sam: data/{sample}/blast/{sample}.sam
+  #     sam_filt: data/{sample}/blast/{sample}_filt.sam
+  #     sam_filt_2: data/{sample}/blast/{sample}_filt2.sam
+  #     bam: data/{sample}/blast/{sample}.bam
+  #     bam_sort: data/{sample}/blast/{sample}_sorted.bam
+  #     bam_ind: data/{sample}/blast/{sample}_sorted.bam.bai
+  # umi:
+  #   umis: data/{sample}/umi/{sample}_extracted_UMI.tsv
+  #   fa: data/{sample}/umi/{sample}_with_extracted_UMI.fasta
+  #   read_ids: data/{sample}/umi/{sample}_read_ids.txt
+  #   no_umi_read_ids: data/{sample}/umi/{sample}_no_umi_read_ids.txt
 
-  minimap:
-    sam: data/{sample}/minimap/{sample}.sam
-    sam_filt: data/{sample}/minimap/{sample}_filt.sam
-    bam: data/{sample}/minimap/{sample}.bam
-    bam_sort: data/{sample}/minimap/{sample}_sorted.bam
-    bam_ind: data/{sample}/minimap/{sample}_sorted.bam.bai
-    read_ids: data/{sample}/minimap/{sample}_read_ids_unmapped_with_UMI.txt
+  # minimap:
+  #   sam: data/{sample}/minimap/{sample}.sam
+  #   sam_filt: data/{sample}/minimap/{sample}_filt.sam
+  #   bam: data/{sample}/minimap/{sample}.bam
+  #   bam_sort: data/{sample}/minimap/{sample}_sorted.bam
+  #   bam_ind: data/{sample}/minimap/{sample}_sorted.bam.bai
+  #   read_ids: data/{sample}/minimap/{sample}_read_ids_unmapped_with_UMI.txt
 
-  umi_dedupe:
-    bam: data/{sample}/umi_dedupe/{sample}.bam
-    log: data/{sample}/umi_dedupe/{sample}.log
-    read_ids: data/{sample}/umi_dedupe/{sample}_read_ids.txt
-    stats: data/{sample}/umi_dedupe/{sample}_stats
+  # umi_dedupe:
+  #   bam: data/{sample}/umi_dedupe/{sample}.bam
+  #   log: data/{sample}/umi_dedupe/{sample}.log
+  #   read_ids: data/{sample}/umi_dedupe/{sample}_read_ids.txt
+  #   stats: data/{sample}/umi_dedupe/{sample}_stats
 
-  assess_umi_dedupe:
-    log: data/{sample}/assess_dedupe/{sample}.log
-    group: data/{sample}/assess_dedupe/{sample}_group.tsv
+  # assess_umi_dedupe:
+  #   log: data/{sample}/assess_dedupe/{sample}.log
+  #   group: data/{sample}/assess_dedupe/{sample}_group.tsv
 
-  qc:
-    nanostats: data/{sample}/qc/{sample}_nanostats.tsv.gz
-    read_ids: data/{sample}/qc/{sample}_read_ids.txt
-    fq: data/{sample}/final/{sample}.fastq
-    fqgz: data/{sample}/final/{sample}.fastq.gz
-    plotpdf: data/{sample}/qc/{sample}_qc.pdf
-    reporttsv: data/{sample}/qc/{sample}_qualities_lengths.tsv
-    readspercentage: data/{sample}/qc/{sample}_reads_percentage_bystep.tsv
-    readspercentage2: data/{sample}/qc/{sample}_reads_assessed_filtered.tsv
+  # qc:
+  #   nanostats: data/{sample}/qc/{sample}_nanostats.tsv.gz
+  #   read_ids: data/{sample}/qc/{sample}_read_ids.txt
+  #   fq: data/{sample}/final/{sample}.fastq
+  #   fqgz: data/{sample}/final/{sample}.fastq.gz
+  #   plotpdf: data/{sample}/qc/{sample}_qc.pdf
+  #   reporttsv: data/{sample}/qc/{sample}_qualities_lengths.tsv
+  #   readspercentage: data/{sample}/qc/{sample}_reads_percentage_bystep.tsv
+  #   readspercentage2: data/{sample}/qc/{sample}_reads_assessed_filtered.tsv
 
-    fastqcreportdir: data/{sample}/qc/fastqc/
-    fastqcreport: data/{sample}/qc/fastqc/{sample}_preprocessed_fastqc.html
+  #   fastqcreportdir: data/{sample}/qc/fastqc/
+  #   fastqcreport: data/{sample}/qc/fastqc/{sample}_preprocessed_fastqc.html
 
-    temporalfile: data/{sample}/qc/{sample}_temporalfile.txt
-    count_parent_simplex: data/{sample}/qc/{sample}_count_parent_simplex.txt
-    readnum1: data/{sample}/qc/count/{sample}_readnum_track1.txt
-    readnum2: data/{sample}/qc/count/{sample}_readnum_track2.txt
-    readnum3: data/{sample}/qc/count/{sample}_readnum_track3.txt
-    readnum4: data/{sample}/qc/count/{sample}_readnum_track4.txt
-    readnum5: data/{sample}/qc/count/{sample}_readnum_track5.txt
-    readnum6: data/{sample}/qc/count/{sample}_readnum_track6.txt
-    readnum7: data/{sample}/qc/count/{sample}_readnum_track7.txt
-    readnum8: data/{sample}/qc/count/{sample}_readnum_track8.txt
-    readnum9: data/{sample}/qc/count/{sample}_readnum_track9.txt
-    readnum10: data/{sample}/qc/count/{sample}_readnum_track10.txt
-    readnum10_2: data/{sample}/qc/count/{sample}_readnum_track10_2.txt
-    readnum11: data/{sample}/qc/count/{sample}_readnum_track11.txt
-    readnum11_2: data/{sample}/qc/count/{sample}_readnum_track11_2.txt
-    readnum12: data/{sample}/qc/count/{sample}_readnum_track12.txt
-    readnum: data/{sample}/qc/count/{sample}_readnum_track.txt
+  #   temporalfile: data/{sample}/qc/{sample}_temporalfile.txt
+  #   count_parent_simplex: data/{sample}/qc/{sample}_count_parent_simplex.txt
+  #   readnum1: data/{sample}/qc/count/{sample}_readnum_track1.txt
+  #   readnum2: data/{sample}/qc/count/{sample}_readnum_track2.txt
+  #   readnum3: data/{sample}/qc/count/{sample}_readnum_track3.txt
+  #   readnum4: data/{sample}/qc/count/{sample}_readnum_track4.txt
+  #   readnum5: data/{sample}/qc/count/{sample}_readnum_track5.txt
+  #   readnum6: data/{sample}/qc/count/{sample}_readnum_track6.txt
+  #   readnum7: data/{sample}/qc/count/{sample}_readnum_track7.txt
+  #   readnum8: data/{sample}/qc/count/{sample}_readnum_track8.txt
+  #   readnum9: data/{sample}/qc/count/{sample}_readnum_track9.txt
+  #   readnum10: data/{sample}/qc/count/{sample}_readnum_track10.txt
+  #   readnum10_2: data/{sample}/qc/count/{sample}_readnum_track10_2.txt
+  #   readnum11: data/{sample}/qc/count/{sample}_readnum_track11.txt
+  #   readnum11_2: data/{sample}/qc/count/{sample}_readnum_track11_2.txt
+  #   readnum12: data/{sample}/qc/count/{sample}_readnum_track12.txt
+  #   readnum: data/{sample}/qc/count/{sample}_readnum_track.txt
 
-  count:
-    unbam_duplex_tag: "1.bam_with_duplex_status"
-    fastq_from_bam: "2.fastq_from_bam"
-    fastqgz_split1: "3.fastqgz_split_1"
-    fastqgz_split2: "4.fastqgz_split_2"
-    fastqgz_split3: "5.fastqgz_remove_multisplits"
-    fastafromfastq: "6.fasta_from_fastq"
-    5linkermappings: "7.5linker_mappings"
-    5linkerprimarymappings: "8.5linker_primary_mappings"
-    reads_with_UMI: "9.reads_with_UMI"
-    reads_without_UMI: "10.reads_without_UMI"
-    reads_umi_non_deduped: "10_2.reads_with_UMI_unmapped"
-    reads_deduped: "11.reads_after_deduped"
-    final_filtering: "11_2.reads_to_be_kept"
-    final_count: "12.final_count_afterfiltering_trimmedQ7"
-    parent_simplex: "11_1.parent_simplex"
+  # count:
+  #   unbam_duplex_tag: "1.bam_with_duplex_status"
+  #   fastq_from_bam: "2.fastq_from_bam"
+  #   fastqgz_split1: "3.fastqgz_split_1"
+  #   fastqgz_split2: "4.fastqgz_split_2"
+  #   fastqgz_split3: "5.fastqgz_remove_multisplits"
+  #   fastafromfastq: "6.fasta_from_fastq"
+  #   5linkermappings: "7.5linker_mappings"
+  #   5linkerprimarymappings: "8.5linker_primary_mappings"
+  #   reads_with_UMI: "9.reads_with_UMI"
+  #   reads_without_UMI: "10.reads_without_UMI"
+  #   reads_umi_non_deduped: "10_2.reads_with_UMI_unmapped"
+  #   reads_deduped: "11.reads_after_deduped"
+  #   final_filtering: "11_2.reads_to_be_kept"
+  #   final_count: "12.final_count_afterfiltering_trimmedQ7"
+  #   parent_simplex: "11_1.parent_simplex"
 
-  output:
-    trimmed: data/{sample}/final/{sample}_trimmed.fastq.gz
-    q7fastqgz: data/{sample}/{sample}_preprocessed.fastq.gz
+  # output:
+  #   trimmed: data/{sample}/final/{sample}_trimmed.fastq.gz
+  #   q7fastqgz: data/{sample}/{sample}_preprocessed.fastq.gz
 
 
   vc:
@@ -154,11 +154,11 @@ data:
       bam_sort_ind: data/{sample}/variants/minimap/{sample}_sort.bam.bai
     gatk:
       vcf_gz: data/{sample}/variants/gatk/{sample}.vcf.gz
-      bam: data/{sample}/variants/gatk/{sample}.bam
-      vcf_gz: data/{sample}/variants/gatk/{sample}.vcf
+      vcf_bam: data/{sample}/variants/gatk/{sample}.bam
+      vcf: data/{sample}/variants/gatk/{sample}.vcf
       vcf_norm: data/{sample}/variants/gatk/{sample}_norm.vcf
 
-clean:
-  clean_split1: data/{sample}/qc/cleaning_split1
-  clean_split2: data/{sample}/qc/cleaning_split2
-  clean_split3: data/{sample}/qc/cleaning_split3
+# clean:
+#   clean_split1: data/{sample}/qc/cleaning_split1
+#   clean_split2: data/{sample}/qc/cleaning_split2
+#   clean_split3: data/{sample}/qc/cleaning_split3
