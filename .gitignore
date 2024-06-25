@@ -37,3 +37,4 @@ multiqc_report.html
 preprocessed_samples_37.tsv
 workflow*
 nanoplotstats
+data

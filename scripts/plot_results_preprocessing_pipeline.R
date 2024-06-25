@@ -64,10 +64,10 @@ percent_original_wide <- track[V1=="1.bam_with_duplex_status", .(sample, reads)]
 setnames(percent_original_wide, grep("reads_dup-assessed", colnames(percent_original_wide)), "dup_assessed")
 
 # Plot
-ggplot(percent_original_wide, aes(x="",y=dup_assessed))+
+a<-ggplot(percent_original_wide, aes(x="",y=dup_assessed))+
   geom_violin()+
   geom_boxplot(outliers = F, width=0.25)+
-  geom_jitter()+
+  ggiraph::geom_jitter_interactive(tooltip=sample)+
   labs(y="Assessed reads (%)", x="")+
   mytheme
 ggplot(percent_original_wide, aes(x="",y=duplication_rate))+
@@ -329,3 +329,17 @@ ggplot(nanostats, aes(x=n50, y=reads_longer1k))+
   labs(x="N50", y="% reads longer 1kb")+
   geom_abline(slope=1, linetype="dashed", col="grey")+
   mytheme
+
+
+dat <- track[V1=="12.final_count_afterfiltering_trimmedQ7"][, sampleid:=gsub(".*_","", sample)]
+dat[, totalreads:=sum(reads), by=sampleid]
+ggplot(dat, aes(x="", y=totalreads/10^6))+
+  geom_violin()+
+  geom_boxplot(outliers = F, width=0.25)+
+  geom_jitter()+
+  labs(y="Reads per sample (M)", x="")+
+  mytheme
+dat[totalreads<10000000]
+dat[reads<10000000]
+
+dat[sampleid%in% dat[reads<10000000, sampleid]][order(sampleid),]
