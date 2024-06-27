@@ -37,14 +37,12 @@ rule call_variants_gatk:
             -I {input.bam} \
             -R {input.fa} \
             -O {output.vcf} \
-            -ERC BP_RESOLUTION \
             --sample-ploidy 2 \
             --max-reads-per-alignment-start 0 \
             --dont-use-soft-clipped-bases true \
             --native-pair-hmm-threads {resources.threads} \
             --max-alternate-alleles 6 \
             --max-genotype-count 1024 \
-            --bamout {output.bam} \
             --create-output-bam-index \
             --sample-name {wildcards.sample}
         """
@@ -194,4 +192,60 @@ rule fix_read_flags:
           {input.split_align} \
           {output.align} \
           {resources.threads}
+        """
+
+rule merge_samples:
+    resources:
+        runtime = 120,
+        threads = 112
+    shell:
+        """
+        module load java-openjdk/17.0.11+9 gatk
+
+        gatk MergeVcfs \
+            -I {input.vcflist} \
+            -O {output.vcf} \
+            --REFERENCE_SEQUENCE {input.reference}
+
+        """
+
+rule vcf_pruning:
+    resources:
+        runtime = 120,
+        threads = 112
+    shell:
+        """
+        module load plink
+
+        plink2 \
+            --vcf {input.vcf} \
+            --allow-extra-chr \
+            --set-missing-var-ids @:# \
+            --indep-pairwise 50 10 0.1 \
+            --threads {resources.threads} \
+            --out {params.output_prefix}
+
+        touch {output.mock}
+        """
+
+rule vcf_pca:
+    resources:
+        runtime = 120,
+        threads = 112
+    shell:
+        """
+        module load plink
+
+        plink2 \
+            --vcf {input.vcf}\
+            --allow-extra-chr \
+            --set-missing-var-ids @:# \
+            --extract {params.input_prefix}.prune.in \
+            --make-bed \
+            --pca \
+            --threads {resources.threads} \
+            --out {params.output_prefix}
+
+        rm {input.mock}
+        touch {output.mock}
         """
