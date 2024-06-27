@@ -108,16 +108,16 @@ use rule call_variants_gatk as vc_call_variants with:
     output:
         vcf = temporary(config['data']['vc']['gatk']['vcf_gz'])
 
-use rule gunzip as vc_gunzip_vcf with:
-    input:
-        ifile = rules.vc_call_variants.output.vcf
-    output:
-        ofile = config['data']['vc']['gatk']['vcf']
+# use rule gunzip as vc_gunzip_vcf with:
+#     input:
+#         ifile = rules.vc_call_variants.output.vcf
+#     output:
+#         ofile = config['data']['vc']['gatk']['vcf']
 
 # normalize variants so they're comparable across samples
 use rule vcf_norm as vc_vcf_norm with:
     input:
-        vcf = rules.vc_gunzip_vcf.output.ofile,
+        vcf = rules.vc_call_variants.output.vcf,
         fa = rules.vc_call_variants.input.fa
     output:
         vcf = config['data']['vc']['gatk']['vcf_norm']
