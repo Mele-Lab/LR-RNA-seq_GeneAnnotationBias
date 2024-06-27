@@ -185,6 +185,7 @@ rule porechop:
 
 rule gunzip:
     resources:
+        runtime = 320,
         threads = 1,
         nodes = 1
     shell:

@@ -122,6 +122,7 @@ rule align_filt_unmapped_supp:
 
 rule add_rg:
     resources:
+        runtime = 120,
         threads = 4,
         nodes = 1
     shell:

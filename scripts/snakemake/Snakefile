@@ -23,7 +23,7 @@ def get_df_val(df, col, sample):
 rule all:
     input:
         expand(config['data']['vc']['gatk']['vcf_norm'],
-               sample=df['sample'].tolist())
+                sample=df['sample'].tolist())
 
 # # TODO map reads to the genome (NOT transcriptome)
 # use rule minimap_fq as vc_map_genome with:
@@ -82,15 +82,15 @@ use rule fix_read_flags as vc_fix_flags with:
 
 use rule bam_sort as vc_sort_bam with:
     input:
-        bam = rules.vc_split_spliced_reads.output.align
+        align = rules.vc_split_spliced_reads.output.align
     output:
-        bam = config['data']['vc']['map']['bam_sort']
+        align = config['data']['vc']['map']['bam_sort']
 
 use rule bamindex as vc_ind_bam with:
     input:
-        bam = rules.vc_sort_bam.output.bam
+        bam = rules.vc_sort_bam.output.align
     output:
-        ind = config['data']['vc']['map']['bam_sort_ind']
+        index = config['data']['vc']['map']['bam_sort_ind']
 
 ###########################################
 ########### GATK
@@ -101,7 +101,7 @@ use rule bamindex as vc_ind_bam with:
 use rule call_variants_gatk as vc_call_variants with:
     input:
         bam = rules.vc_ind_bam.input.bam,
-        bai = rules.vc_ind_bam.output.ind,
+        bai = rules.vc_ind_bam.output.index,
         fa = rules.vc_make_dict.input.fa,
         ind = rules.vc_fa_ind.output.fai,
         dict = rules.vc_make_dict.output.fa_dict

@@ -17,3 +17,4 @@ snakemake \
   -A bsc83 \
   -o smk_out/{wildcards.sample}/%j_%x.out \
   -t {resources.runtime}"
+#{wildcards.sample}/

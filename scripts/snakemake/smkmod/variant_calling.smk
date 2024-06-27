@@ -1,15 +1,18 @@
 rule ref_make_gatk_dict:
     resources:
-        threads = 1,
+        runtime = 120,
+        threads = 112,
         nodes = 1
     shell:
         """
+        module load java-openjdk/22.0.1
         module load gatk
-        gatk-launch CreateSequenceDictionary -R {input.fa}
+        gatk CreateSequenceDictionary -R {input.fa} -O {output.fa_dict}
         """
 
 rule ref_make_fa_ind:
     resources:
+        runtime = 120,
         threads = 1,
         nodes = 1
     shell:
@@ -20,7 +23,8 @@ rule ref_make_fa_ind:
 
 rule call_variants_gatk:
     resources:
-        threads = 16,
+        runtime = 120,
+        threads = 112,
         nodes = 4
     shell:
         """
@@ -49,6 +53,7 @@ rule filt_variants:
     params:
         qual_thresh = 1000
     resources:
+        runtime = 120,
         threads = 1,
         nodes = 1
     run:
@@ -67,6 +72,7 @@ rule filt_variants:
 
 rule intersect_variants_with_bed:
     resources:
+        runtime = 120,
         threads = 1,
         nodes = 1
     shell:
@@ -77,6 +83,7 @@ rule intersect_variants_with_bed:
 
 rule rev_intersect_variants_with_bed:
     resources:
+        runtime = 120,
         threads = 1,
         nodes = 1
     shell:
@@ -87,6 +94,7 @@ rule rev_intersect_variants_with_bed:
 
 rule merge_variants:
     resources:
+        runtime = 120,
         threads = 1,
         nodes = 1
     shell:
@@ -98,6 +106,7 @@ rule merge_variants:
 
 rule bgzip:
     resources:
+        runtime = 120,
         threads = 1,
         nodes = 1
     shell:
@@ -107,6 +116,7 @@ rule bgzip:
 
 rule vcf_index:
     resources:
+        runtime = 120,
         threads = 1,
         nodes = 1
     shell:
@@ -118,6 +128,7 @@ rule vcf_index:
 # at higher ploidies
 rule vcf_rm_PL:
     resources:
+        runtime = 120,
         threads = 1,
         nodes = 1
     shell:
@@ -133,16 +144,20 @@ rule vcf_rm_PL:
 
 rule vcf_norm:
     resources:
-        threads = 1,
+        runtime = 320,
+        threads = 112,
         nodes = 2
     shell:
         """
+        module load bcftools
+
         if [ -s "{input.vcf}" ]; then
             bcftools norm \
               -a \
               -m -any \
               --fasta-ref {input.fa} \
               --old-rec-tag INFO \
+              --threads {resources.threads}\
               {input.vcf} > {output.vcf}
         else
             touch {output.vcf}
@@ -151,13 +166,14 @@ rule vcf_norm:
 
 rule gatk_split_reads:
     resources:
+        runtime = 120,
         threads = 112,
         nodes = 10
     shell:
         """
         module load java-openjdk/22.0.1
         module load gatk
-        gatk --java-options "-Xmx4G -XX:+UseParallelGC -XX:ParallelGCThreads=$THREADS" SplitNCigarReads \
+        gatk --java-options "-Xmx4G -XX:+UseParallelGC -XX:ParallelGCThreads={resources.threads}" SplitNCigarReads \
           -R {input.fa} \
           -I {input.align} \
           -O {output.align}
@@ -165,6 +181,7 @@ rule gatk_split_reads:
 
 rule fix_read_flags:
     resources:
+        runtime = 120,
         threads = 112,
         nodes = 10
     shell:
