@@ -22,7 +22,10 @@ data:
       vcf_bam: data/{sample}/variants/gatk/{sample}.bam
       vcf: data/{sample}/variants/gatk/{sample}.vcf
       vcf_norm: data/{sample}/variants/gatk/{sample}_norm.vcf
-      vcf_merged: data/merged/twosamplestestmerge.vcf
+      vcf_norm_gz: data/{sample}/variants/gatk/{sample}_norm.vcf.gz
+      vcf_norm_gz_index: data/{sample}/variants/gatk/{sample}_norm.vcf.gz.csi
+      vcf_merged_psam: data/merged/twosamplestestmerge.psam
+      vcf_merged: data/merged/twosamplestestmerge.vcf.gz
       mock1: data/merged/mock1.rmme
       mock2: data/merged/mock2.rmme
 

@@ -4,3 +4,7 @@ slurm_scripts
 workflow_dag.png
 smk_out
 .snakemake
+scripts/merged_prepruning.log
+scripts/merged_prepruning-temporary.psam
+scripts/merged_pruned.log
+scripts/merged_pruned-temporary.psam

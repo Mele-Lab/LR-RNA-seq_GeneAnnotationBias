@@ -105,11 +105,22 @@ rule merge_variants:
 rule bgzip:
     resources:
         runtime = 120,
-        threads = 1,
+        threads = 112,
         nodes = 1
     shell:
         """
-        bgzip -c {input.ifile} > {output.gz}
+        module load htslib
+        bgzip -c {input.ifile} -@ {resources.threads} > {output.gz}
+        """
+
+rule vcfgz_index:
+    resources:
+        runtime = 120,
+        threads = 112
+    shell:
+        """
+        module load bcftools
+        bcftools index --threads {resources.threads} {input.vcfgz} --output {output.index}
         """
 
 rule vcf_index:
@@ -194,18 +205,24 @@ rule fix_read_flags:
           {resources.threads}
         """
 
+
+
+
+
 rule merge_samples:
     resources:
         runtime = 120,
         threads = 112
     shell:
         """
-        module load java-openjdk/17.0.11+9 gatk
+        module load bcftools
 
-        gatk MergeVcfs \
-            -I {input.vcflist} \
-            -O {output.vcf} \
-            --REFERENCE_SEQUENCE {input.reference}
+        bcftools merge \
+            --missing-to-ref \
+            --output {output.vcfgz} \
+            --output-type z \
+            --threads {resources.threads} \
+            {params.inputvcfs}
 
         """
 
@@ -220,6 +237,8 @@ rule vcf_pruning:
         plink2 \
             --vcf {input.vcf} \
             --allow-extra-chr \
+            --double-id \
+            --psam {input.psam} \
             --set-missing-var-ids @:# \
             --indep-pairwise 50 10 0.1 \
             --threads {resources.threads} \
@@ -242,10 +261,32 @@ rule vcf_pca:
             --set-missing-var-ids @:# \
             --extract {params.input_prefix}.prune.in \
             --make-bed \
+            --psam {input.psam} \
             --pca \
             --threads {resources.threads} \
             --out {params.output_prefix}
 
         rm {input.mock}
+        touch {output.mock}
+        """
+
+rule vcf_pca_no_pruning:
+    resources:
+        runtime = 120,
+        threads = 112
+    shell:
+        """
+        module load plink
+
+        plink2 \
+            --vcf {input.vcf}\
+            --allow-extra-chr \
+            --set-missing-var-ids @:# \
+            --make-bed \
+            --psam {input.psam} \
+            --pca \
+            --threads {resources.threads} \
+            --out {params.output_prefix}
+
         touch {output.mock}
         """

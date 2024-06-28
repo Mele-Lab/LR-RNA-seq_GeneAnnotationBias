@@ -120,38 +120,68 @@ use rule vcf_norm as vc_vcf_norm with:
         vcf = rules.vc_call_variants.output.vcf,
         fa = rules.vc_call_variants.input.fa
     output:
-        vcf = config['data']['vc']['gatk']['vcf_norm']
+        vcf = temporary(config['data']['vc']['gatk']['vcf_norm'])
 
+
+# NEW PART
 def fmt_list_for_cli(x, sep=' '):
     return f'{sep}'.join(x)
 
 #        vcflist = fmt_list_for_cli(list(lambda wildcards: expand(config['data']['vc']['gatk']['vcf_norm'], sample=df['sample'].tolist()))),
 
-# NEW PART
+# bgzip files so they can be merged
+use rule bgzip as compress_vcf with:
+    input:
+        ifile = rules.vc_vcf_norm.output.vcf
+    output:
+        gz = config['data']['vc']['gatk']['vcf_norm_gz']
+
+# index files so they can be merged
+use rule vcfgz_index as index_premerge with:
+    input:
+        vcfgz = rules.compress_vcf.output.gz
+    output:
+        index = config['data']['vc']['gatk']['vcf_norm_gz_index']
+
+
 # merge vcfs of all samples
 use rule merge_samples as merging with:
     input:
-        vcflist = lambda wildcards: expand(config['data']['vc']['gatk']['vcf_norm'], sample=df['sample'].tolist()),
-        reference = config['ref']['fa_full']
-    output:
-        vcf = config['data']['vc']['gatk']['vcf_merged']
-
-# prune merged vcf
-
-use rule vcf_pruning as prune with:
-    input:
-        vcf = rules.merging.output.vcf
+        mock2 = lambda wildcards: expand(config['data']['vc']['gatk']['vcf_norm_gz_index'], sample=df['sample'].tolist()),
+        mock = lambda wildcards: expand(config['data']['vc']['gatk']['vcf_norm_gz'], sample=df['sample'].tolist())
+        #reference = config['ref']['fa_full']
     params:
-        output_prefix = config['params']['outputprefix']
+        inputvcfs = (lambda wildcards: fmt_list_for_cli(list(expand(config['data']['vc']['gatk']['vcf_norm_gz'], sample=df['sample'].tolist()))))
     output:
-        mock = config['data']['vc']['gatk']['mock1']
+        vcfgz = config['data']['vc']['gatk']['vcf_merged']
 
-# pca
+# # prune merged vcf
 
-use rule vcf_pca as pca with:
+# use rule vcf_pruning as prune with:
+#     input:
+#         vcf = rules.merging.output.vcfgz,
+#         psam = config['data']['vc']['gatk']['vcf_merged_psam']
+#     params:
+#         output_prefix = config['params']['outputprefix']
+#     output:
+#         mock = config['data']['vc']['gatk']['mock1']
+
+# # pca
+
+# use rule vcf_pca as pca with:
+#     input:
+#         vcf = rules.merging.output.vcfgz,
+#         mock = rules.prune.output.mock
+#     params:
+#         input_prefix = config['params']['outputprefix'],
+#         output_prefix = config['params']['outputprefix2']
+#     output:
+#         mock = config['data']['vc']['gatk']['mock2']
+
+use rule vcf_pca_no_pruning as pca with:
     input:
-        vcf = rules.merging.output.vcf,
-        mock = rules.prune.output.mock
+        vcf = rules.merging.output.vcfgz,
+        psam = config['data']['vc']['gatk']['vcf_merged_psam']
     params:
         input_prefix = config['params']['outputprefix'],
         output_prefix = config['params']['outputprefix2']
