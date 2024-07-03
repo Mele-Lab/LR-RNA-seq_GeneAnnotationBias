@@ -5,11 +5,15 @@ ref:
   fa_full_ind: /gpfs/projects/bsc83/Data/assemblies/GRCh38/modified/GRCh38.primary_assembly.sirvset4.genome.fa.fai
 
 params:
-  outputprefix: "merged_prepruning"
-  outputprefix2: "merged_pruned"
+  outputprefix: "data/merged_prepruning"
+  outputprefix2: "data/final"
 
 data:
   vc:
+    filters:
+      vcf_merged_complete: data/merged/samplesmerge_complete.vcf
+      chromosome: data/merged/splitchr_raw/samplesmerge_complete.{chromosome}.vcf
+      1000Gchromosome: data/merged/splitchr_raw/samplesmerge_complete.{chromosome}_1000Gmerge.vcf
     map:
       bam: /gpfs/projects/bsc83/Projects/pantranscriptome/pclavell/03_mapping/data/genomic/{sample}.bam
       bam_rg: data/{sample}/variants/minimap/{sample}_rg.bam
@@ -28,6 +32,29 @@ data:
       vcf_merged: data/merged/twosamplestestmerge.vcf.gz
       mock1: data/merged/mock1.rmme
       mock2: data/merged/mock2.rmme
+chromosomes:
+  - chr1
+  - chr2
+  - chr3
+  - chr4
+  - chr5
+  - chr6
+  - chr7
+  - chr8
+  - chr9
+  - chr10
+  - chr11
+  - chr12
+  - chr13
+  - chr14
+  - chr15
+  - chr16
+  - chr17
+  - chr18
+  - chr19
+  - chr20
+  - chr21
+  - chr22
 
 
 

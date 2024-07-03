@@ -10,8 +10,13 @@ include: 'smkmod/formatting.smk'
 include: 'smkmod/variant_calling.smk'
 
 configfile: 'snakemake/config.yml'
-config_tsv = 'snakemake/test_array.tsv'
+config_tsv = 'snakemake/array.tsv'
 #config_tsv = '/gpfs/projects/bsc83/Projects/pantranscriptome/pclavell/01_basecalling/data/data_array.tsv'
+
+with open(configfile, 'r') as f:
+    config = yaml.safe_load(f)
+
+chromosome = config["chromosomes"]
 
 df = pd.read_csv(config_tsv, sep='\t')
 
@@ -22,7 +27,7 @@ def get_df_val(df, col, sample):
 
 rule all:
     input:
-        expand(config['data']['vc']['gatk']['mock2'],
+        expand(config['data']['vc']['gatk']['vcf_merged'],
                 sample=df['sample'].tolist())
 
 # # TODO map reads to the genome (NOT transcriptome)
@@ -134,7 +139,7 @@ use rule bgzip as compress_vcf with:
     input:
         ifile = rules.vc_vcf_norm.output.vcf
     output:
-        gz = config['data']['vc']['gatk']['vcf_norm_gz']
+        gz = temporary(config['data']['vc']['gatk']['vcf_norm_gz'])
 
 # index files so they can be merged
 use rule vcfgz_index as index_premerge with:
@@ -154,6 +159,34 @@ use rule merge_samples as merging with:
         inputvcfs = (lambda wildcards: fmt_list_for_cli(list(expand(config['data']['vc']['gatk']['vcf_norm_gz'], sample=df['sample'].tolist()))))
     output:
         vcfgz = config['data']['vc']['gatk']['vcf_merged']
+
+
+
+# ###################### UNTESTED AREA#########################
+# split vcf in chromosomes
+use rule vcf_split_into_chr as chr_split with:
+    input:
+        vcfgz = rules.merging.output.vcfgz
+    params:
+        chr= lambda wildcards: wildcards.chromosome
+    output:
+        vcf = config['data']['vc']['filters']['chromosome']
+
+# merge with 1000G chromosomes
+use rule merge_samples as merge_with_1000g with:
+    input:
+        vcf = rules.chr_split.output.vcf
+    output:
+        vcf = config['data']['vc']['filters']['1000Gchromosome']
+
+# filter positions with some missigness
+use rule vcf_filter_missing_pos as filter_incomplete with:
+    input:
+        vcf =  rules.merge_with_1000g.output.vcf
+    output:
+        vcf = config['data']['vc']['filters']['vcf_merged_complete']
+
+
 
 # # prune merged vcf
 
@@ -178,10 +211,9 @@ use rule merge_samples as merging with:
 #     output:
 #         mock = config['data']['vc']['gatk']['mock2']
 
-use rule vcf_pca_no_pruning as pca with:
+# use rule vcf_pca_no_pruning as pca with:
     input:
-        vcf = rules.merging.output.vcfgz,
-        psam = config['data']['vc']['gatk']['vcf_merged_psam']
+        vcf = rules.filter_incomplete.output.vcf
     params:
         input_prefix = config['params']['outputprefix'],
         output_prefix = config['params']['outputprefix2']

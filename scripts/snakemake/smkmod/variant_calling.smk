@@ -130,7 +130,19 @@ rule vcf_index:
         nodes = 1
     shell:
         """
+        oneapi/2024.1 htslib/1.19.1 tabixpp/1.1.2
         tabix -p vcf {input.vcf}
+        """
+
+rule vcf_index_csi:
+    resources:
+        runtime = 120,
+        threads = 1,
+        nodes = 1
+    shell:
+        """
+        oneapi/2024.1 htslib/1.19.1 tabixpp/1.1.2
+        tabix -p vcf --csi {input.vcf}
         """
 
 # remove PL tag because it doesn't work with bcftools
@@ -218,34 +230,75 @@ rule merge_samples:
         module load bcftools
 
         bcftools merge \
-            --missing-to-ref \
             --output {output.vcfgz} \
             --output-type z \
             --threads {resources.threads} \
             {params.inputvcfs}
 
         """
+# split vcf into chroms
+# rule vcf_split_into_chr:
+#     resources:
+#         runtime = 120,
+#         threads = 112
+#     shell:
+#         """
+#         module load bcftools
 
-rule vcf_pruning:
+#         echo chr{1..22} | tr ' ' '\n' |\
+#         while read chr; do bcftools view -O z -o /gpfs/projects/bsc83/Projects/pantranscriptome/pclavell/05_variant_calling/scripts/data/merged/splitchr_raw/split.${chr}.vcf {input.vcf} "${chr}" ; done
+#         touch {output.mock}
+#         """
+rule vcf_split_into_chr:
     resources:
         runtime = 120,
         threads = 112
     shell:
         """
-        module load plink
+        module load vcftools 
 
-        plink2 \
-            --vcf {input.vcf} \
-            --allow-extra-chr \
-            --double-id \
-            --psam {input.psam} \
-            --set-missing-var-ids @:# \
-            --indep-pairwise 50 10 0.1 \
-            --threads {resources.threads} \
-            --out {params.output_prefix}
-
-        touch {output.mock}
+        vcftools --gzvcf {input.vcfgz} \
+            --chr {params.chr} --recode \
+            --out {output.vcf}
         """
+
+
+rule vcf_filter_missing_pos:
+    resources:
+        runtime = 120,
+        threads = 112
+    shell:
+        """
+        module load vcftools
+
+        vcftools \
+            --vcf {input.vcf}
+            --max-missing-count 0 \
+            --recode \
+            --recode-INFO-all \
+            --stdout > {output.vcf}
+        """
+
+# rule vcf_pruning:
+#     resources:
+#         runtime = 120,
+#         threads = 112
+#     shell:
+#         """
+#         module load plink
+
+#         plink2 \
+#             --vcf {input.vcf} \
+#             --allow-extra-chr \
+#             --double-id \
+#             --psam {input.psam} \
+#             --set-missing-var-ids @:# \
+#             --indep-pairwise 50 10 0.1 \
+#             --threads {resources.threads} \
+#             --out {params.output_prefix}
+
+#         touch {output.mock}
+#         """
 
 rule vcf_pca:
     resources:
@@ -283,7 +336,6 @@ rule vcf_pca_no_pruning:
             --allow-extra-chr \
             --set-missing-var-ids @:# \
             --make-bed \
-            --psam {input.psam} \
             --pca \
             --threads {resources.threads} \
             --out {params.output_prefix}
