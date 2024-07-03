@@ -9,16 +9,18 @@ include: 'smkmod/samtools.smk'
 include: 'smkmod/formatting.smk'
 include: 'smkmod/variant_calling.smk'
 
-configfile: 'snakemake/config.yml'
-config_tsv = 'snakemake/array.tsv'
+configfile: 'config.yml'
+config_tsv = 'array.tsv'
+chromosome_tsv = 'chromosomes.tsv'
 #config_tsv = '/gpfs/projects/bsc83/Projects/pantranscriptome/pclavell/01_basecalling/data/data_array.tsv'
 
 with open(configfile, 'r') as f:
     config = yaml.safe_load(f)
 
-chromosome = config["chromosomes"]
 
 df = pd.read_csv(config_tsv, sep='\t')
+chromosome_obj = pd.read_csv(chromosome_tsv, sep='\t')
+
 
 def get_df_val(df, col, sample):
     temp = df.loc[df['sample']==sample]
@@ -28,7 +30,8 @@ def get_df_val(df, col, sample):
 rule all:
     input:
         expand(config['data']['vc']['gatk']['vcf_merged'],
-                sample=df['sample'].tolist())
+                sample=df['sample'].tolist(),
+                chromosome=chromosome_obj.tolist())
 
 # # TODO map reads to the genome (NOT transcriptome)
 # use rule minimap_fq as vc_map_genome with:

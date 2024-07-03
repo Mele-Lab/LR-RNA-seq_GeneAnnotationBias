@@ -150,8 +150,7 @@ rule vcf_index_csi:
 rule vcf_rm_PL:
     resources:
         runtime = 120,
-        threads = 1,
-        nodes = 1
+        threads = 1
     shell:
         """
         if [ -s "{input.vcf}" ]; then
@@ -166,8 +165,7 @@ rule vcf_rm_PL:
 rule vcf_norm:
     resources:
         runtime = 320,
-        threads = 112,
-        nodes = 2
+        threads = 112
     shell:
         """
         module load bcftools
@@ -187,9 +185,8 @@ rule vcf_norm:
 
 rule gatk_split_reads:
     resources:
-        runtime = 120,
-        threads = 112,
-        nodes = 10
+        runtime = 400,
+        threads = 112
     shell:
         """
         module load java-openjdk/22.0.1
@@ -272,7 +269,7 @@ rule vcf_filter_missing_pos:
         module load vcftools
 
         vcftools \
-            --vcf {input.vcf}
+            --vcf {input.vcf} \
             --max-missing-count 0 \
             --recode \
             --recode-INFO-all \
