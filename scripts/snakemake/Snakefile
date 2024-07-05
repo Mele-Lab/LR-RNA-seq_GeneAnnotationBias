@@ -33,14 +33,7 @@ rule all:
                 sample=df['sample'].tolist(),
                 chromosome=chromosome_obj['chr'].tolist())
 
-# # TODO map reads to the genome (NOT transcriptome)
-# use rule minimap_fq as vc_map_genome with:
-#     input:
-#         junc_bed = config['ref']['junc_bed'],
-#         fq = # TODO fill in fastq,
-#         ref_fa = config['ref']['fa_full']
-#     output:
-#         sam = temporary(config['data']['vc']['map']['sam'])
+
 
 
 # TODO MAYBE WE HAVE TO RECOVER THIS RULE BECAUSE I DIDN'T FILTER PFOR PRIMARY MAPPINGS

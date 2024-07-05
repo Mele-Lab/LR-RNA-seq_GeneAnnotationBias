@@ -23,13 +23,15 @@ rule ref_make_fa_ind:
 
 rule call_variants_gatk:
     resources:
-        runtime = 600,
+        runtime = 900,
         threads = 112
     shell:
         """
-        module purge
         module load java-openjdk/17.0.11+9
         module load gatk/4.5.0.0
+
+        export OMP_NUM_THREADS={resources.threads}
+
         gatk \
             --java-options "-Xmx36g -Xms32g" \
             HaplotypeCaller \
