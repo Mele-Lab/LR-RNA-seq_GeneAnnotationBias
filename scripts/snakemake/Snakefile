@@ -9,13 +9,13 @@ include: 'smkmod/samtools.smk'
 include: 'smkmod/formatting.smk'
 include: 'smkmod/variant_calling.smk'
 
-configfile: 'config.yml'
-config_tsv = 'array.tsv'
-chromosome_tsv = 'chromosomes.tsv'
+configfile: 'snakemake/config.yml'
+config_tsv = 'snakemake/array.tsv'
+chromosome_tsv = 'snakemake/chromosomes.tsv'
 #config_tsv = '/gpfs/projects/bsc83/Projects/pantranscriptome/pclavell/01_basecalling/data/data_array.tsv'
 
-with open(configfile, 'r') as f:
-    config = yaml.safe_load(f)
+# with open(configfile, 'r') as f:
+#     config = yaml.safe_load(f)
 
 
 df = pd.read_csv(config_tsv, sep='\t')
@@ -31,7 +31,7 @@ rule all:
     input:
         expand(config['data']['vc']['gatk']['vcf_merged'],
                 sample=df['sample'].tolist(),
-                chromosome=chromosome_obj.tolist())
+                chromosome=chromosome_obj['chr'].tolist())
 
 # # TODO map reads to the genome (NOT transcriptome)
 # use rule minimap_fq as vc_map_genome with:
@@ -214,11 +214,11 @@ use rule vcf_filter_missing_pos as filter_incomplete with:
 #     output:
 #         mock = config['data']['vc']['gatk']['mock2']
 
-# use rule vcf_pca_no_pruning as pca with:
-    input:
-        vcf = rules.filter_incomplete.output.vcf
-    params:
-        input_prefix = config['params']['outputprefix'],
-        output_prefix = config['params']['outputprefix2']
-    output:
-        mock = config['data']['vc']['gatk']['mock2']
+# TODO UNQUOTE# use rule vcf_pca_no_pruning as pca with:
+#     input:
+#         vcf = rules.filter_incomplete.output.vcf
+#     params:
+#         input_prefix = config['params']['outputprefix'],
+#         output_prefix = config['params']['outputprefix2']
+#     output:
+#         mock = config['data']['vc']['gatk']['mock2']

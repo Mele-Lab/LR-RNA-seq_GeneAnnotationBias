@@ -23,9 +23,8 @@ rule ref_make_fa_ind:
 
 rule call_variants_gatk:
     resources:
-        runtime = 120,
-        threads = 112,
-        nodes = 4
+        runtime = 600,
+        threads = 112
     shell:
         """
         module purge
@@ -99,6 +98,7 @@ rule merge_variants:
         """
         bcftools merge \
             --use-header {input.header_vcf} \
+            --threads {resources.threads} \
             {input.vcfs} > {output.vcf}
         """
 
@@ -141,7 +141,7 @@ rule vcf_index_csi:
         nodes = 1
     shell:
         """
-        oneapi/2024.1 htslib/1.19.1 tabixpp/1.1.2
+        module load oneapi/2024.1 htslib/1.19.1 tabixpp/1.1.2
         tabix -p vcf --csi {input.vcf}
         """
 
@@ -153,6 +153,7 @@ rule vcf_rm_PL:
         threads = 1
     shell:
         """
+        module load bcftools
         if [ -s "{input.vcf}" ]; then
             bcftools annotate \
                 -x ^INFO/DP,^FORMAT/GT,^FORMAT/AD,^FORMAT/DP,^FORMAT/GQ \
