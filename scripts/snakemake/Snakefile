@@ -20,7 +20,7 @@ chromosome_tsv = 'snakemake/chromosomes.tsv'
 
 df = pd.read_csv(config_tsv, sep='\t')
 chromosome_obj = pd.read_csv(chromosome_tsv, sep='\t')
-
+chroms = chromosome_obj.chr.tolist()
 
 def get_df_val(df, col, sample):
     temp = df.loc[df['sample']==sample]
@@ -30,8 +30,9 @@ def get_df_val(df, col, sample):
 rule all:
     input:
         expand(config['data']['vc']['gatk']['vcf_merged'],
-                sample=df['sample'].tolist(),
                 chromosome=chromosome_obj['chr'].tolist())
+        # expand(config['data']['vc']['gatk']['vcf_merged'],
+        #         sample=df['sample'].tolist())
 
 
 
@@ -163,8 +164,6 @@ use rule merge_samples as merging with:
 use rule vcf_split_into_chr as chr_split with:
     input:
         vcfgz = rules.merging.output.vcfgz
-    params:
-        chr= lambda wildcards: wildcards.chromosome
     output:
         vcf = config['data']['vc']['filters']['chromosome']
 
@@ -181,8 +180,6 @@ use rule vcf_filter_missing_pos as filter_incomplete with:
         vcf =  rules.merge_with_1000g.output.vcf
     output:
         vcf = config['data']['vc']['filters']['vcf_merged_complete']
-
-
 
 # # prune merged vcf
 
@@ -215,3 +212,12 @@ use rule vcf_filter_missing_pos as filter_incomplete with:
 #         output_prefix = config['params']['outputprefix2']
 #     output:
 #         mock = config['data']['vc']['gatk']['mock2']
+
+# TODO -- change the input and output files
+rule merge_over_chromosomes:
+    input:
+        expand(config['data']['vc']['filters']['chromosome'],
+               chromosome=chroms)
+    output: # output file; no wildcards needed
+    shell:
+        # something here too

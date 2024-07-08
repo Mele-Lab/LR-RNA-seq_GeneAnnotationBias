@@ -32,6 +32,3 @@ data:
       vcf_merged: data/merged/twosamplestestmerge.vcf.gz
       mock1: data/merged/mock1.rmme
       mock2: data/merged/mock2.rmme
-
-
-
