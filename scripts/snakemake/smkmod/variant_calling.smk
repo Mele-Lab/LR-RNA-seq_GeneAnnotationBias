@@ -23,7 +23,7 @@ rule ref_make_fa_ind:
 
 rule call_variants_gatk:
     resources:
-        runtime = 900,
+        runtime = 1100,
         threads = 112
     shell:
         """
