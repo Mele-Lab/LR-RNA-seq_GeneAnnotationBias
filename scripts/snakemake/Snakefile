@@ -29,8 +29,12 @@ def get_df_val(df, col, sample):
 
 rule all:
     input:
-        expand(config['data']['vc']['gatk']['vcf_merged'],
-                chromosome=chromosome_obj['chr'].tolist())
+        expand(config['data']['final']['allmerged'],
+                 chroms=chromosome_obj['chr'].tolist(),
+                 sample=df['sample'].tolist())
+        #config['data']['final']['allmerged']
+        # expand(config['data']['vc']['gatk']['vcf_merged'],
+        #         chromosome=chromosome_obj['chr'].tolist())
         # expand(config['data']['vc']['gatk']['vcf_merged'],
         #         sample=df['sample'].tolist())
 
@@ -170,14 +174,15 @@ use rule vcf_split_into_chr as chr_split with:
 # merge with 1000G chromosomes
 use rule merge_samples as merge_with_1000g with:
     input:
-        vcf = rules.chr_split.output.vcf
+        myvcf = rules.chr_split.output.vcf,
+        thousandGvcf = config['data']['1000Gchr']
     output:
-        vcf = config['data']['vc']['filters']['1000Gchromosome']
+        vcfgz = config['data']['vc']['filters']['1000Gchromosome']
 
 # filter positions with some missigness
 use rule vcf_filter_missing_pos as filter_incomplete with:
     input:
-        vcf =  rules.merge_with_1000g.output.vcf
+        vcf =  rules.merge_with_1000g.output.vcfgz
     output:
         vcf = config['data']['vc']['filters']['vcf_merged_complete']
 
@@ -214,10 +219,10 @@ use rule vcf_filter_missing_pos as filter_incomplete with:
 #         mock = config['data']['vc']['gatk']['mock2']
 
 # TODO -- change the input and output files
-rule merge_over_chromosomes:
+use rule merge_variants as merge_over_chromosomes with:
     input:
-        expand(config['data']['vc']['filters']['chromosome'],
-               chromosome=chroms)
+        vcfs = lambda wildcards: expand(config['data']['vc']['filters']['vcf_merged_complete'],
+               chroms=chroms)
     output: # output file; no wildcards needed
-    shell:
-        # something here too
+        finalvcf = config['data']['final']['allmerged']
+

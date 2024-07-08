@@ -236,6 +236,23 @@ rule merge_samples:
             {params.inputvcfs}
 
         """
+
+
+rule merge_samples_1000G:
+    resources:
+        runtime = 120,
+        threads = 112
+    shell:
+        """
+        module load bcftools
+
+        bcftools merge \
+            --output {output.vcfgz} \
+            --output-type z \
+            --threads {resources.threads} \
+            {input.myvcf} {input.thousandGvcf}
+
+        """
 # split vcf into chroms
 # rule vcf_split_into_chr:
 #     resources:
@@ -258,7 +275,7 @@ rule vcf_split_into_chr:
         module load vcftools 
 
         vcftools --gzvcf {input.vcfgz} \
-            --chr {params.chr} --recode \
+            --chr {wildcards.chroms} --recode \
             --out {output.vcf}
         """
 

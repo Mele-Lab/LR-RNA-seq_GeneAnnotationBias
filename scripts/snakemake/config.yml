@@ -9,11 +9,14 @@ params:
   outputprefix2: "data/final"
 
 data:
+  final:
+    allmerged: /data/merged/final/samples_1000G_chr_merged.vcf
+  1000Gchr: /gpfs/projects/bsc83/Data/1000G/x30_vcf/original_data/1kGP_high_coverage_Illumina.{chroms}.filtered.SNV_INDEL_SV_phased_panel.vcf.gz
   vc:
     filters:
-      vcf_merged_complete: data/merged/samplesmerge_complete.vcf
-      chromosome: data/merged/splitchr_raw/samplesmerge_complete.{chromosome}.vcf
-      1000Gchromosome: data/merged/splitchr_raw/samplesmerge_complete.{chromosome}_1000Gmerge.vcf
+      vcf_merged_complete: data/merged/samplesmerge_complete_chr{chroms}.vcf
+      chromosome: data/merged/splitchr_raw/samplesmerge_complete.{chroms}.vcf
+      1000Gchromosome: data/merged/splitchr_raw/samplesmerge_complete.{chroms}_1000Gmerge.vcf.gz
     map:
       bam: /gpfs/projects/bsc83/Projects/pantranscriptome/pclavell/03_mapping/data/genomic/{sample}.bam
       bam_rg: data/{sample}/variants/minimap/{sample}_rg.bam
