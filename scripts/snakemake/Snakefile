@@ -70,11 +70,11 @@ use rule ref_make_fa_ind as vc_fa_ind with:
         fai = config['ref']['fa_full_ind']
 
 # TODO actually write this rule, there's nothing underneath ATM
-# split reads based on where introns are because we have spliced data
 use rule gatk_split_reads as vc_split_spliced_reads with:
     input:
         fa = rules.vc_make_dict.input.fa,
-        align = rules.vc_add_rg.output.align
+        align = rules.vc_add_rg.output.align,
+        index = rules.vc_fa_ind.output.fai
     output:
         align = temporary(config['data']['vc']['map']['bam_split'])
 
@@ -92,27 +92,56 @@ use rule bam_sort as vc_sort_bam with:
     output:
         align = temporary(config['data']['vc']['map']['bam_sort'])
 
-use rule bamindex as vc_ind_bam with:
+# index chr splitted bams
+use rule bamindex as vc_ind_bam_first with:
     input:
         bam = rules.vc_sort_bam.output.align
     output:
-        index = config['data']['vc']['map']['bam_sort_ind']
+        index = temporary(config['data']['vc']['map']['bam_sort_ind'])
 
 ###########################################
 ########### GATK
 ###########################################
 
+# split bams into chromosomes
+use rule split_bams_into_chromosomes as chr_bamsplit with:
+    input:
+        bam_to_split = rules.vc_sort_bam.output.align,
+        index = rules.vc_ind_bam_first.output.index
+    output:
+        splitted_bam = temporary(config['data']['vc']['map']['splittedbam'])
+
+# index chr splitted bams
+use rule bamindex as vc_ind_bam with:
+    input:
+        bam = rules.chr_bamsplit.output.splitted_bam
+    output:
+        index = temporary(config['data']['vc']['map']['bam_sort_ind_chr'])
+
 
 # actual variant calling
 use rule call_variants_gatk as vc_call_variants with:
     input:
-        bam = rules.vc_ind_bam.input.bam,
+        bam = rules.chr_bamsplit.output.splitted_bam,
         bai = rules.vc_ind_bam.output.index,
         fa = rules.vc_make_dict.input.fa,
-        ind = rules.vc_fa_ind.output.fai,
+        ind = rules.vc_ind_bam_first.output.index,
         dict = rules.vc_make_dict.output.fa_dict
     output:
-        vcf = temporary(config['data']['vc']['gatk']['vcf_gz'])
+        vcf = temporary(config['data']['vc']['gatk']['vcf_gz_splitted'])
+
+# merge chromosomes of same individual
+def fmt_list_for_cli(x, sep=' '):
+    return f'{sep}'.join(x)
+use rule merge_variants as merge_chr_of_a_sample with:
+    input:
+        vcfs = fmt_list_for_cli(list(lambda wildcards: expand(rules.vc_call_variants.output.vcf, chroms=chroms))),
+        header_vcf = lambda wildcards: expand(rules.vc_call_variants.output.vcf,
+                 chroms='chr1')
+    output:
+        vcfgz = temporary(config['data']['vc']['gatk']['vcf_gz'])
+
+
 
 # use rule gunzip as vc_gunzip_vcf with:
 #     input:
@@ -123,24 +152,23 @@ use rule call_variants_gatk as vc_call_variants with:
 # normalize variants so they're comparable across samples
 use rule vcf_norm as vc_vcf_norm with:
     input:
-        vcf = rules.vc_call_variants.output.vcf,
+        vcf = rules.merge_chr_of_a_sample.output.vcfgz,
         fa = rules.vc_call_variants.input.fa
     output:
-        vcf = temporary(config['data']['vc']['gatk']['vcf_norm'])
+        vcfnorm = temporary(config['data']['vc']['gatk']['vcf_norm'])
 
 
 # NEW PART
-def fmt_list_for_cli(x, sep=' '):
-    return f'{sep}'.join(x)
+
 
 #        vcflist = fmt_list_for_cli(list(lambda wildcards: expand(config['data']['vc']['gatk']['vcf_norm'], sample=df['sample'].tolist()))),
 
 # bgzip files so they can be merged
 use rule bgzip as compress_vcf with:
     input:
-        ifile = rules.vc_vcf_norm.output.vcf
+        ifile = rules.vc_vcf_norm.output.vcfnorm
     output:
-        gz = temporary(config['data']['vc']['gatk']['vcf_norm_gz'])
+        gz = config['data']['vc']['gatk']['vcf_norm_gz']
 
 # index files so they can be merged
 use rule vcfgz_index as index_premerge with:

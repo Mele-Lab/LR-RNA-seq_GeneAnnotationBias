@@ -8,13 +8,13 @@ params:
   outputprefix: "data/merged_prepruning"
   outputprefix2: "data/final"
 
-data:
+data: 
   final:
     allmerged: /data/merged/final/samples_1000G_chr_merged.vcf
   1000Gchr: /gpfs/projects/bsc83/Data/1000G/x30_vcf/original_data/1kGP_high_coverage_Illumina.{chroms}.filtered.SNV_INDEL_SV_phased_panel.vcf.gz
   vc:
     filters:
-      vcf_merged_complete: data/merged/samplesmerge_complete_chr{chroms}.vcf
+      vcf_merged_complete: data/merged/samplesmerge_complete_{chroms}.vcf
       chromosome: data/merged/splitchr_raw/samplesmerge_complete.{chroms}.vcf
       1000Gchromosome: data/merged/splitchr_raw/samplesmerge_complete.{chroms}_1000Gmerge.vcf.gz
     map:
@@ -24,10 +24,13 @@ data:
       bam_split_flag: data/{sample}/variants/minimap/{sample}_split_flag.bam
       bam_sort: data/{sample}/variants/minimap/{sample}_sort.bam
       bam_sort_ind: data/{sample}/variants/minimap/{sample}_sort.bam.bai
+      bam_sort_ind_chr: data/{sample}/variants/minimap/{sample}_sort_{chroms}.bam.bai
+      splittedbam: data/{sample}/variants/minimap/{sample}_sort_{chroms}.bam
     gatk:
       vcf_gz: data/{sample}/variants/gatk/{sample}.vcf.gz
       vcf_bam: data/{sample}/variants/gatk/{sample}.bam
       vcf: data/{sample}/variants/gatk/{sample}.vcf
+      vcf_gz_splitted: data/{sample}/variants/gatk/called_variants_{sample}_{chroms}.vcf.gz
       vcf_norm: data/{sample}/variants/gatk/{sample}_norm.vcf
       vcf_norm_gz: data/{sample}/variants/gatk/{sample}_norm.vcf.gz
       vcf_norm_gz_index: data/{sample}/variants/gatk/{sample}_norm.vcf.gz.csi

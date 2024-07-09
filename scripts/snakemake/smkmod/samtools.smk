@@ -123,7 +123,7 @@ rule align_filt_unmapped_supp:
 rule add_rg:
     resources:
         runtime = 120,
-        threads = 4,
+        threads = 112,
         nodes = 1
     shell:
         """
@@ -135,4 +135,18 @@ rule add_rg:
             -@ {resources.threads} \
             -o {output.align} \
             {input.align}
+        """
+
+
+rule split_bams_into_chromosomes:
+    resources:
+        runtime = 120,
+        threads = 112
+    shell:
+        """
+        module load samtools
+        samtools view \
+            -@ {resources.threads} \
+            -b \
+            {input.bam_to_split} {wildcards.chroms} > {output.splitted_bam}
         """

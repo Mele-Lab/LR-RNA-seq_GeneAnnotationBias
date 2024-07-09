@@ -94,14 +94,14 @@ rule rev_intersect_variants_with_bed:
 rule merge_variants:
     resources:
         runtime = 120,
-        threads = 1,
+        threads = 112,
         nodes = 1
     shell:
         """
         bcftools merge \
             --use-header {input.header_vcf} \
             --threads {resources.threads} \
-            {input.vcfs} > {output.vcf}
+            {input.vcfs} > {output.vcfgz}
         """
 
 rule bgzip:
@@ -152,7 +152,7 @@ rule vcf_index_csi:
 rule vcf_rm_PL:
     resources:
         runtime = 120,
-        threads = 1
+        threads = 112
     shell:
         """
         module load bcftools
@@ -180,7 +180,7 @@ rule vcf_norm:
               --fasta-ref {input.fa} \
               --old-rec-tag INFO \
               --threads {resources.threads}\
-              {input.vcf} > {output.vcf}
+              {input.vcf} > {output.vcfnorm}
         else
             touch {output.vcf}
         fi
@@ -233,7 +233,7 @@ rule merge_samples:
             --output {output.vcfgz} \
             --output-type z \
             --threads {resources.threads} \
-            {params.inputvcfs}
+            {input.vcfs}
 
         """
 
