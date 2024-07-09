@@ -142,15 +142,15 @@ def fmt_list_for_cli(x, sep=' '):
 use rule merge_variants as merge_chr_of_a_sample with:
     input:
         vcfs = lambda wildcards: expand(rules.vc_call_variants.output.vcf,
-                                      chroms=chromosome_obj['chr'].tolist(),
-                                      sample=wildcards.sample))
+            chroms=chromosome_obj['chr'].tolist(),
+            sample=wildcards.sample)
     params:
-        vcfs_cli = fmt_list_for_cli(expand(rules.vc_call_variants.output.vcf,
-                                      chroms=chromosome_obj['chr'].tolist(),
-                                      sample=wildcards.sample)),
+        vcfs_cli = lambda wildcards: fmt_list_for_cli(expand(rules.vc_call_variants.output.vcf,
+            chroms=chromosome_obj['chr'].tolist(),
+            sample=wildcards.sample)),
         header_vcf = lambda wildcards: expand(rules.vc_call_variants.output.vcf,
-                 chroms='chr1',
-                 sample=wildcards.sample)
+            chroms='chr1',
+            sample=wildcards.sample)
     output:
         vcfgz = temporary(config['data']['vc']['gatk']['vcf_gz'])
 
