@@ -138,10 +138,10 @@ use rule merge_variants as merge_chr_of_a_sample with:
         vcfs = fmt_list_for_cli(list(lambda wildcards:
                                      expand(rules.vc_call_variants.output.vcf,
                                      chroms=chroms,
-                                     sample=wildcards.sample))),
+                                     sample={wildcards.sample}))),
         header_vcf = lambda wildcards: expand(rules.vc_call_variants.output.vcf,
                  chroms='chr1',
-                 sample=wildcards.sample)
+                 sample={wildcards.sample})
     output:
         vcfgz = temporary(config['data']['vc']['gatk']['vcf_gz'])
 
