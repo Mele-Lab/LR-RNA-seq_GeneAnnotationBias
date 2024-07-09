@@ -27,6 +27,9 @@ def get_df_val(df, col, sample):
     assert len(temp.index) == 1
     return temp[col].values[0]
 
+wildcard_constraints:
+    chroms='|'.join([re.escape(x) for x in chromosome_obj.chr.tolist()]),
+
 rule all:
     input:
         expand(config['data']['final']['allmerged'],
