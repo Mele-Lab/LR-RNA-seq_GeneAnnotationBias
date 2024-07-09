@@ -99,9 +99,9 @@ rule merge_variants:
     shell:
         """
         bcftools merge \
-            --use-header {input.header_vcf} \
+            --use-header {params.header_vcf} \
             --threads {resources.threads} \
-            {input.vcfs} > {output.vcfgz}
+            {params.vcfs_cli} > {output.vcfgz}
         """
 
 rule bgzip:
@@ -272,7 +272,7 @@ rule vcf_split_into_chr:
         threads = 112
     shell:
         """
-        module load vcftools 
+        module load vcftools
 
         vcftools --gzvcf {input.vcfgz} \
             --chr {wildcards.chroms} --recode \
