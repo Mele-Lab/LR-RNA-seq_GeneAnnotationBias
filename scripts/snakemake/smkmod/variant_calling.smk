@@ -98,6 +98,7 @@ rule merge_variants:
         nodes = 1
     shell:
         """
+        module load bcftools
         bcftools merge \
             --use-header {params.header_vcf} \
             --threads {resources.threads} \

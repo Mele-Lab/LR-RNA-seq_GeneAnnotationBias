@@ -10,7 +10,7 @@ include: 'smkmod/formatting.smk'
 include: 'smkmod/variant_calling.smk'
 
 configfile: 'snakemake/config.yml'
-config_tsv = 'snakemake/test_array.tsv'
+config_tsv = 'snakemake/array.tsv'
 chromosome_tsv = 'snakemake/chromosomes.tsv'
 #config_tsv = '/gpfs/projects/bsc83/Projects/pantranscriptome/pclavell/01_basecalling/data/data_array.tsv'
 
@@ -114,7 +114,7 @@ use rule split_bams_into_chromosomes as chr_bamsplit with:
         bam_to_split = rules.vc_sort_bam.output.align,
         index = rules.vc_ind_bam_first.output.index
     output:
-        splitted_bam = temporary(config['data']['vc']['map']['splittedbam'])
+        splitted_bam = config['data']['vc']['map']['splittedbam']
 
 # index chr splitted bams
 use rule bamindex as vc_ind_bam with:
