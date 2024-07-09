@@ -33,8 +33,7 @@ wildcard_constraints:
 
 rule all:
     input:
-        expand(config['data']['vc']['gatk']['vcf_gz'],
-                 sample=df['sample'].tolist())
+        expand(config['data']['final']['allmerged'])
         # expand(config['data']['final']['allmerged'],
         #          chroms=chromosome_obj['chr'].tolist(),
         #          sample=df['sample'].tolist())
