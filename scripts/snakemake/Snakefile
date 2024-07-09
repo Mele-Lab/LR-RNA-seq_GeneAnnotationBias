@@ -10,7 +10,7 @@ include: 'smkmod/formatting.smk'
 include: 'smkmod/variant_calling.smk'
 
 configfile: 'snakemake/config.yml'
-config_tsv = 'snakemake/array.tsv'
+config_tsv = 'snakemake/test_array.tsv'
 chromosome_tsv = 'snakemake/chromosomes.tsv'
 #config_tsv = '/gpfs/projects/bsc83/Projects/pantranscriptome/pclavell/01_basecalling/data/data_array.tsv'
 
