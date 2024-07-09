@@ -32,9 +32,12 @@ wildcard_constraints:
 
 rule all:
     input:
-        expand(config['data']['final']['allmerged'],
+        expand(config['data']['gatk']['vcf_gz_splitted'],
                  chroms=chromosome_obj['chr'].tolist(),
                  sample=df['sample'].tolist())
+        # expand(config['data']['final']['allmerged'],
+        #          chroms=chromosome_obj['chr'].tolist(),
+        #          sample=df['sample'].tolist())
         #config['data']['final']['allmerged']
         # expand(config['data']['vc']['gatk']['vcf_merged'],
         #         chromosome=chromosome_obj['chr'].tolist())
@@ -136,6 +139,7 @@ use rule call_variants_gatk as vc_call_variants with:
 # merge chromosomes of same individual
 def fmt_list_for_cli(x, sep=' '):
     return f'{sep}'.join(x)
+
 use rule merge_variants as merge_chr_of_a_sample with:
     input:
         vcfs = lambda wildcards: fmt_list_for_cli(
