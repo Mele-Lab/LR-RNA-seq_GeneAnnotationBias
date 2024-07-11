@@ -99,10 +99,11 @@ rule merge_variants:
     shell:
         """
         module load bcftools
-        bcftools merge \
-            --use-header {params.header_vcf} \
+        bcftools concat \
             --threads {resources.threads} \
-            {params.vcfs_cli} > {output.vcfgz}
+            --output {output.vcfgz} \
+            --output-type z \
+            {params.vcfs_cli}
         """
 
 rule bgzip:
@@ -183,7 +184,7 @@ rule vcf_norm:
               --threads {resources.threads}\
               {input.vcf} > {output.vcfnorm}
         else
-            touch {output.vcf}
+            echo "UNKNOWN ERROR VCF_NORM RULE"
         fi
         """
 
@@ -234,7 +235,7 @@ rule merge_samples:
             --output {output.vcfgz} \
             --output-type z \
             --threads {resources.threads} \
-            {input.vcfs}
+            {params.vcfs_cli}
 
         """
 
@@ -277,7 +278,7 @@ rule vcf_split_into_chr:
 
         vcftools --gzvcf {input.vcfgz} \
             --chr {wildcards.chroms} --recode \
-            --out {output.vcf}
+            ----stdout > {output.vcf}
         """
 
 
@@ -290,7 +291,7 @@ rule vcf_filter_missing_pos:
         module load vcftools
 
         vcftools \
-            --vcf {input.vcf} \
+            --gzvcf {input.vcf} \
             --max-missing-count 0 \
             --recode \
             --recode-INFO-all \
@@ -318,28 +319,28 @@ rule vcf_filter_missing_pos:
 #         touch {output.mock}
 #         """
 
-rule vcf_pca:
-    resources:
-        runtime = 120,
-        threads = 112
-    shell:
-        """
-        module load plink
+# rule vcf_pca:
+#     resources:
+#         runtime = 120,
+#         threads = 112
+#     shell:
+#         """
+#         module load plink
 
-        plink2 \
-            --vcf {input.vcf}\
-            --allow-extra-chr \
-            --set-missing-var-ids @:# \
-            --extract {params.input_prefix}.prune.in \
-            --make-bed \
-            --psam {input.psam} \
-            --pca \
-            --threads {resources.threads} \
-            --out {params.output_prefix}
+#         plink2 \
+#             --vcf {input.vcf}\
+#             --allow-extra-chr \
+#             --set-missing-var-ids @:# \
+#             --extract {params.input_prefix}.prune.in \
+#             --make-bed \
+#             --psam {input.psam} \
+#             --pca \
+#             --threads {resources.threads} \
+#             --out {params.output_prefix}
 
-        rm {input.mock}
-        touch {output.mock}
-        """
+#         rm {input.mock}
+#         touch {output.mock}
+#         """
 
 rule vcf_pca_no_pruning:
     resources:
@@ -359,4 +360,19 @@ rule vcf_pca_no_pruning:
             --out {params.output_prefix}
 
         touch {output.mock}
+        """
+
+rule keep_biallelic:
+    resources:
+        runtime = 60,
+        threads = 112
+    shell:
+        """
+        module load bcftools
+
+        bcftools view \
+            --max-alleles 2 \
+            -O v \
+            -o {output.vcf}\
+            {input.vcf}
         """

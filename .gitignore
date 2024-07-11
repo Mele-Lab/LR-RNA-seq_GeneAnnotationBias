@@ -8,3 +8,5 @@ scripts/merged_prepruning.log
 scripts/merged_prepruning-temporary.psam
 scripts/merged_pruned.log
 scripts/merged_pruned-temporary.psam
+finalparsed.vcf
+finalparsed.cvf

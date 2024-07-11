@@ -10,11 +10,17 @@ params:
 
 data: 
   final:
-    allmerged: /data/merged/final/samples_1000G_chr_merged.vcf
+    allmerged_nomultiallelic: data/merged/final/samples_1000G_chr_merged_biallelic.vcf
+    allmerged: data/merged/final/samples_1000G_chr_merged.vcf
   1000Gchr: /gpfs/projects/bsc83/Data/1000G/x30_vcf/original_data/1kGP_high_coverage_Illumina.{chroms}.filtered.SNV_INDEL_SV_phased_panel.vcf.gz
+  1000Gchr_normalized: data/normalized1000G_{chroms}.vcf
+  1000Gchr_normalized_compressed: data/normalized1000G_{chroms}.vcf.gz
+  1000Gchr_normalized_compressed_index: data/normalized1000G_{chroms}.vcf.gz.csi
   vc:
     filters:
       vcf_merged_complete: data/merged/samplesmerge_complete_{chroms}.vcf
+      vcf_norm_gz_two: data/merged/samplesmerge_complete.{chroms}.vcf.gz
+      vcf_norm_gz_index_two: data/merged/samplesmerge_complete.{chroms}.vcf.gz.csi
       chromosome: data/merged/splitchr_raw/samplesmerge_complete.{chroms}.vcf
       1000Gchromosome: data/merged/splitchr_raw/samplesmerge_complete.{chroms}_1000Gmerge.vcf.gz
     map:
@@ -34,7 +40,7 @@ data:
       vcf_norm: data/{sample}/variants/gatk/{sample}_norm.vcf
       vcf_norm_gz: data/{sample}/variants/gatk/{sample}_norm.vcf.gz
       vcf_norm_gz_index: data/{sample}/variants/gatk/{sample}_norm.vcf.gz.csi
-      vcf_merged_psam: data/merged/twosamplestestmerge.psam
-      vcf_merged: data/merged/twosamplestestmerge.vcf.gz
+      vcf_merged_psam: data/merged/fortyfiveincompletesamplestestmerge.psam
+      vcf_merged: data/merged/fortyfiveincompletesamplestestmerge.vcf.gz
       mock1: data/merged/mock1.rmme
       mock2: data/merged/mock2.rmme
