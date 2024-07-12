@@ -33,7 +33,7 @@ wildcard_constraints:
 
 rule all:
     input:
-        expand(config['data']['final']['allmerged_nomultiallelic'])
+        expand(config['data']['final']['allmerged_nomultiallelic_parsed'])
         # expand(config['data']['final']['allmerged'],
         #          chroms=chromosome_obj['chr'].tolist(),
         #          sample=df['sample'].tolist())
@@ -188,6 +188,15 @@ use rule vcfgz_index as index_premerge with:
         vcfgz = rules.compress_vcf.output.gz
     output:
         index = config['data']['vc']['gatk']['vcf_norm_gz_index']
+# TODO add rules for joint genotyping
+
+    # gatk --java-options "-Xmx4g -Xms4g" GenomicsDBImport \
+    #   -V data/gvcfs/mother.g.vcf.gz \
+    #   -V data/gvcfs/father.g.vcf.gz \
+    #   -V data/gvcfs/son.g.vcf.gz \
+    #   --genomicsdb-workspace-path my_database \
+    #   --tmp-dir=/path/to/large/tmp \
+    #   -L 20
 
 
 # merge vcfs of all samples
@@ -251,7 +260,7 @@ use rule vcfgz_index as index_premerge_2_1000G with:
 use rule merge_samples_1000G as merge_with_1000g with:
     input:
         myvcf = rules.compress_vcf_2.output.gz,
-        thousandGvcf = rules.vc_vcf_norm_1000G.output.vcfnorm,
+        thousandGvcf = rules.compress_vcf_2_1000G.output.gz,
         index = rules.index_premerge_2.output.index,
         index2 = rules.index_premerge_2_1000G.output.index
     output:
@@ -305,6 +314,13 @@ use rule keep_biallelic as filterout_multiallelic with:
         vcf = rules.merge_all_chromosomes.output.vcfgz
     output: 
         vcf = config['data']['final']['allmerged_nomultiallelic']
+
+use rule parse_vcf as parse_final_vcf with:
+    input:
+        vcf = rules.filterout_multiallelic.output.vcf
+    output:
+        vcf = config['data']['final']['allmerged_nomultiallelic_parsed']
+
 
 # TODO UNQUOTE# use rule vcf_pca_no_pruning as pca with:
 use rule vcf_pca_no_pruning as pca with:

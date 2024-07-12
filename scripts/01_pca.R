@@ -32,7 +32,7 @@ catch_args(0)
 # 
 # 
 # 
-# metadata <- fread("../00_metadata/pantranscriptome_samples_metadata.tsv")
+metadata <- fread("../00_metadata/pantranscriptome_samples_metadata.tsv")
 # metadata[, processid := paste(lab_number_sample, lab_sampleid, cell_line_id, sep="_")]
 # 
 # mypcs <- metadata[pcs, on=c(processid="#IID")]
@@ -44,34 +44,48 @@ catch_args(0)
 # 
 
 # load vcf
-data <- fread("data/fortyfiveincompletesamplestestmerge.vcf", skip=340)
+data <- fread("scripts/data/merged/final/samples_1000G_chr_merged_biallelic_parsed.vcf", skip=423)
 
 # remove info columns
 data <- data[,c(1:9) :=NULL]
-
+dataf <- data[, c(grepl("_", colnames(data))), with=FALSE]
 # 
-# recod <- lapply(data, function(x) ifelse(x == "0|0", 0, 
-#                                           ifelse(x %in% c("0|1", "1|0"), 1, 
-#                                                  ifelse(x == "1|1", 2, NA))))
+recod <- lapply(dataf, function(x) ifelse(x == "0|0", 0,
+                                          ifelse(x %in% c("0|1", "1|0"), 1,
+                                                 ifelse(x == "1|1", 2, NA))))
 
-recod <- lapply(data, \(x) sub("./.:.:.:.:.", "nd", x))
+# recod <- lapply(data, \(x) sub("./.:.:.:.:.", "nd", x))
 recod <- as.data.frame(recod)
-recod <- lapply(recod, \(x) gsub(":.*", "", x))
-recod <- as.data.frame(recod)
-recod <- lapply(recod, \(x) ifelse(grepl("1/1", x), "c",
-                                   ifelse(grepl("0/1", x), "b",
-                                          ifelse(grepl("1/0", x), "b",
-                                                 ifelse(grepl("0/0", x), "a", "nd")))))
+# recod <- lapply(recod, \(x) gsub(":.*", "", x))
+# recod <- as.data.frame(recod)
+# recod <- lapply(recod, \(x) ifelse(grepl("1/1", x), "c",
+#                                    ifelse(grepl("0/1", x), "b",
+#                                           ifelse(grepl("1/0", x), "b",
+#                                                  ifelse(grepl("0/0", x), "a", "nd")))))
 
 recod <- as.data.frame(recod)
-recod <- lapply(recod, \(x) as.factor(x))
-recod <- as.data.frame(recod)
+# recod <- lapply(recod, \(x) as.factor(x))
+# recod <- as.data.frame(recod)
+# 
+# recod[, countnd := grepl("nd", recod)]
+recodt <- t(recod)
+# recodfiltered <- recod[rowSums(recod=="nd")<30,]
+pc <- prcomp(recodt)
 
-pc <- prcomp(as.data.frame(recod))
+res.pca <-rownames_to_column(as.data.frame(pc[["x"]]), var="sample_m")
+setDT(res.pca)
+res.pca[, cell_line_id := gsub(".*_", "", res.pca$sample_m)]
+merged <- metadata[, .(cell_line_id, population, color_pop, sample)][res.pca, on="cell_line_id"]
+
+ggplot(merged, aes(x=PC1, y=PC2))+
+  geom_point(aes(col=population), alpha=0.8, size=3)+
+  scale_color_manual(values=unique(merged$color_pop)[order(unique(merged$population))])+
+  mytheme+
+  geom_text(data=merged[grepl("IS2|CH2|NI4|PY5|KE1|PE5", sample_m)], aes(x=PC1, y=PC2, label=sample))
 
 library(factoextra)
-fviz_pca_var(pc, geom="text")
+fviz_pca_ind(pc, geom="text")
 
 
 library("FactoMineR")
-pc <- PCA(t(recod))
+pc <- PCA(recodfiltered)

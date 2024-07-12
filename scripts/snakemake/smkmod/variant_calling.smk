@@ -376,3 +376,17 @@ rule keep_biallelic:
             -o {output.vcf}\
             {input.vcf}
         """
+
+rule parse_vcf:
+    resources:
+        runtime = 60,
+        threads = 1
+    shell:
+        """
+        cat {input.vcf} |\
+         grep "#" > {output.vcf}
+        cat {input.vcf} |\
+         grep -v "#" |\
+          awk 'BEGIN{{OFS="\t"}}{{for(i=10; i<=NF; i++){{sub(/:.*/, "", $i)}};\
+           for(i=10; i<=NF; i++){{gsub(/\//, "|", $i)}}; print}}' >> {output.vcf}
+        """

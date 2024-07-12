@@ -12,6 +12,7 @@ data:
   final:
     allmerged_nomultiallelic: data/merged/final/samples_1000G_chr_merged_biallelic.vcf
     allmerged: data/merged/final/samples_1000G_chr_merged.vcf
+    allmerged_nomultiallelic_parsed: data/merged/final/samples_1000G_chr_merged_biallelic_parsed.vcf
   1000Gchr: /gpfs/projects/bsc83/Data/1000G/x30_vcf/original_data/1kGP_high_coverage_Illumina.{chroms}.filtered.SNV_INDEL_SV_phased_panel.vcf.gz
   1000Gchr_normalized: data/normalized1000G_{chroms}.vcf
   1000Gchr_normalized_compressed: data/normalized1000G_{chroms}.vcf.gz
