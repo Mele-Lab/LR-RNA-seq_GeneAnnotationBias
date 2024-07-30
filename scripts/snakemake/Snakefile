@@ -16,7 +16,7 @@ include: 'smkmod/variant_calling.smk'
 
 configfile: 'snakemake/config.yml'
 #config_tsv = 'snakemake/test_data_2.tsv'
-config_tsv = '/gpfs/projects/bsc83/Projects/pantranscriptome/pclavell/01_basecalling/data/array10.tsv'
+config_tsv = '/gpfs/projects/bsc83/Projects/pantranscriptome/pclavell/01_basecalling/data/array_4preprocess'
 
 
 
@@ -31,6 +31,8 @@ def get_df_val(df, col, sample):
 rule all:
     input:
         expand(config['data']['output']['q7fastqgz'],
+                sample=df['sample'].tolist()),
+        expand(config['data']['output']['q10fastqgz'],
                 sample=df['sample'].tolist()),
         expand(config['data']['qc']['readnum'],
                 sample=df['sample'].tolist()),
@@ -361,6 +363,14 @@ use rule fastqfilter as filterfastq with:
         phred = 7
     output:
         align = config['data']['output']['q7fastqgz']
+
+use rule fastqfilter as filterfastqQ10 with:
+    input:
+        align = rules.trimadapters.output.fastqgz
+    params:
+        phred = 10
+    output:
+        align = config['data']['output']['q10fastqgz']
 
 # obtaing length and average quality of reads
 use rule pseudonanoplot as nanostats with:

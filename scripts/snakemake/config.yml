@@ -100,7 +100,7 @@ data:
     readspercentage2: data/{sample}/qc/{sample}_reads_assessed_filtered.tsv
 
     fastqcreportdir: data/{sample}/qc/fastqc/
-    fastqcreport: data/{sample}/qc/fastqc/{sample}_preprocessed_fastqc.html
+    fastqcreport: data/{sample}/qc/fastqc/{sample}_preprocessed_Q7_fastqc.html
 
     temporalfile: data/{sample}/qc/{sample}_temporalfile.txt
     count_parent_simplex: data/{sample}/qc/{sample}_count_parent_simplex.txt
@@ -139,7 +139,9 @@ data:
 
   output:
     trimmed: data/{sample}/final/{sample}_trimmed.fastq.gz
-    q7fastqgz: data/{sample}/{sample}_preprocessed.fastq.gz
+    q7fastqgz: data/{sample}/{sample}_preprocessed_Q7.fastq.gz
+    q10fastqgz: data/{sample}/{sample}_preprocessed_Q10.fastq.gz
+
 
 
   vc:
