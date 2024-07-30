@@ -10,3 +10,4 @@ scripts/merged_pruned.log
 scripts/merged_pruned-temporary.psam
 finalparsed.vcf
 finalparsed.cvf
+scripts/snakemake/array.tsv
