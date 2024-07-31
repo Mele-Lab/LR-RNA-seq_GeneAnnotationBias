@@ -44,18 +44,20 @@ metadata <- fread("../00_metadata/pantranscriptome_samples_metadata.tsv")
 # 
 
 # load vcf
-data <- fread("scripts/data/merged/final/samples_1000G_chr_merged_biallelic_parsed.vcf", skip=423)
+data <- fread("finalparsed.vcf", skip=340)
 
 # remove info columns
 data <- data[,c(1:9) :=NULL]
-dataf <- data[, c(grepl("_", colnames(data))), with=FALSE]
+data <- data[rowSums(data==".|.")==0,]
+#dataf <- data[, c(grepl("_", colnames(data))), with=FALSE]
 # 
-recod <- lapply(dataf, function(x) ifelse(x == "0|0", 0,
+recod <- lapply(data, function(x) ifelse(x == "0|0", 0,
                                           ifelse(x %in% c("0|1", "1|0"), 1,
                                                  ifelse(x == "1|1", 2, NA))))
 
 # recod <- lapply(data, \(x) sub("./.:.:.:.:.", "nd", x))
 recod <- as.data.frame(recod)
+recod <- recod[complete.cases(recod),]
 # recod <- lapply(recod, \(x) gsub(":.*", "", x))
 # recod <- as.data.frame(recod)
 # recod <- lapply(recod, \(x) ifelse(grepl("1/1", x), "c",
@@ -75,13 +77,15 @@ pc <- prcomp(recodt)
 res.pca <-rownames_to_column(as.data.frame(pc[["x"]]), var="sample_m")
 setDT(res.pca)
 res.pca[, cell_line_id := gsub(".*_", "", res.pca$sample_m)]
+# change the cell id of the MPC5 because it had a typo
+res.pca[grepl("GM10497",res.pca$cell_line_id), "cell_line_id"] <- "GM10496"
 merged <- metadata[, .(cell_line_id, population, color_pop, sample)][res.pca, on="cell_line_id"]
 
 ggplot(merged, aes(x=PC1, y=PC2))+
   geom_point(aes(col=population), alpha=0.8, size=3)+
   scale_color_manual(values=unique(merged$color_pop)[order(unique(merged$population))])+
   mytheme+
-  geom_text(data=merged[grepl("IS2|CH2|NI4|PY5|KE1|PE5", sample_m)], aes(x=PC1, y=PC2, label=sample))
+  geom_repel_text(data=merged[grepl("IS2|CH2|NI4|PY5|KE1|PE5|CH6", sample_m)], aes(x=PC1, y=PC2, label=sample_m))
 
 library(factoextra)
 fviz_pca_ind(pc, geom="text")

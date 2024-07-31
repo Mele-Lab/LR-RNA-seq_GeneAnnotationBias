@@ -11,3 +11,4 @@ scripts/merged_pruned-temporary.psam
 finalparsed.vcf
 finalparsed.cvf
 scripts/snakemake/array.tsv
+scripts/snakemake/array.tsv

@@ -10,7 +10,7 @@ include: 'smkmod/formatting.smk'
 include: 'smkmod/variant_calling.smk'
 
 configfile: 'snakemake/config.yml'
-config_tsv = 'snakemake/array.tsv'
+config_tsv = '/gpfs/projects/bsc83/Projects/pantranscriptome/pclavell/03_mapping/data/wholegenome/general_mapping_separated_samples_Q10_MAPQ10/array_4variantcall'
 chromosome_tsv = 'snakemake/chromosomes.tsv'
 #config_tsv = '/gpfs/projects/bsc83/Projects/pantranscriptome/pclavell/01_basecalling/data/data_array.tsv'
 
@@ -33,7 +33,7 @@ wildcard_constraints:
 
 rule all:
     input:
-        expand(config['data']['final']['allmerged_nomultiallelic_parsed'])
+        expand(config['data']['vc']['gatk']['vcf_merged'])
         # expand(config['data']['final']['allmerged'],
         #          chroms=chromosome_obj['chr'].tolist(),
         #          sample=df['sample'].tolist())
@@ -212,122 +212,121 @@ use rule merge_samples as merging with:
 
 
 
-# ###################### UNTESTED AREA#########################
-# split vcf in chromosomes
-use rule vcf_split_into_chr as chr_split with:
-    input:
-        vcfgz = rules.merging.output.vcfgz
-    output:
-        vcf = config['data']['vc']['filters']['chromosome']
-
-# bgzip files so they can be merged
-use rule bgzip as compress_vcf_2 with:
-    input:
-        ifile = rules.chr_split.output.vcf
-    output:
-        gz = config['data']['vc']['filters']['vcf_norm_gz_two']
-
-# index files so they can be merged
-use rule vcfgz_index as index_premerge_2 with:
-    input:
-        vcfgz = rules.compress_vcf_2.output.gz
-    output:
-        index = config['data']['vc']['filters']['vcf_norm_gz_index_two']
-
-# normalize variants of 1000G
-use rule vcf_norm as vc_vcf_norm_1000G with:
-    input:
-        vcf = config['data']['1000Gchr'],
-        fa = rules.vc_call_variants.input.fa
-    output:
-        vcfnorm = config['data']['1000Gchr_normalized']
-
-# bgzip files so they can be merged
-use rule bgzip as compress_vcf_2_1000G with:
-    input:
-        ifile = rules.vc_vcf_norm_1000G.output.vcfnorm
-    output:
-        gz = config['data']['1000Gchr_normalized_compressed']
-
-# index files so they can be merged
-use rule vcfgz_index as index_premerge_2_1000G with:
-    input:
-        vcfgz = rules.compress_vcf_2_1000G.output.gz
-    output:
-        index = config['data']['1000Gchr_normalized_compressed_index']
-
-# merge with 1000G chromosomes
-use rule merge_samples_1000G as merge_with_1000g with:
-    input:
-        myvcf = rules.compress_vcf_2.output.gz,
-        thousandGvcf = rules.compress_vcf_2_1000G.output.gz,
-        index = rules.index_premerge_2.output.index,
-        index2 = rules.index_premerge_2_1000G.output.index
-    output:
-        vcfgz = config['data']['vc']['filters']['1000Gchromosome']
-
-# filter positions with some missigness
-use rule vcf_filter_missing_pos as filter_incomplete with:
-    input:
-        vcf =  rules.merge_with_1000g.output.vcfgz
-    output:
-        vcf = config['data']['vc']['filters']['vcf_merged_complete']
-
-# # prune merged vcf
-
-# use rule vcf_pruning as prune with:
+# # split vcf in chromosomes
+# use rule vcf_split_into_chr as chr_split with:
 #     input:
-#         vcf = rules.merging.output.vcfgz,
-#         psam = config['data']['vc']['gatk']['vcf_merged_psam']
-#     params:
-#         output_prefix = config['params']['outputprefix']
+#         vcfgz = rules.merging.output.vcfgz
 #     output:
-#         mock = config['data']['vc']['gatk']['mock1']
+#         vcf = config['data']['vc']['filters']['chromosome']
 
-# # pca
-
-# use rule vcf_pca as pca with:
+# # bgzip files so they can be merged
+# use rule bgzip as compress_vcf_2 with:
 #     input:
-#         vcf = rules.merging.output.vcfgz,
-#         mock = rules.prune.output.mock
+#         ifile = rules.chr_split.output.vcf
+#     output:
+#         gz = config['data']['vc']['filters']['vcf_norm_gz_two']
+
+# # index files so they can be merged
+# use rule vcfgz_index as index_premerge_2 with:
+#     input:
+#         vcfgz = rules.compress_vcf_2.output.gz
+#     output:
+#         index = config['data']['vc']['filters']['vcf_norm_gz_index_two']
+
+# # normalize variants of 1000G
+# use rule vcf_norm as vc_vcf_norm_1000G with:
+#     input:
+#         vcf = config['data']['1000Gchr'],
+#         fa = rules.vc_call_variants.input.fa
+#     output:
+#         vcfnorm = config['data']['1000Gchr_normalized']
+
+# # bgzip files so they can be merged
+# use rule bgzip as compress_vcf_2_1000G with:
+#     input:
+#         ifile = rules.vc_vcf_norm_1000G.output.vcfnorm
+#     output:
+#         gz = config['data']['1000Gchr_normalized_compressed']
+
+# # index files so they can be merged
+# use rule vcfgz_index as index_premerge_2_1000G with:
+#     input:
+#         vcfgz = rules.compress_vcf_2_1000G.output.gz
+#     output:
+#         index = config['data']['1000Gchr_normalized_compressed_index']
+
+# # merge with 1000G chromosomes
+# use rule merge_samples_1000G as merge_with_1000g with:
+#     input:
+#         myvcf = rules.compress_vcf_2.output.gz,
+#         thousandGvcf = rules.compress_vcf_2_1000G.output.gz,
+#         index = rules.index_premerge_2.output.index,
+#         index2 = rules.index_premerge_2_1000G.output.index
+#     output:
+#         vcfgz = config['data']['vc']['filters']['1000Gchromosome']
+
+# # filter positions with some missigness
+# use rule vcf_filter_missing_pos as filter_incomplete with:
+#     input:
+#         vcf =  rules.merge_with_1000g.output.vcfgz
+#     output:
+#         vcf = config['data']['vc']['filters']['vcf_merged_complete']
+
+# # # prune merged vcf
+
+# # use rule vcf_pruning as prune with:
+# #     input:
+# #         vcf = rules.merging.output.vcfgz,
+# #         psam = config['data']['vc']['gatk']['vcf_merged_psam']
+# #     params:
+# #         output_prefix = config['params']['outputprefix']
+# #     output:
+# #         mock = config['data']['vc']['gatk']['mock1']
+
+# # # pca
+
+# # use rule vcf_pca as pca with:
+# #     input:
+# #         vcf = rules.merging.output.vcfgz,
+# #         mock = rules.prune.output.mock
+# #     params:
+# #         input_prefix = config['params']['outputprefix'],
+# #         output_prefix = config['params']['outputprefix2']
+# #     output:
+# #         mock = config['data']['vc']['gatk']['mock2']
+
+
+#  change the input and output files
+# use rule merge_variants as merge_all_chromosomes with:
+#     input:
+#         vcfs = lambda wildcards: expand(rules.filter_incomplete.output.vcf,
+#             chroms=chromosome_obj['chr'].tolist())
+#     params:
+#         vcfs_cli = lambda wildcards: fmt_list_for_cli(list(expand(rules.filter_incomplete.output.vcf,
+#             chroms=chromosome_obj['chr'].tolist())))
+
+#     output: # output file; no wildcards needed
+#         vcfgz = config['data']['final']['allmerged']
+
+# use rule keep_biallelic as filterout_multiallelic with:
+#     input:
+#         vcf = rules.merge_all_chromosomes.output.vcfgz
+#     output: 
+#         vcf = config['data']['final']['allmerged_nomultiallelic']
+
+# use rule parse_vcf as parse_final_vcf with:
+#     input:
+#         vcf = rules.filterout_multiallelic.output.vcf
+#     output:
+#         vcf = config['data']['final']['allmerged_nomultiallelic_parsed']
+
+
+# use rule vcf_pca_no_pruning as pca with:
+# use rule vcf_pca_no_pruning as pca with:
+#     input:
+#         vcf = rules.merge_all_chromosomes.output.vcfgz
 #     params:
 #         input_prefix = config['params']['outputprefix'],
 #         output_prefix = config['params']['outputprefix2']
 #     output:
 #         mock = config['data']['vc']['gatk']['mock2']
-
-
-# TODO -- change the input and output files
-use rule merge_variants as merge_all_chromosomes with:
-    input:
-        vcfs = lambda wildcards: expand(rules.filter_incomplete.output.vcf,
-            chroms=chromosome_obj['chr'].tolist())
-    params:
-        vcfs_cli = lambda wildcards: fmt_list_for_cli(list(expand(rules.filter_incomplete.output.vcf,
-            chroms=chromosome_obj['chr'].tolist())))
-
-    output: # output file; no wildcards needed
-        vcfgz = config['data']['final']['allmerged']
-
-use rule keep_biallelic as filterout_multiallelic with:
-    input:
-        vcf = rules.merge_all_chromosomes.output.vcfgz
-    output: 
-        vcf = config['data']['final']['allmerged_nomultiallelic']
-
-use rule parse_vcf as parse_final_vcf with:
-    input:
-        vcf = rules.filterout_multiallelic.output.vcf
-    output:
-        vcf = config['data']['final']['allmerged_nomultiallelic_parsed']
-
-
-# TODO UNQUOTE# use rule vcf_pca_no_pruning as pca with:
-use rule vcf_pca_no_pruning as pca with:
-    input:
-        vcf = rules.merge_all_chromosomes.output.vcfgz
-    params:
-        input_prefix = config['params']['outputprefix'],
-        output_prefix = config['params']['outputprefix2']
-    output:
-        mock = config['data']['vc']['gatk']['mock2']
