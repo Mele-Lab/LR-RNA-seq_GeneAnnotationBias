@@ -39,3 +39,5 @@ workflow*
 nanoplotstats
 data
 array_all_separated
+arrayq7_fastqgz
+arrayq10_fastqgz
