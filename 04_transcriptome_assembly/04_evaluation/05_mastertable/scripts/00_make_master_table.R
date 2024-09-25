@@ -123,16 +123,19 @@ fwrite(annot, "04_evaluation/02_sqanti/data/240909merge_withoutchrEBV_mastertabl
 
 ##### JUNCTIONS ------------------------------------------------------------------------------------------------
 # load data
-myjunctions <- fread("04_evaluation/02_sqanti/data/240909merge/240909merge_junctions.txt") # sqanti sj table
+myjunctions <- fread("04_evaluation/02_sqanti/data/240909merge_withoutchrEBV_sqanti_output/240909merge_junctions.txt") # sqanti sj table
 recount <- fread("04_evaluation/03_recount3/data/recount3_srv3h_morethan10counts.tsv") # recount 3 with more than 10 counts per SJ
 colnames(recount) <- c("contig", "start", "end", "strand", "novel", "donor", "acceptor", "recount_samples", "recount_counts", "junction")
-
+correspondence <- fread("04_evaluation/01_adapt_lyric_output/data/ref_contigs_correspondence.tsv", header=F)
 # parse my junctions
 myjunctions <-myjunctions[, .(isoform, chrom, strand, junction_number, genomic_start_coord, genomic_end_coord, junction_category, start_site_category, end_site_category, canonical)]
-myjunctions[, junction := paste0(chrom, ":", genomic_start_coord, "-", genomic_end_coord, ":", strand)]
+myjunctions[, junction := paste0(chrom, ":", genomic_start_coord, ":", genomic_end_coord, ":", strand)]
 
+correspondencevec <- correspondence$V1
+names(correspondencevec) <- correspondence$V2
+recount[, contig:=correspondencevec[contig]][, junction:=paste(contig, start,end,strand, sep=":")]
 mergedsj <-recount[, .(junction, recount_samples, recount_counts)][myjunctions, on="junction"]
-rm(recount, myjunctions)
+rm(recount, myjunctions, correspondence)
 gc()
 mergedsj$recount_counts <- replace_na(mergedsj$recount_counts, 0)
 mergedsj$recount_samples <- replace_na(mergedsj$recount_samples, 0)
@@ -149,6 +152,7 @@ mergedsj[, sj_category:=ifelse(junction_category=="novel",
 
 
 mergedsj[, sj_category_full := paste(sj_category,canonical, sep="_")]
+fwrite(mergedsj, "04_evaluation/05_mastertable/data/240909merge_sj_table_updatedrecount.tsv", quote = F, row.names = F, sep="\t")
 
 
 # Convert SJ data.table to transcript-wise SJ info
@@ -169,16 +173,18 @@ newmerged <- novelsj[mergedsj, on="isoform" ]
 mylogical <- c(colnames(newmerged)=="isoform" | grepl("sj_", colnames(newmerged)))
 sj_trxwise <- unique(newmerged[,..mylogical][, sj_category:=NULL])
 
-fwrite(sj_trxwise, "04_evaluation/02_sqanti/data/240909merge_withoutchrEBV_mastertable/240909merge_sj_trxwise.tsv")
+fwrite(sj_trxwise, "04_evaluation/05_mastertable/data/240909merge_sj_trxwise_updatedrecount.tsv")
+rm(mergedsj, newmerged, novelsj)
+gc()
 # merge with annotation
-sj_trxwise <-fread("04_evaluation/02_sqanti/data/240909merge_withoutchrEBV_mastertable/240909merge_sj_trxwise.tsv")
-annot <-fread("04_evaluation/02_sqanti/data/240909merge_withoutchrEBV_mastertable/240909merge_reslongmeta_annot_sqanti.tsv")
+sj_trxwise <-fread("04_evaluation/05_mastertable/data/240909merge_sj_trxwise_updatedrecount.tsv")
+annot <-fread("04_evaluation/05_mastertable/data/240909merge_reslongmeta_annot_sqanti.tsv")
 annot <- sj_trxwise[annot, on=c("isoform")]
 annot[, `:=`(platform=NULL, feature=NULL, unk1=NULL, unk2=NULL, info=NULL, tool_sample_pairs=NULL, tool_sample_pairs_split=NULL)]
-fwrite(annot, "04_evaluation/02_sqanti/data/240909merge_withoutchrEBV_mastertable/240909merge_reslongmeta_annot_sqanti_sj.tsv")
+fwrite(annot, "04_evaluation/05_mastertable/data/240909merge_reslongmeta_annot_sqanti_sj_updatedrecount.tsv")
 
 # add information about the associated genes
-annot <- fread("04_evaluation/02_sqanti/data/240909merge_withoutchrEBV_mastertable/240909merge_reslongmeta_annot_sqanti_sj.tsv")
+annot <- fread("04_evaluation/02_sqanti/data/240909merge_withoutchrEBV_mastertable/240909merge_reslongmeta_annot_sqanti_sj_updatedrecount.tsv")
 gencode <- fread("/home/pclavell/mounts/mn5/Data/gene_annotations/gencode/v47/modified/gencode.v47.primary_assembly.annotation.transcript_parsed.tsv")
 gencode <- gencode[, .(geneid.v, transcriptid.v, gene_biotype, gene_name, transcript_biotype)]
 
@@ -195,18 +201,129 @@ colnames(annot)[colnames(annot)%in%replacenames] <- newnames[colnames(annot)[col
 # count number of discovered transcripts per gene
 annot[, discovered_transcripts_per_gene:=.N, by=associated_geneid.v]
 # save
-fwrite(annot, "04_evaluation/02_sqanti/data/240909merge_withoutchrEBV_mastertable/240909merge_reslongmeta_annot_sqanti_sj_gencodev47.tsv")
-#annot <- fread("04_evaluation/02_sqanti/data/240909merge_withoutchrEBV_mastertable/240909merge_reslongmeta_annot_sqanti_sj_gencodev47.tsv")
+fwrite(annot, "04_evaluation/05_mastertable/data/240909merge_reslongmeta_annot_sqanti_sj_gencodev47_updatedrecount.tsv")
 
-# # create table relating transcripts and geneid
-# fwrite(unique(annot[, .(associated_geneid.v, isoform)]), "04_evaluation/02_sqanti/data/240909merge_withoutchrEBV_mastertable/240909merge_transcript_associatedgene_correspondence.tsv", col.names = F, quote = F, sep="\t")
-# fwrite(unique(annot[structural_category=="intergenic", .(associated_geneid.v, isoform)]), "04_evaluation/02_sqanti/data/240909merge_withoutchrEBV_mastertable/240909merge_novelgene_transcripts.tsv", col.names = F, quote = F, sep="\t")
-# test <-unique(annot[structural_category=="intergenic", .(associated_geneid.v, isoform, contig)])
-# table(test$contig)              
+# read
+annot <- fread("04_evaluation/05_mastertable/data/240909merge_reslongmeta_annot_sqanti_sj_gencodev47_updatedrecount.tsv")
+quanti <- fread("../06_quantification/02_flairquantify/data/240917_merge_geneEntry_correctedScaffolds_nochrEBV/quantification_stats_stringent_for_master_table.tsv")
+
+# add quantification data to master table
+annot <- quanti[annot, on="isoform"]
+# save
+fwrite(annot, "04_evaluation/05_mastertable/data/240909merge_reslongmeta_annot_sqanti_sj_gencodev47_quantification_updatedrecount.tsv")
 
 
-test <- fread("../02_ONT_preprocessing/arrayq10_fastqgz", header = F)
-test[, lab_sampleid:=tstrsplit(V1,"_")[[4]]]
-myfile <-metadata[, .(lab_sampleid, sample)][test, on="lab_sampleid"]
-fwrite(myfile[, `:=`(condition="condition1", batch="batch1")][, .(sample, condition, batch, V1)],
-       "../06_quantification/01_isoquantify/array_flair", row.names = F, col.names = F, quote = F, sep="\t")
+# add info about novel loci
+annot <- fread("04_evaluation/05_mastertable/data/240909merge_reslongmeta_annot_sqanti_sj_gencodev47_quantification_updatedrecount.tsv")
+transcriptlvl <- fread("../../novelannotations/merged/240917_merge_geneEntry_correctedScaffolds_nochrEBV_onlyTranscriptFeatures.gtf")
+transcriptlvl[,geneid_afterbuildloci := tstrsplit(V9, "\"")[[6]]]
+transcriptlvl[,isoform := tstrsplit(V9, "\"")[[2]]]
+annot <- unique(transcriptlvl[, .(isoform, geneid_afterbuildloci)])[annot, on="isoform"]
+annot[, associated_geneid.v := ifelse(structural_category=="intergenic", geneid_afterbuildloci, associated_geneid.v)]
+annot[, geneid_afterbuildloci:=NULL]
+annot[, discovered_transcripts_per_gene:=.N, by=associated_geneid.v]
+fwrite(annot, "04_evaluation/05_mastertable/data/240909merge_reslongmeta_annot_sqanti_sj_gencodev47_quantification_novellocus_updatedrecount.tsv")
+
+#### ADD protein prediciton info
+
+protein <- fread("../../novelannotations/protein/240919_protein_annotation.tsv")
+annot <- fread("04_evaluation/05_mastertable/data/240909merge_reslongmeta_annot_sqanti_sj_gencodev47_quantification_novellocus_updatedrecount.tsv")
+
+protein <- protein[, .(tid, blastp_identity, blastp_bitscore, transcript_length_nt, orf_length_nt, protein_length_cd, protein_is_nmd, protein_splice_category, protein_splice_subcategory, protein_sequence)]
+protein[, `:=`(isoform=tid, tid=NULL)]
+
+annot <- protein[annot, on="isoform"]
+fwrite(annot, "04_evaluation/05_mastertable/data/240909merge_reslongmeta_annot_sqanti_sj_gencodev47_quantification_novellocus_proteinInfo_updatedrecount.tsv")
+
+# disambiguoate geneids
+annot <- fread("04_evaluation/05_mastertable/data/240909merge_reslongmeta_annot_sqanti_sj_gencodev47_quantification_novellocus_proteinInfo_updatedrecount.tsv")
+gencode <- fread("/home/pclavell/mounts/mn5/Data/gene_annotations/gencode/v47/modified/gencode.v47.primary_assembly.annotation.transcript_parsed.tsv")
+gencode <- gencode[, .(geneid.v, transcriptid.v, gene_biotype, gene_name, transcript_biotype)]
+gencodevec <- gencode$geneid.v
+names(gencodevec) <- gencode$transcriptid.v
+
+biotypevec <- gencode$gene_biotype
+names(biotypevec) <- gencode$geneid.v
+annot[associated_gene_biotype=="" & structural_category%in%c("full-splice_match", "incomplete-splice_match")]
+annot[, old_associated_geneid.v:=associated_geneid.v]
+annot[, old_associated_gene_biotype:=associated_gene_biotype]
+annot[, associated_geneid.v:=ifelse(associated_gene_biotype=="" & structural_category%in%c("full-splice_match", "incomplete-splice_match"), gencodevec[associated_transcriptid.v], associated_geneid.v)]
+annot[, associated_gene_biotype:=ifelse(associated_gene_biotype=="" & structural_category%in%c("full-splice_match", "incomplete-splice_match"), biotypevec[associated_geneid.v], associated_gene_biotype)]
+fwrite(annot, "04_evaluation/05_mastertable/data/240909merge_reslongmeta_annot_sqanti_sj_gencodev47_quantification_novellocus_proteinInfo_updatedrecount_disambiguatedGenes.tsv")
+
+
+# Compute some extra metrics and remove some NA
+annot <- fread("04_evaluation/05_mastertable/data/240909merge_reslongmeta_annot_sqanti_sj_gencodev47_quantification_novellocus_proteinInfo_updatedrecount_disambiguatedGenes.tsv")
+
+# How many transcripts are there associated to each gene by sqanti category
+geneperstrcount <-unique(annot[, .(trxPerGeneAndCategory = .N), by=c("associated_geneid.v", "structural_category")])
+transcriptperstrcount <-unique(annot[, .(trxPerAssTrxAndCategory = .N), by=c("associated_transcriptid.v", "structural_category")])
+
+
+geneperstrcount_wide <- dcast(unique(geneperstrcount[, .(associated_geneid.v, structural_category, trxPerGeneAndCategory)]), associated_geneid.v~structural_category, fill=0)
+transcriptperstrcount_wide <- dcast(unique(transcriptperstrcount[, .(associated_transcriptid.v, structural_category, trxPerAssTrxAndCategory)]), associated_transcriptid.v~structural_category, fill=0)
+colnames(geneperstrcount_wide)[2:ncol(geneperstrcount_wide)] <- paste0("trx_pergene_count_",colnames(geneperstrcount_wide)[2:ncol(geneperstrcount_wide)] )
+colnames(transcriptperstrcount_wide)[2:ncol(transcriptperstrcount_wide)] <- paste0("trx_per_asstrx_count_",colnames(transcriptperstrcount_wide)[2:ncol(transcriptperstrcount_wide)] )
+
+annot <- geneperstrcount_wide[annot, on = .(associated_geneid.v)]
+annot <- transcriptperstrcount_wide[annot, on = .(associated_transcriptid.v)]
+
+annot[, existsFSMinGene:=ifelse(`trx_pergene_count_full-splice_match`>0, TRUE, FALSE)]
+annot[, existsFSMinTranscript:=ifelse(`trx_per_asstrx_count_full-splice_match`>0, TRUE, FALSE)]
+
+# replace NA by 0
+annot$flair_max_counts <- replace_na(annot$flair_max_counts, 0)
+annot$flair_min_counts <- replace_na(annot$flair_min_counts, 0)
+annot$flair_mean_counts <- replace_na(annot$flair_mean_counts, 0)
+annot$flair_expressed_samples <- replace_na(annot$flair_expressed_samples, 0)
+annot$flair_total_counts <- replace_na(annot$flair_total_counts, 0)
+
+# relabel empty gene biotypes
+annot[, associated_gene_biotype:=ifelse(associated_gene_biotype=="", "novel/ambiguous gene")]
+
+# change categories names
+categories <- c("FSM", "ISM", "NIC", "Intergenic", "NNC", "Fusion", "Antisense", "Genic")
+names(categories) <- unique(annot$structural_category)
+annot$structural_category <- categories[annot$structural_category]
+
+fwrite(annot, "04_evaluation/05_mastertable/data/240909merge_reslongmeta_annot_sqanti_sj_gencodev47_quantification_novellocus_proteinInfo_updatedrecount_disambiguatedGenes_replacedFLAIRna&addedISMinfo.tsv")
+
+
+# 
+# # is flair quantification biasing the results?
+# 
+# ggplot(annot, aes(x=factor(flair), y=log10(flair_total_counts+1)))+
+#   geom_violin()+
+#   geom_boxplot(outliers=F, width=0.15)+
+#   mytheme
+# # what percentage of transcripts discovered by each tool are found in more tools
+# toollong <-melt(annot[, .(flair, espresso, isoquant, lyric, tool_sharing, flair_mean_counts, flair_total_counts)], measure.vars=c("flair", "espresso", "isoquant", "lyric"), variable.name = "tool", value.name="detected")
+# toollong <- toollong[detected==1]
+# ggplot(toollong, aes(x=tool, fill=factor(tool_sharing)))+
+#   geom_bar()+
+#   mytheme+
+#   labs(x="", y="# Detected transcripts", fill="Tool sharing")
+# 
+# 
+# # which tool does have a higher percentage of stuff passing expresion filter
+# toollong[, flair_mean_counts:=ifelse(is.na(flair_mean_counts), 0, flair_mean_counts)]
+# toollong[, overfilt:=ifelse(flair_mean_counts>=1.3, "kept transcript", "dropped transcript")]
+# ggplot(toollong, aes(x=tool, fill=factor(overfilt)))+
+#   geom_bar()+
+#   mytheme+
+#   labs(x="", y="# Detected transcripts", fill="Mean counts>=1.3")+
+#   facet_wrap(~factor(tool_sharing))+
+#   scale_fill_manual(values=c("darkred", "#2D93AD"))
+# ggplot(toollong, aes(x=tool, fill=factor(overfilt)))+
+#   geom_bar(position="fill")+
+#   mytheme+
+#   labs(x="", y="# Detected transcripts", fill="Mean counts>=1.3")+
+#   facet_wrap(~factor(tool_sharing))+
+#   scale_fill_manual(values=c("darkred", "#2D93AD"))
+# 
+# ggplot(toollong, aes(x=log10(flair_total_counts+1), fill=factor(tool_sharing)))+
+#   geom_bar()+
+#   facet_wrap(~factor(tool_sharing))+
+#   mytheme+
+#   ylab("Tool sharing")+
+#   guides(fill="none")
