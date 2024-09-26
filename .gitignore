@@ -16,7 +16,7 @@
 */*/*/array*
 */*/ref
 06_quantification/02_flairquantify/array
-08_allele_specifics
+08_allele_specifics/*preprocessed*
 Z_00_short_read_transcriptome_assemblies
 Z_testsdir
 01_basecalling/scripts/dna_r10.4.1_e8.2_5khz_stereo@v1.2

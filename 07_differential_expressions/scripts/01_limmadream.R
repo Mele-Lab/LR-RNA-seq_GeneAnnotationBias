@@ -31,12 +31,12 @@ library("BiocParallel")
 # Choose covariates
 # covariates <- c("sex", "population", "map_reads_generalmap", "captrap_batch", "libprep_batch")
 # covariates_ooa <- c("sex", "ooa", "map_reads_generalmap", "captrap_batch", "libprep_batch")
-covariates <- c("sex", "population", "map_reads_generalmap", "pc1", "pc2")
-covariates_ooa <- c("sex", "ooa", "map_reads_generalmap", "pc1", "pc2")
+covariates <- c("sex", "population", "pc1", "pc2", "pc3", "pc4", "pc5", "pc6", "pc7")
+covariates_ooa <- c("sex", "ooa", "pc1", "pc2", "pc3", "pc4", "pc5", "pc6", "pc7")
 
 
 # Load and parse metadata
-metadataraw <- fread("../00_metadata/pantranscriptome_samples_metadata.tsv")
+metadataraw <- fread("../00_metadata/data/pantranscriptome_samples_metadata.tsv")
 metadataraw <- metadataraw[mixed_samples==FALSE,]
 metadataraw[, map_reads_generalmap:=scale(map_reads_generalmap)]
 metadataraw[, map_reads_generalmap:=scale(map_reads_generalmap)]
@@ -74,8 +74,8 @@ param <- SnowParam(4, "SOCK", progressbar = TRUE)
 #form <- ~ 0 + population + sex + map_reads_generalmap + (1|captrap_batch) + (1|libprep_batch)
 #form_ooa <- ~ 0 + ooa + sex + map_reads_generalmap + (1|captrap_batch) + (1|libprep_batch)
 
-form <- ~ 0 + population + sex + map_reads_generalmap + pc1 +pc2
-form_ooa <- ~ 0 + ooa + sex + map_reads_generalmap + pc1 +pc2
+form <- ~ 0+ population+ sex +pc1
+form_ooa <- ~ 0+ooa +sex  + pc1 +pc2+ pc3 + pc4 +pc5 +pc6 +pc7
 
 # estimate weights using linear mixed model of dream
 vobjDream <- voomWithDreamWeights(dge, form, metadata, BPPARAM = param)
@@ -110,13 +110,14 @@ new_contrasts_named <- setNames(new_contrasts, paste0(gsub(" .*", "", new_contra
 
 # Step 5: Convert the original contrast string to a list
 original_contrasts <- eval(parse(text = paste0("list(", mycon, ")")))
-OOAcontrasts <- c(OOAvsAFR= "(populationLWK + populationMPC + populationYRI)/3-(populationITU + populationCEU + populationHAC  + populationAJI + populationPEL)/5")
+OOAcontrasts <- c(AFRvsOOA= "(populationLWK + populationMPC + populationYRI)/3-(populationITU + populationCEU + populationHAC  + populationAJI + populationPEL)/5")
 
 # Step 6: Combine the original contrasts with the new ones
 all_contrasts <- c(original_contrasts, new_contrasts_named, OOAcontrasts)
 ###--------------------------
 
 # prepare constrast
+#L <- makeContrastsDream(form, metadata, contrasts = "populationCEU-populationHAC")
 L <- makeContrastsDream(form, metadata,
                         contrasts = all_contrasts)
 L_ooa <- makeContrastsDream(form_ooa, metadata_ooa,
@@ -130,9 +131,9 @@ plotContrasts(L_ooa)
 fit <- dream(vobjDream, form, metadata, L)
 errors <- attr(fit, 'errors')
 print(errors)
-fit <- eBayes(fit)
+fit <- variancePartition::eBayes(fit)
 fit_ooa <- dream(vobjDream_ooa, form_ooa, metadata_ooa, L_ooa)
-fit_ooa <- eBayes(fit_ooa)
+fit_ooa <-  variancePartition::eBayes(fit_ooa)
 errors <- attr(fit_ooa, 'errors')
 print(errors)
 
@@ -142,10 +143,25 @@ print(errors)
 colnames(fit)
 
 # extract results from first contrast
-results_list <- lapply(colnames(fit_ooa)[1], function(contrast) {
-  topTable(fit_ooa, coef = contrast, number = Inf, adjust.method = "BH")
+results_list <- lapply(colnames(fit)[1:37], function(contrast) {
+  variancePartition::topTable(fit, coef = contrast, number = Inf, adjust.method = "BH")
 })
 names(results_list) <- colnames(fit)[1:37]
+variancePartition::topTable(fit, coef ="populationMPC" , number = Inf, adjust.method = "BH")
+
+# ##### TEMPORARY volcano -----------
+# for(x in 1:37){
+#   p<-ggplot(data.table(results_list[[x]])[, sig:=ifelse(adj.P.Val<0.05, "sig", "ns")], aes(col=sig, x=logFC, y=-adj.P.Val))+
+#     geom_point(alpha=0.5, size=0.5)+
+#     geom_hline(yintercept=-0.05, color="black", linetype="dashed")+
+#     mytheme+
+#     scale_color_manual(values=rev(c("darkred", "darkgrey")))+
+#     ggtitle(names(results_list)[x])
+#   print(p)}
+
+####
+
+
 
 #
 deg_threshold <- function(result, p_value_cutoff = 0.05, logFC_cutoff = 0.5) {
@@ -155,7 +171,7 @@ deg_threshold <- function(result, p_value_cutoff = 0.05, logFC_cutoff = 0.5) {
 
 # Apply the threshold function to each contrast result
 deg_list <- lapply(results_list, deg_threshold)
-pairwise_data <- lapply(deg_list, nrow)[1:(length(names(pairwise_data))-9)]
+pairwise_data <- lapply(deg_list, nrow)[1:(length(names(original_contrasts))-9)]
 
 
 
@@ -197,9 +213,10 @@ ggplot(pairwiselong, aes(x = contrast, y = variable, fill = degs)) +
 
 
 
+# 
+# 
+# mygenes <-gsub("\\..*","",rownames(deg_list$`(populationLWK + populationMPC + populationYRI)/3 - (populationITU + populationCEU + populationHAC + populationAJI + populationPEL)/5`))
+# fwrite(as.data.frame(mygenes),"/home/pclavell/Downloads/mygenes.tsv", quote =F, row.names = F)
+# mybck <- gsub("\\..*","",rownames(dge$counts))
+# fwrite(as.data.frame(mybck),"/home/pclavell/Downloads/mybck.tsv", quote =F, row.names = F)
 
-
-mygenes <-gsub("\\..*","",rownames(deg_list$`(populationLWK + populationMPC + populationYRI)/3 - (populationITU + populationCEU + populationHAC + populationAJI + populationPEL)/5`))
-fwrite(as.data.frame(mygenes),"/home/pclavell/Downloads/mygenes.tsv", quote =F, row.names = F)
-mybck <- gsub("\\..*","",rownames(dge$counts))
-fwrite(as.data.frame(mybck),"/home/pclavell/Downloads/mybck.tsv", quote =F, row.names = F)
