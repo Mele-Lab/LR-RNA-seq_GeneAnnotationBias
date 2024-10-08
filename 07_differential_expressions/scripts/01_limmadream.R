@@ -22,40 +22,50 @@ setup_script(relative_path, 3, 48)
 catch_args(0)
 ##
 ## 0----------------------------END OF HEADER----------------------------------0
-
+TYPE<-"gencode"
 library("variancePartition")
 library("edgeR")
 library("BiocParallel")
 
-
 # Choose covariates
-# covariates <- c("sex", "population", "map_reads_generalmap", "captrap_batch", "libprep_batch")
-# covariates_ooa <- c("sex", "ooa", "map_reads_generalmap", "captrap_batch", "libprep_batch")
-covariates <- c("sex", "population", "pc1", "pc2", "pc3", "pc4", "pc5", "pc6", "pc7")
-covariates_ooa <- c("sex", "ooa", "pc1", "pc2", "pc3", "pc4", "pc5", "pc6", "pc7")
+covariates <- c("sex", "population", "pc1", "pc2")
+# covariates_ooa <- c("sex", "ooa", "pc1", "pc2")
 
-
-# Load and parse metadata
+# LOAD DATA
 metadataraw <- fread("../00_metadata/data/pantranscriptome_samples_metadata.tsv")
-metadataraw <- metadataraw[mixed_samples==FALSE,]
-metadataraw[, map_reads_generalmap:=scale(map_reads_generalmap)]
-metadataraw[, map_reads_generalmap:=scale(map_reads_generalmap)]
-metadataraw <-metadataraw[order(rownames(metadataraw)),]
-# Load PCA
-mypca <- fread("data/gencode/01_PCA.tsv")
-metadataraw <- mypca[metadataraw, on="cell_line_id"]
-metadataraw <- column_to_rownames(metadataraw, var="cell_line_id")
+mypca <- fread(paste0("data/01_PCA_", TYPE,".tsv"))
+if(TYPE=="GENCODE"){
+  counts <- fread("../../novelannotations/v47_kallisto_quant/matrix.abundance.tsv")
+  annot <- fread("../../../../Data/gene_annotations/gencode/v47/modified/gencode.v47.primary_assembly.annotation.transcript_parsed.tsv")
+}else if(TYPE=="pantrx"){
+  counts <- fread("../../novelannotations/kallisto_quant/matrix.abundance.tsv")
+  annot <- fread("../../novelannotations/merged/240926_filtered_with_genes.transcript2gene.tsv", header=F)
+  colnames(annot) <- c("transcriptid.v","geneid.v")
+}
 
+# PARSE DATA
+metadataraw <- metadataraw[mixed_samples==FALSE]
+metadataraw <- metadataraw[merged_run_mode==TRUE]
+metadataraw <-metadataraw[order(metadataraw$cell_line_id),]
+metadataraw <- mypca[metadataraw, on="cell_line_id"]
+metadataraw[, population:=factor(population, levels=c("CEU", "AJI", "ITU", "HAC", "PEL", "LWK", "YRI", "MPC"))]
+metadataraw[, ooa:=factor(ooa, levels=c("OOA", "AFR"))]
+
+# prepare new names vector
+samplesnames <- metadataraw$sample
+names(samplesnames) <- metadataraw$quantification_id
+samplesnames <- c(samplesnames, "transcript_id"="transcriptid.v", "geneid.v"="geneid.v")
+metadataraw <- column_to_rownames(metadataraw, var="sample")
 metadata <- metadataraw[order(rownames(metadataraw)), c(covariates)]
 metadata_ooa <- metadataraw[order(rownames(metadataraw)), c(covariates_ooa)]
-
-# Load and parse counts
-counts <- fread("../06_quantification/01_isoquantify/data/gencodev47/gene_counts_matrix.tsv")
-counts <- counts[!(geneid.v%in%c("__ambiguous", "__no_feature", "__not_aligned"))]
+# Sum transcript counts per gene
+counts <- annot[, .(transcriptid.v, geneid.v)][counts, on=c("transcriptid.v"= "transcript_id")]
+counts <- counts[, lapply(.SD, sum), by = geneid.v, .SDcols = patterns("_")]
+colnames(counts) <- gsub("_1$", "", colnames(counts))
+setnames(counts, old = names(samplesnames), new = samplesnames,skip_absent=TRUE)
 counts <- column_to_rownames(counts, var="geneid.v")
 colnames(counts)  <- gsub(".*_", "", colnames(counts))
 counts <- counts[, order(colnames(counts))]
-counts <- counts[, colnames(counts)%in%rownames(metadataraw)]
 
 
 # filter genes by number of counts
@@ -70,84 +80,55 @@ dge <- calcNormFactors(dge)
 # this is used implicitly by dream() to run in parallel
 param <- SnowParam(4, "SOCK", progressbar = TRUE)
 
-# QUE SIGNIFICA AQUEST 0+??????????????????????????????????????????????????
-#form <- ~ 0 + population + sex + map_reads_generalmap + (1|captrap_batch) + (1|libprep_batch)
-#form_ooa <- ~ 0 + ooa + sex + map_reads_generalmap + (1|captrap_batch) + (1|libprep_batch)
+form <- ~population+sex+pc1+pc2
+# form_ooa <- ~ooa+sex+pc1+pc2
 
-form <- ~ 0+ population+ sex +pc1
-form_ooa <- ~ 0+ooa +sex  + pc1 +pc2+ pc3 + pc4 +pc5 +pc6 +pc7
-
+design <- model.matrix(form, metadata)
 # estimate weights using linear mixed model of dream
 vobjDream <- voomWithDreamWeights(dge, form, metadata, BPPARAM = param)
-vobjDream_ooa <- voomWithDreamWeights(dge, form_ooa, metadata_ooa, BPPARAM = param)
+# vobjDream_ooa <- voomWithDreamWeights(dge, form_ooa, metadata_ooa, BPPARAM = param)
 
-#Since dream uses an estimated degrees of freedom value for each hypothsis test, the degrees of freedom is different for each gene here. Therefore, the t-statistics are not directly comparable since they have different degrees of freedom. In order to be able to compare test statistics, we report z.std which is the p-value transformed into a signed z-score. This can be used for downstream analysis.
-# You can also perform a hypothesis test of the difference between two or more coefficients by using a contrast matrix. The contrasts are evaluated at the time of the model fit and the results can be extracted with topTable(). This behaves like makeContrasts() and contrasts.fit() in limma.
-#Multiple contrasts can be evaluated at the same time, in order to save computation time. Make sure to inspect your contrast matrix to confirm it is testing what you intend.
-
-## CREATE ALL THE CONTRASTS---------------------
-# Create all pairwise combinations
-combinations <- combn(unique(metadata$population), 2, simplify = FALSE)
+# PREPARE CONTRASTS #########################################################################........................................................
+# combinations <- expand.grid(levels(metadata$population), 
+#                             levels(metadata$population))
+combinations<- combn(levels(metadata$population)[!grepl("CEU", levels(metadata$population))], m=2, simplify=F)
 
 # Generate the contrasts
-contrasts <- sapply(combinations, function(pair) {
+contrasts <- lapply(combinations, function(pair) {
   paste0(pair[1], "vs", pair[2], " = \"population", pair[1], " - population", pair[2], "\"")
 })
-
 mycon <-paste(contrasts, collapse=", ")
+
 # Convert the contrasts into a named vector
 contrast_list <- eval(parse(text = paste0("list(", mycon, ")")))
 
-populations <- unique(metadata$population)
-# Step 3: Create new contrasts where each population is compared against the average of all others
-new_contrasts <- sapply(populations, function(pop) {
-  other_pops <- setdiff(populations, pop)
-  paste0("population", pop, " - (", paste0("population",other_pops, collapse = " + "), ")/", length(other_pops))
-})
-
-# Step 4: Convert new contrasts to a named list
-new_contrasts_named <- setNames(new_contrasts, paste0(gsub(" .*", "", new_contrasts), "vsALL"))
-
-# Step 5: Convert the original contrast string to a list
-original_contrasts <- eval(parse(text = paste0("list(", mycon, ")")))
-OOAcontrasts <- c(AFRvsOOA= "(populationLWK + populationMPC + populationYRI)/3-(populationITU + populationCEU + populationHAC  + populationAJI + populationPEL)/5")
-
-# Step 6: Combine the original contrasts with the new ones
-all_contrasts <- c(original_contrasts, new_contrasts_named, OOAcontrasts)
-###--------------------------
-
-# prepare constrast
-#L <- makeContrastsDream(form, metadata, contrasts = "populationCEU-populationHAC")
-L <- makeContrastsDream(form, metadata,
-                        contrasts = all_contrasts)
-L_ooa <- makeContrastsDream(form_ooa, metadata_ooa,
-                        contrasts = c(OOAvsAFR= "ooaAFR - ooaOOA"))
-# Visualize contrast matrix
-plotContrasts(L)
-plotContrasts(L_ooa)
-
 # fit dream model with contrasts
+# Define contrast matrix to test ITU vs YRI
+contrast_list <- append(contrast_list,
+  list("YRIvsCEU" = "populationYRI",
+  "MPCvsCEU" = "populationMPC",
+  "LWKvsCEU" = "populationLWK",
+  "AJIvsCEU" = "populationAJI",
+  "ITUvsCEU" = "populationITU",
+  "HACvsCEU" = "populationHAC",
+  "PELvsCEU" = "populationPEL"))
+contrast.matrix <- do.call(makeContrasts, c(contrast_list, list(levels = design)))
 
-fit <- dream(vobjDream, form, metadata, L)
-errors <- attr(fit, 'errors')
-print(errors)
+
+# Apply contrasts to the model fit
+fit <- dream(vobjDream, form, metadata)
+fit <- contrasts.fit(fit, contrast.matrix)
 fit <- variancePartition::eBayes(fit)
-fit_ooa <- dream(vobjDream_ooa, form_ooa, metadata_ooa, L_ooa)
-fit_ooa <-  variancePartition::eBayes(fit_ooa)
-errors <- attr(fit_ooa, 'errors')
-print(errors)
-
-# CHECK RESULTS........................................................
-
-# get names of available coefficients and contrasts for testing
-colnames(fit)
+# fit_ooa <- dream(vobjDream_ooa, form_ooa, metadata_ooa, L_ooa)
+# fit_ooa <-  variancePartition::eBayes(fit_ooa)
 
 # extract results from first contrast
-results_list <- lapply(colnames(fit)[1:37], function(contrast) {
+results_list <- lapply(colnames(fit), function(contrast) {
   variancePartition::topTable(fit, coef = contrast, number = Inf, adjust.method = "BH")
 })
-names(results_list) <- colnames(fit)[1:37]
-variancePartition::topTable(fit, coef ="populationMPC" , number = Inf, adjust.method = "BH")
+names(results_list) <- colnames(fit)
+
+
 
 # ##### TEMPORARY volcano -----------
 # for(x in 1:37){
@@ -165,58 +146,99 @@ variancePartition::topTable(fit, coef ="populationMPC" , number = Inf, adjust.me
 
 #
 deg_threshold <- function(result, p_value_cutoff = 0.05, logFC_cutoff = 0.5) {
-  degs <- result[result$adj.P.Val < p_value_cutoff & abs(result$logFC) >= logFC_cutoff, ]
-  return(degs)
+  up <- nrow(result[result$adj.P.Val < p_value_cutoff & result$logFC >= logFC_cutoff, ])
+  down <- nrow(result[result$adj.P.Val < p_value_cutoff & result$logFC <= -logFC_cutoff, ])
+  return(c(up, down))
 }
 
 # Apply the threshold function to each contrast result
 deg_list <- lapply(results_list, deg_threshold)
-pairwise_data <- lapply(deg_list, nrow)[1:(length(names(original_contrasts))-9)]
+# Create an empty data.table
+result <- data.table()
 
-
-
-# Extract unique population names
-populations <- unique(unlist(strsplit(names(pairwise_data), " - ")))
-populations <- trimws(populations)  # Trim any leading or trailing whitespace
-
-# Create an empty matrix
-pairwise_matrix <- matrix(as.numeric(0), nrow = length(populations), ncol = length(populations), 
-                          dimnames = list(populations, populations))
-pairwise_matrix <- as.data.frame(pairwise_matrix)
-# Fill the matrix with the data
-for (i in seq_along(pairwise_data)) {
-  pops <- unlist(strsplit(names(pairwise_data)[i], " - "))
-  pops <- trimws(pops)  # Trim any leading or trailing whitespace
+# Iterate over each item in the list
+for (name in names(deg_list)) {
+  # Split the name at "vs"
+  parts <- strsplit(name, "vs")[[1]]
   
-  # Correctly assign the value if both populations are found in the matrix dimensions
-  if (all(pops %in% populations)) {
-    pairwise_matrix[pops[1], pops[2]] <- as.numeric(pairwise_data[i])
-  }
+  # Extract the up and down values
+  values <- deg_list[[name]]
+  
+  # Create a new row and bind it to the result
+  result <- rbind(result, data.table(
+    up = values[1],
+    down = values[2],
+    before_vs = trimws(parts[1]),
+    after_vs = trimws(parts[2])
+  ))
+}
+result[, down:=-down]
+# Reorder columns to desired format
+setcolorder(result, c("before_vs", "after_vs", "up", "down"))
+
+# Create a unique list of contrasts
+contrasts <- unique(c(result$before_vs, result$after_vs))
+
+# Initialize a matrix with NA values
+matrix_size <- length(contrasts)
+result_matrix <- matrix(NA, nrow = matrix_size, ncol = matrix_size)
+
+# Set row and column names
+rownames(result_matrix) <- contrasts
+colnames(result_matrix) <- contrasts
+
+# Fill the matrix with up and down values
+for (i in 1:nrow(result)) {
+  before <- result$before_vs[i]
+  after <- result$after_vs[i]
+  up_value <- result$up[i]
+  down_value <- result$down[i]
+  
+  # Assign values to the matrix
+  result_matrix[before, after] <- up_value      # Upregulated in upper triangle
+  result_matrix[after, before] <- down_value     # Downregulated in lower triangle
 }
 
-pairwise <- rownames_to_column(pairwise_matrix, var="contrast")
-pairwiselong <- melt(pairwise,id.vars ="contrast" , value.name ="degs")
-pairwiselong$contrast <- gsub("population", "", pairwiselong$contrast)
-pairwiselong$variable <- gsub("population", "", pairwiselong$variable)
+# Melt the data frame to long format
+melted_df <- melt(result_matrix, value.name = "DEGs")
 
-library(ggplot2)
-
-# Ensure that `contrast` and `variable` are factors with ordered levels
-pairwiselong$contrast <- factor(pairwiselong$contrast, levels = unique(pairwiselong$contrast))
-pairwiselong$variable <- factor(pairwiselong$variable, levels = unique(pairwiselong$variable))
-
+# Remove NA values for better visualization
+melted_df <- melted_df[!is.na(melted_df$DEGs), ]
+colnames(melted_df) <- c( "Contrast","Ref", "DEGs")
 # Create the heatmap
-ggplot(pairwiselong, aes(x = contrast, y = variable, fill = degs)) +
-  geom_tile() +
-  theme_minimal()+
-  scale_fill_gradient(low = "white", high = "red") # Optional: Use a color scale suitable for heatmaps
+ggplot(melted_df, aes(x = Contrast, y = Ref, fill = DEGs)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient2(low = "#0080AF", mid = "white", high = "#A0000D", midpoint = 0, na.value = "grey") +
+  theme_minimal() +
+  labs(title="PODER annotation",
+       y = "Comparison (vs Ref)",
+       x = "Reference",
+       fill = "# DEGs") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  geom_text(aes(label=abs(DEGs), size=abs(DEGs)))+
+  coord_fixed()+
+  scale_size_continuous(range=c(3,5))+
+  guides(size="none")+
+  mytheme
 
 
 
-# 
-# 
-# mygenes <-gsub("\\..*","",rownames(deg_list$`(populationLWK + populationMPC + populationYRI)/3 - (populationITU + populationCEU + populationHAC + populationAJI + populationPEL)/5`))
-# fwrite(as.data.frame(mygenes),"/home/pclavell/Downloads/mygenes.tsv", quote =F, row.names = F)
-# mybck <- gsub("\\..*","",rownames(dge$counts))
-# fwrite(as.data.frame(mybck),"/home/pclavell/Downloads/mybck.tsv", quote =F, row.names = F)
 
+
+
+
+
+
+
+#### run enrichments
+resultsdt <- rbindlist(results_list, idcol="contrast")
+resultsdt <- unique(resultsdt[,.(adj.P.Val, geneid.v)])[, geneid:=gsub("\\..*", "", geneid.v)]
+
+passdata <-unique(data[filter=="pass" & sample=="YRI5", adj.P.Val:=fdr][, .(adj.P.Val, geneid.v)])
+passdata[, geneid:=gsub("\\..*", "", geneid.v)]
+ora_res <- run_ora(unique(passdata[, .(geneid, adj.P.Val)]), db=dbs, keyType="ENSEMBL")
+res <-extract_ora_res_individual(ora_res)
+ggplot(res, aes(x=Count, y=reorder(Description, Count), col=qvalue))+
+  geom_point()+
+  mytheme
+eval(res$GeneRatio)

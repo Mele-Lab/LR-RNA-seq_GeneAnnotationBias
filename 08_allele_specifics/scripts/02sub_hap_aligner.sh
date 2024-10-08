@@ -128,8 +128,8 @@ echo "THREADS: $THREADS"
 EXTENSION="$(extension ${FASTQ})"
 NAME="$(basename ${FASTQ} $(extension ${FASTQ}))"
 
-mkdir -p ${NAME}_temp
-cd ${NAME}_temp
+mkdir -p data/gencode/02_haplotype_alignments/${NAME}_temp
+cd data/gencode/02_haplotype_alignments/${NAME}_temp
 echo "Processing sample" ${NAME} >> ${NAME}_hap_aware.log
 
 

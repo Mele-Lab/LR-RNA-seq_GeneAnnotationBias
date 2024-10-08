@@ -250,7 +250,7 @@ run_ora <- function(x, db,...){
 #   return(ora.obj)}
 
 # execute enrichment and save Rdata
-dbs <- c("GO:BP", "GO:MF", "GO:CC", "Hallmark")
+dbs <- c("GO:BP")
 
 
 # Sys.time()

@@ -24,7 +24,7 @@ catch_args(0)
 ## 0----------------------------END OF HEADER----------------------------------0
 
 # load data
-data <- fread("05_mastertable/data/240909merge_reslongmeta_annot_sqanti_sj_gencodev47_quantification_novellocus.tsv")
+data <- fread("05_mastertable/data/240909merge_reslongmeta_annot_sqanti_sj_gencodev47_quantification_novellocus_proteinInfo_updatedrecount_disambiguatedGenes_replacedFLAIRna&addedISMinfo_filteredINFO.tsv")
 sj <- fread("05_mastertable/data/240909merge_sj_table.tsv")
 #sj <- fread("02_sqanti/data/240909merge_withoutchrEBV_sqanti_output/240909merge_junctions.txt")
 metadata <- fread("../../00_metadata/data/pantranscriptome_samples_metadata.tsv")
@@ -33,10 +33,97 @@ popcol <- unique(metadata$color_pop)
 names(popcol) <- unique(metadata$population)
 
 # merge
-sj <- data[sj, on="isoform"]
+sj <- data[filter=="pass",sj_category_full_trx:=sj_category_full][,sj_category_full:=NULL][sj, on="isoform"]
 
 # keep only sj belonging to population specific transcripts
-sjone <- sj[population_sharing==1 & sample_sharing>1,]
+sjone <- sj[population_sharing==1 & sample_sharing>=2,]
+sjonelong <- melt(, measure.vars = c("AJI", "CEU", "MPC", "YRI", "LWK", "HAC", "ITU", "PEL"), value.name = "detected", variable.name = "population")[detected>=2]
+#### PARENTHESIS TO TRY TO IDENTIFY POP SPECIFIC JUNCTIONS------------------
+
+
+sjonelong[, sj_total_ocurrences:=.N, by="junction"]
+sjonelong[, sj_pop_ocurrences:=.N, by=c("junction", "population")]
+sjonelong[, sj_pop_specific:=ifelse(sj_total_ocurrences==sj_pop_ocurrences, "Pop Specific", "Pop Shared")]
+
+popspsj <-sjonelong[sj_pop_specific=="Pop Specific"]
+popspsj <- unique(metadata[, .(population, map_reads_assemblymap)][, .(popdepth=sum(map_reads_assemblymap)), by="population"])[popspsj, on="population"]
+popspsj[, popspsj_x_pop_x_cat:=.N, by=c("population", "sj_category")]
+popspsj[,  eurpop:= ifelse(population%in%c("CEU", "AJI"), "EUR", "nonEUR")]
+
+ggplot(unique(popspsj[, .(popdepth, popspsj_x_pop_x_cat,sj_category, eurpop)]), aes(x=popdepth, y=popspsj_x_pop_x_cat, col=sj_category))+
+  geom_line(linewidth=1.5)+
+  mytheme+
+  scale_color_manual(values=c("darkgreen","deepskyblue3", "darkgoldenrod3", "darkred"))+
+  labs(x="Total population mapped reads", y="# Population Specific Splice Junctions")+
+  ggnewscale::new_scale_color()+
+  geom_point(aes(color=eurpop, size=eurpop, alpha=eurpop))+
+  scale_color_manual(values=c("red", "grey"))+
+  scale_size_manual(values=c(5,3))+
+  scale_alpha_manual(values=c(0.6, 0.9))
+  
+ggplot(unique(popspsj[eurpop=="nonEUR", .(popdepth, popspsj_x_pop_x_cat,sj_category, eurpop)]), aes(x=popdepth, y=popspsj_x_pop_x_cat, col=sj_category))+
+  geom_line(linewidth=1.5)+
+  mytheme+
+  scale_color_manual(values=c("darkgreen","deepskyblue3", "darkgoldenrod3", "darkred"))+
+  labs(x="Total population mapped reads", y="# Population Specific Splice Junctions")+
+  ggnewscale::new_scale_color()+
+  geom_point(aes(color=eurpop, size=eurpop, alpha=eurpop))+
+  scale_color_manual(values=c( "grey"))+
+  scale_size_manual(values=c(3))+
+  scale_alpha_manual(values=c( 0.9))
+
+# PERMUTATION TEST -------I'll test proportions, are CEU having a largest proportion of knownSJ within their population specific SJ ??
+pops <-c("AJI.", "CEU.", "ITU.", "HAC.", "PEL.", "MPC.", "YRI.", "LWK.")
+pattern <- paste(pops, collapse = "|")
+samplecols <- colnames(sj)[grepl(pattern, colnames(sj))]
+
+# keep only transcripts that are shared at least across 2 samples because (if not, they won't pass the popsp filter)
+sj2 <- sj[sample_sharing>1 & filter=="pass"][, .SD, .SDcols=c(samplecols, "sj_category", "isoform", "junction")]
+
+sjlong <- melt(sj2, measure.vars = samplecols, variable.name = "sample", value.name = "detected")[detected!=0]
+samplingvec <- gsub(".$", "", unique(sjlong$sample))
+
+resvecpos <- c()
+resvecprop <- c()
+for(iteration in 1:1000){
+  randompop <-sample(samplingvec, 43)
+  sjlong3 <- copy(sjlong)
+  names(randompop) <- unique(sjlong3$sample)
+  
+  sjlong3[, `:=`(population=randompop[sample])]
+  sjlong3 <- unique(metadata[, .(sample, map_reads_assemblymap)])[sjlong3, on="sample"]
+  sjlong3[, popreads := sum(unique(map_reads_assemblymap)), by="population"]
+  
+  # detect pseupop sp transcripts
+  # count ocurrences of isoform by population (how many samples in a pop detect the transcript)
+  pseudopopsp <- unique(unique(sjlong3[, .(isoform, population, sample)])[, samples_x_pseudopop:=.N, by=c("isoform", "population")][samples_x_pseudopop>1][, .(isoform, population, samples_x_pseudopop)])
+  # keep pop specific transcripts
+  pseudopopsp <- pseudopopsp[, popsharing := .N, by="isoform"][popsharing==1]
+  pseudopopsp <- sjlong3[pseudopopsp, on=c("isoform","population" )]
+  
+  pseudopopsp[, sj_total_ocurrences:=.N, by="junction"]
+  pseudopopsp[, sj_pop_ocurrences:=.N, by=c("junction", "population")]
+  pseudopopsp[, sj_pop_specific:=ifelse(sj_total_ocurrences==sj_pop_ocurrences, "Pop Specific", "Pop Shared")]
+  pseudopopsp[sj_pop_specific=="Pop Specific"]
+  
+  # keep population specific junctions
+  sjlong3 <- sjlong3[popsharing==1]
+  pseudodt <-as.data.table(as.data.frame(table(unique(sjlong3[, .(population, popreads, sj_category, junction)])[, .(population, sj_category)])))
+  finaldt <-pseudodt[, propsj:=Freq/sum(Freq), by="population"][sj_category=="knownSJ", .(population, propsj)]
+  setorder(finaldt, -propsj)
+  resvecprop <- c(resvecprop, which(finaldt$population=="CEU"))
+  resvecpos <- c(resvecpos, finaldt[population=="CEU", .(propsj)])
+  rm(sjlong3, pseudodt,pseudopopsp)
+  gc()}
+
+
+
+
+
+##############################################################--------------
+
+
+
 pops <-c("AJI.", "CEU.", "ITU.", "HAC.", "PEL.", "MPC.", "YRI.", "LWK.")
 pattern <- paste(pops, collapse = "|")
 samplecols <- colnames(sjone)[grepl(pattern, colnames(sjone))][]
@@ -75,7 +162,7 @@ ggplot(unique(sjonlong[, .(population, norm_SJ_count, sj_category, popreads)]), 
   labs(x="", y="SJ count")
 
 
-# PERMUTATION TEST -------I'll test proportions, are CEU having a largest proportion of knownSJ?
+# PERMUTATION TEST -------I'll test proportions, are CEU having a largest proportion of knownSJ in population specific transcripts??
 pops <-c("AJI.", "CEU.", "ITU.", "HAC.", "PEL.", "MPC.", "YRI.", "LWK.")
 pattern <- paste(pops, collapse = "|")
 samplecols <- colnames(sj)[grepl(pattern, colnames(sj))]

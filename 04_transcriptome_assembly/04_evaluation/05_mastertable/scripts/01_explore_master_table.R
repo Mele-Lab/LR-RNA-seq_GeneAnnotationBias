@@ -29,8 +29,8 @@ metadata <- fread("00_metadata/data/pantranscriptome_samples_metadata.tsv")
 metadata <- metadata[mixed_samples==F]
 popcol <- metadata$color_pop
 names(popcol) <- metadata$population
-colsqanti <- c("#61814B", "#8EDE95", "#356CA1", "#C8773C", "#B5B5B5", "#4F4F4F", "#6E5353", "#000000")
-names(colsqanti) <- unique(data$structural_category)[c(1,2,3,5,8,6,7,4)]
+colsqanti <- c("#61814B", "#8EDE95", "#356CA1", "#C8773C",  "darkred", "#B5B5B5", "#4F4F4F", "#6E5353")
+names(colsqanti) <- unique(data$structural_category)[c(1,2,3,5,4,8,6,7)]
 data[, structural_category := factor(structural_category, levels=names(colsqanti))]
 n_fun <- function(x, y){
   return(data.frame(y = y, label = paste0("n = ",length(x))))
@@ -39,6 +39,23 @@ n_fun <- function(x, y){
 
 # compute total mapped reads per population
 metadata[, population_throughput := sum(map_reads_assemblymap), by=population]
+
+# plot gene and transcript distribution
+ggplot(data, aes(x=structural_category, fill=structural_category))+
+  geom_bar()+
+  mytheme+
+  scale_fill_manual(values=colsqanti)+
+  guides(fill="none")+
+  labs(y="# Transcripts", x="")+
+  geom_text(aes(label = after_stat(count)), stat="count", vjust = -0.5)
+ggplot(unique(data[, .(associated_geneid.v, structural_category)]), aes(x=structural_category, fill=structural_category))+
+  geom_bar()+
+  mytheme+
+  scale_fill_manual(values=colsqanti)+
+  guides(fill="none")+
+  labs(y="# Genes", x="")+
+  geom_text(aes(label = after_stat(count)), stat="count", vjust = -0.5)
+
 
 
 # SAMPLES SHARING------------------------------------------------------------------------------------
