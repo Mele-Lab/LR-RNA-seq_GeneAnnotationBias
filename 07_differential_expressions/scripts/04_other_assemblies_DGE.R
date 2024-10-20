@@ -26,19 +26,25 @@ library("variancePartition")
 library("edgeR")
 library("BiocParallel")
 
+
+TYPES <-c("gencode", "pantrx")
+ASSEMBLIES <- c("HG002_maternal", "HG02717_maternal")
+
+TYPE <- TYPES[2]
+ASSEMBLY <- ASSEMBLIES[1]
 # Choose covariates
 covariates <- c("sex", "population", "pc1", "pc2")
 
 # LOAD DATA
 metadataraw <- fread("../00_metadata/data/pantranscriptome_samples_metadata.tsv")
-mypca <- fread(paste0("data/01_PCA_", TYPE,".tsv"))
+mypca <- fread(paste0("data/01_PCA_", TYPE,"_genelvl.tsv"))
 if(TYPE=="gencode"){
-  nametype <- "GENCODEv47 annotation"
-  counts <- fread("../../novelannotations/v47_kallisto_quant/matrix.abundance.tsv")
+  nametype <- "GENCODEv47"
+  counts <- fread(paste0("../../novelannotations/quantifications/v47_personal_kallisto_quant/", ASSEMBLY,"/matrix.abundance.tsv"))
   annot <- fread("../../../../Data/gene_annotations/gencode/v47/modified/gencode.v47.primary_assembly.annotation.transcript_parsed.tsv")
 }else if(TYPE=="pantrx"){
-  nametype <- "PODER annotation"
-  counts <- fread("../../novelannotations/kallisto_quant/matrix.abundance.tsv")
+  nametype <- "PODER"
+  counts <- fread(paste0("../../novelannotations/quantifications/personal_kallisto_quant/", ASSEMBLY,"/matrix.abundance.tsv"))
   annot <- fread("../../novelannotations/merged/240926_filtered_with_genes.transcript2gene.tsv", header=F)
   colnames(annot) <- c("transcriptid.v","geneid.v")
 }
@@ -49,7 +55,6 @@ metadataraw <- metadataraw[merged_run_mode==TRUE]
 metadataraw <-metadataraw[order(metadataraw$cell_line_id),]
 metadataraw <- mypca[metadataraw, on="cell_line_id"]
 metadataraw[, population:=factor(population, levels=c("CEU", "AJI", "ITU", "HAC", "PEL", "LWK", "YRI", "MPC"))]
-metadataraw[, ooa:=factor(ooa, levels=c("OOA", "AFR"))]
 
 # prepare new names vector
 samplesnames <- metadataraw$sample
@@ -57,7 +62,7 @@ names(samplesnames) <- metadataraw$quantification_id
 samplesnames <- c(samplesnames, "transcript_id"="transcriptid.v", "geneid.v"="geneid.v")
 metadataraw <- column_to_rownames(metadataraw, var="sample")
 metadata <- metadataraw[order(rownames(metadataraw)), c(covariates)]
-# metadata_ooa <- metadataraw[order(rownames(metadataraw)), c(covariates_ooa)]
+
 # Sum transcript counts per gene
 counts <- annot[, .(transcriptid.v, geneid.v)][counts, on=c("transcriptid.v"= "transcript_id")]
 counts <- counts[, lapply(.SD, sum), by = geneid.v, .SDcols = patterns("_")]
@@ -68,10 +73,10 @@ colnames(counts)  <- gsub(".*_", "", colnames(counts))
 counts <- counts[, order(colnames(counts))]
 if(TYPE=="pantrx"){
   fwrite(rownames_to_column(counts, var="geneid.v"), 
-       "../../novelannotations/kallisto_quant/matrix.abundance.genelevel.tsv", row.names = F, quote = F, sep="\t")
+         paste0("../../novelannotations/quantifications/personal_kallisto_quant/",ASSEMBLY,"/matrix.abundance.genelevel.tsv"), row.names = F, quote = F, sep="\t")
 }else if(TYPE=="gencode"){
   fwrite(rownames_to_column(counts, var="geneid.v"), 
-         "../../novelannotations/v47_kallisto_quant/matrix.abundance.genelevel.tsv", row.names = F, quote = F, sep="\t")
+         paste0("../../novelannotations/quantifications/v47_personal_kallisto_quant/",ASSEMBLY,"/matrix.abundance.genelevel.tsv"), row.names = F, quote = F, sep="\t")
 }
 # filter genes by number of counts
 isexpr <- rowSums(cpm(counts) > 1) >= 5
@@ -145,8 +150,8 @@ colnames(resultsdt)[grep("adj.P.Val", colnames(resultsdt))] <- "fdr"
 colnames(resultsdt)[grep("contrast", colnames(resultsdt))] <- "contrast_name"
 colnames(resultsdt)[grep("comparison", colnames(resultsdt))] <- "contrast"
 colnames(resultsdt)[grep("P.Value", colnames(resultsdt))] <- "pval"
-fwrite(resultsdt, paste0("data/02_DEGres_", TYPE,".tsv"), quote = F, sep = "\t", row.names = F)
-resultsdt <- fread(paste0("data/02_DEGres_", TYPE,".tsv"))
+fwrite(resultsdt, paste0("data/other_assemblies/02_DEGres_", ASSEMBLY,"_", TYPE,".tsv"), quote = F, sep = "\t", row.names = F)
+resultsdt <- fread(paste0("data/other_assemblies/02_DEGres_", ASSEMBLY,"_",TYPE,".tsv"))
 
 # resultsdt[, upDEG:=-upDEG]
 
@@ -194,11 +199,11 @@ resultsdt <- fread(paste0("data/02_DEGres_", TYPE,".tsv"))
 # }
 # result[, down:=-down]
 # Reorder columns to desired format
-result <- unique(resultsdt[, .(comparison, reference, upDEG, downDEG)])
+result <- unique(resultsdt[, .(contrast, reference, upDEG, downDEG)])
 # setcolorder(result, c("before_vs", "after_vs", "up", "down"))
 
 # Create a unique list of contrasts
-contrasts <- unique(c(result$comparison, result$reference))
+contrasts <- unique(c(result$contrast, result$reference))
 
 # Initialize a matrix with NA values
 matrix_size <- length(contrasts)
@@ -210,7 +215,7 @@ colnames(result_matrix) <- contrasts
 
 # Fill the matrix with up and down values
 for (i in 1:nrow(result)) {
-  before <- result$comparison[i]
+  before <- result$contrast[i]
   after <- result$reference[i]
   up_value <- result$upDEG[i]
   down_value <- result$downDEG[i]
@@ -237,7 +242,7 @@ ggplot(melted_df, aes(x = Ref, y = Contrast, fill = DEGs,)) +
   geom_tile(color = "white") +
   scale_fill_gradient2(low = "#0080AF", mid = "white", high = "#A0000D", midpoint = 0, na.value = "#9AC7CB") +
   theme_minimal() +
-  labs(title=nametype,
+  labs(title=paste0(ASSEMBLY, " - ",nametype),
        x = "Against Reference",
        y="Upregulated Genes in",
        fill = "# DEGs") +
@@ -248,5 +253,5 @@ ggplot(melted_df, aes(x = Ref, y = Contrast, fill = DEGs,)) +
   guides(size="none")+
   mytheme
 
-fwrite(melted_df, paste0("data/02_DEGres_", TYPE, "_sigGenesMatrix.tsv"), sep = "\t", quote = F, row.names = F)
+fwrite(melted_df, paste0("data/other_assemblies/02_DEGres_", ASSEMBLY, "_",TYPE, "_sigGenesMatrix.tsv"), sep = "\t", quote = F, row.names = F)
 

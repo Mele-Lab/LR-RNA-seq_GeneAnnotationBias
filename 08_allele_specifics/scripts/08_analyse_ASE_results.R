@@ -23,9 +23,17 @@ catch_args(0)
 ##
 ## 0----------------------------END OF HEADER----------------------------------0
 library(ggpmisc)
+if(TYPE=="gencode"){
+  nametype <- "GENCODEv47 annotation"
+  annot <- fread("../../../../Data/gene_annotations/gencode/v47/modified/gencode.v47.primary_assembly.annotation.transcript_parsed.tsv")
+}else if(TYPE=="pantrx"){
+  nametype <- "PODER annotation"
+  annot <- fread("../../novelannotations/merged/240926_filtered_with_genes.transcript2gene_with_biotypes.tsv")
+}
+
 namevec <- c()
 all_samples <- list()
-for(file in list.files("data/04_calc_ase", pattern="ase_annotated.tsv", full.names=T)){
+for(file in list.files(paste0("data/", TYPE,"/04_calc_ase"), pattern="ase_annotated.tsv", full.names=T)){
   tempdata <- fread(file)
   all_samples <- append(all_samples, list(tempdata[,geneid.v:=tstrsplit(GENE_ID,",")[[1]]]))
   namevec <- c(namevec, gsub(".*_","",gsub("_ase_annotated.tsv","",file)))
@@ -33,6 +41,8 @@ for(file in list.files("data/04_calc_ase", pattern="ase_annotated.tsv", full.nam
 names(all_samples) <- namevec
 data <- rbindlist(all_samples, idcol="sample")
 metadata <- fread("../00_metadata/data/pantranscriptome_samples_metadata.tsv")
+metadata<- metadata[mixed_samples==F]
+metadata<- metadata[merged_run_mode==T]
 data <- metadata[, .(cell_line_id, sample, population, map_reads_assemblymap)][data, on=c("cell_line_id"="sample")]
 
 
@@ -40,7 +50,7 @@ data <- metadata[, .(cell_line_id, sample, population, map_reads_assemblymap)][d
 data[, filter:=ifelse(GENOTYPE_WARNING==0 & BLACKLIST==0 & MULTI_MAPPING==0 & OTHER_ALLELE_WARNING==0 & HIGH_INDEL_WARNING==0 & rawDepth>=20, "pass", "fail")]
 data[filter=="pass", fdr:=p.adjust(BINOM_P, method="BH"), by="sample"]
 data[, significant:=ifelse(fdr<0.05, "FDR<0.05", "ns")]
-
+hist(data[sample=="LWK4" & filter=="pass"]$BINOM_P  )
 # plot number of significant variants and variants passing threshold
 ggplot(data, aes(x=reorder(sample, map_reads_assemblymap), fill=filter))+
   geom_bar()+
@@ -54,7 +64,12 @@ ggplot(data, aes(x=reorder(sample, map_reads_assemblymap), fill=filter))+
 data[, tested_genes := uniqueN(geneid.v[filter == "pass"]), by="sample"]
 data[, significant_genes := uniqueN(geneid.v[filter == "pass" & significant!="ns"]), by="sample"]
 
-hist(data$fdr)
+# save a list with all the sig variants
+datapass <- data[filter=="pass"][, .(contig, position, variantID, refAllele, altAllele, refCount, altCount, totalCount, GENOTYPE, geneid.v, BINOM_P, fdr, tested_genes, significant_genes, cell_line_id, sample, population, map_reads_assemblymap)]
+setnames(datapass, old = c("variantID", "BINOM_P", "fdr"), new = c("variant", "p.value", "FDR"))
+
+fwrite(datapass, paste0("data/ASE_hits_", TYPE, ".tsv"), sep="\t", quote = F, row.names = F)
+datapass <- fread(paste0("data/ASE_hits_", TYPE, ".tsv"))
 
 popcols <- unique(metadata$color_pop)
 names(popcols) <- unique(metadata$population)
@@ -62,21 +77,38 @@ ggplot(unique(data[, .(significant_genes, tested_genes, population, map_reads_as
   stat_poly_line(color="darkgrey")+
   stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")),
                formula = y ~ x, parse = TRUE, label.x.npc = "left", label.y.npc = 0.9, size = 5) +  # Equation and R-squared
-  geom_point(aes(col=population,size=map_reads_assemblymap/10^6))+
+  geom_point(aes(col=population,size=map_reads_assemblymap/10^6), alpha=0.7)+
   mytheme+
-  labs(y="# Significant Genes", x="# Tested Genes", size="Reads (M)")+
+  labs(y="# ASE Significant Genes", x="# ASE Tested Genes", size="Reads (M)", title="PODER annotation")+
   scale_color_manual(values=popcols)
 
 
+# add annotation data
+datapassannot <- unique(annot[, .(geneid.v, gene_biotype)])[datapass, on="geneid.v"]
+datapassannotsig <- datapassannot[FDR<0.05]
 
-# compute enrichment of significatn genes in total
-passdata <-unique(data[filter=="pass", adj.P.Val:=fdr][, .(adj.P.Val, geneid.v)])
-passdata[, geneid:=gsub("\\..*", "", geneid.v)]
-ora_res <- run_ora(unique(passdata[, .(geneid, adj.P.Val)]), db=dbs, keyType="ENSEMBL")
-res <-extract_ora_res_individual(ora_res)
-ggplot(res, aes(x=Count, y=reorder(Description, Count), col=qvalue))+
-  geom_point()+
-  mytheme
+datapassannotsig[, countperbiotype := uniqueN(geneid.v), by=c("gene_biotype", "sample")]
+
+ggplot(unique(datapassannotsig[gene_biotype%in%c("protein_coding", "lncRNA"), .(sample, gene_biotype, countperbiotype)]), aes(x=gene_biotype, col=gene_biotype, y=countperbiotype))+
+  geom_jitter()+
+  mytheme+
+  scale_color_manual(values=c("#F79D5C","#297373" ))+
+  labs(y="ASE genes", x="", title=nametype)+
+  guides(color="none")
+
+
+
+
+
+
+# # compute enrichment of significatn genes in total
+# passdata <-unique(data[filter=="pass", adj.P.Val:=fdr][, .(adj.P.Val, geneid.v)])
+# passdata[, geneid:=gsub("\\..*", "", geneid.v)]
+# ora_res <- run_ora(unique(passdata[, .(geneid, adj.P.Val)]), db=dbs, keyType="ENSEMBL")
+# res <-extract_ora_res_individual(ora_res)
+# ggplot(res, aes(x=Count, y=reorder(Description, Count), col=qvalue))+
+#   geom_point()+
+#   mytheme
 
 
 

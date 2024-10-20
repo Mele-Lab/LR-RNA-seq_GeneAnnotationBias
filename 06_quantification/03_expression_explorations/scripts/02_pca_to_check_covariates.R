@@ -19,19 +19,22 @@ setup_script(relative_path, 3, 48)
 ##
 ##    catch arguments from standard input 
 ##      catch_args(number_of_args, "obj_name1", "obj_name2")
-catch_args(1, "TYPE")
+catch_args(2, "TYPE", "LEVEL")
 ##
 ## 0----------------------------END OF HEADER----------------------------------0
+
+TYPE<-"pantrx"
+LEVEL <-"transcriptlvl"
 
 library(edgeR)
 library(FactoMineR)
 library(factoextra)
 # load data
 if(TYPE=="gencode"){
-  counts <- fread("../../novelannotations/v47_kallisto_quant/matrix.abundance.tsv")
+  counts <- fread("../../novelannotations/quantifications/v47_kallisto_quant/matrix.abundance.tsv")
   annot <- fread("../../../../Data/gene_annotations/gencode/v47/modified/gencode.v47.primary_assembly.annotation.transcript_parsed.tsv")
 }else if(TYPE=="pantrx"){
-  counts <- fread("../../novelannotations/kallisto_quant/matrix.abundance.tsv")
+  counts <- fread("../../novelannotations/quantifications/kallisto_quant/matrix.abundance.tsv")
   annot <- fread("../../novelannotations/merged/240926_filtered_with_genes.transcript2gene.tsv", header=F)
   colnames(annot) <- c("transcriptid.v","geneid.v")
 }
@@ -40,11 +43,15 @@ if(TYPE=="gencode"){
 metadata <- fread("../00_metadata/data/pantranscriptome_samples_metadata.tsv")
 metadata <- metadata[merged_run_mode==TRUE]
 
-# Sum transcript counts per gene
-counts <- annot[, .(transcriptid.v, geneid.v)][counts, on=c("transcriptid.v"= "transcript_id")]
-counts <- counts[, lapply(.SD, sum), by = geneid.v, .SDcols = patterns("_")]
-
-counts <- column_to_rownames(counts, var="geneid.v")
+if(LEVEL=="genelvl"){
+  # Sum transcript counts per gene
+  counts <- annot[, .(transcriptid.v, geneid.v)][counts, on=c("transcriptid.v"= "transcript_id")]
+  counts <- counts[, lapply(.SD, sum), by = geneid.v, .SDcols = patterns("_")]
+  
+  counts <- column_to_rownames(counts, var="geneid.v")
+}else if(LEVEL=="transcriptlvl"){
+  counts <- column_to_rownames(counts, var=colnames(counts)[grep("transcript", colnames(counts))])
+}
 colnames(counts) <- gsub("_.*", "",colnames(counts))
 metadata <- metadata[cell_line_id %in% colnames(counts),]
 
@@ -79,10 +86,10 @@ mypca <- FactoMineR::PCA(topca,ncp = 10, quali.sup=c(1:(length(covariates)-1)))
 # # variance explained by each PC
 # fviz_screeplot(mypca, ncp=10, addlabels=T)
 # 
-# # Captrap batch (PC1 and PC2 depend on it)
+# Captrap batch (PC1 and PC2 depend on it)
 # fviz_pca_ind(mypca, habillage = 6, geom = "point",mean.point = FALSE, pointsize=5,
 #              repel = TRUE, axes=c(1,2))
-# 
+
 # # ONT_seq
 # fviz_pca_ind(mypca, habillage = 7, geom = "point",mean.point = FALSE, pointsize=5,
 #              axes = c(1,2), addEllipses = F, repel=T)
@@ -99,4 +106,5 @@ mypca <- FactoMineR::PCA(topca,ncp = 10, quali.sup=c(1:(length(covariates)-1)))
 mypcares <- as.data.frame(mypca$ind$coord)
 colnames(mypcares) <- paste0("pc", 1:10)
 mypcares <- rownames_to_column(mypcares, var="cell_line_id")
-fwrite(mypcares, paste0("../07_differential_expressions/data/01_PCA_", TYPE,".tsv"), quote = F, sep="\t", row.names = F)
+fwrite(mypcares, paste0("../07_differential_expressions/data/01_PCA_", TYPE,"_",LEVEL,".tsv"), quote = F, sep="\t", row.names = F)
+

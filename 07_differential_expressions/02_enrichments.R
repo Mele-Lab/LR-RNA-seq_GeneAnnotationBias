@@ -286,138 +286,149 @@ extract_ora_res_individual <- function(x){if(is.list(x)){
 # }
 
 extract_ora_res_individual(ora_res)
+#### run enrichments
+resultsdt <- rbindlist(results_list, idcol="contrast")
+resultsdt <- unique(resultsdt[,.(adj.P.Val, geneid.v)])[, geneid:=gsub("\\..*", "", geneid.v)]
 
-# plot
-ora.extracted %>%
-  filter(p.adjust <= 0.05) %>%
-  mutate("odds.ratio" = DOSE::parse_ratio(GeneRatio) / DOSE::parse_ratio(BgRatio)) %>%
-  group_by(Description) %>%
-  mutate(count = n()) %>%
-  group_by(tissue)%>%
-  mutate(count2=n())%>%
-  #filter(pathway%in%c("GO:BP"))%>%
-  #filter(tissue=="WholeBlood")%>%
-  filter(grepl("[Rr]ib", Description) | grepl("[Tt]ranslation", Description))%>%
-  ggplot(aes(y = reorder(tissue, -count2), x = reorder(Description, -count))) +
-  geom_point(aes(size = odds.ratio, col = as.numeric(p.adjust))) +
-  theme(axis.text.x = element_text(angle = 45,  hjust = 1, size=5))+
-  xlab("")+
-  ylab("")
-ggsave("figures/dotplot.ORA_DGE_results.png", dpi = 96, height= 8, width= 14)
+passdata <-unique(data[filter=="pass" & sample=="YRI5", adj.P.Val:=fdr][, .(adj.P.Val, geneid.v)])
+passdata[, geneid:=gsub("\\..*", "", geneid.v)]
+ora_res <- run_ora(unique(passdata[, .(geneid, adj.P.Val)]), db=dbs, keyType="ENSEMBL")
+res <-extract_ora_res_individual(ora_res)
+ggplot(res, aes(x=Count, y=reorder(Description, Count), col=qvalue))+
+  geom_point()+
+  mytheme
+eval(res$GeneRatio)
+# # plot
+# ora.extracted %>%
+#   filter(p.adjust <= 0.05) %>%
+#   mutate("odds.ratio" = DOSE::parse_ratio(GeneRatio) / DOSE::parse_ratio(BgRatio)) %>%
+#   group_by(Description) %>%
+#   mutate(count = n()) %>%
+#   group_by(tissue)%>%
+#   mutate(count2=n())%>%
+#   #filter(pathway%in%c("GO:BP"))%>%
+#   #filter(tissue=="WholeBlood")%>%
+#   filter(grepl("[Rr]ib", Description) | grepl("[Tt]ranslation", Description))%>%
+#   ggplot(aes(y = reorder(tissue, -count2), x = reorder(Description, -count))) +
+#   geom_point(aes(size = odds.ratio, col = as.numeric(p.adjust))) +
+#   theme(axis.text.x = element_text(angle = 45,  hjust = 1, size=5))+
+#   xlab("")+
+#   ylab("")
+# ggsave("figures/dotplot.ORA_DGE_results.png", dpi = 96, height= 8, width= 14)
+# 
 
-
-##### Now rerun ORA but only with genes that are DGE across at least 5 tissues
-sig.genes <- c()
-all.genes <- c()
-for(tissue in DGEres.entrez){
-  genes <- tissue[tissue$fdr<=0.05, "entrez.id"]
-  sig.genes <- c(sig.genes, genes)
-  all.genes <- c(all.genes, tissue[,"entrez.id"])
-}
-
-shared.sig.entrez <- names(table(sig.genes)[table(sig.genes)>=5])
-all.sig.entrez <- unique(sig.genes)
-all.entrez <- unique(all.genes)
-
-shared.sig.entrez%>%
-  as.data.frame()%>%
-  write_delim("output/list.shared_sig_genes.txt", quote="none", col_names=F)
-all.entrez%>%
-  as.data.frame()%>%
-  write_delim("output/list.all_genes_background.txt", quote="none", col_names=F)
-
-# execute function twice using 2 different backgrounds: all the significant DGE genes and all the tested genes
-dbs <- c("GO:BP", "GO:MF", "GO:CC", "Hallmark","KEGG", "ReactomePA","DO","DisGeNET", "OMIM", "human_phenotype")
-
-ora.res.shared.allsig <- ora.fun2(shared.sig.entrez, all.sig.entrez, dbs, keyType = "ENTREZID")
-ora.res.shared.all <- ora.fun2(shared.sig.entrez, all.entrez, dbs, keyType = "ENTREZID")
-
-
-# extract results
-parsed.ora.res.allsig <-extract.ora.res.general(ora.res.shared.allsig, nested=F)
-parsed.ora.res.all <- extract.ora.res.general(ora.res.shared.all, nested=F)
-
-# plot results
-parsed.ora.res.allsig%>%
-  mutate("odds.ratio" = DOSE::parse_ratio(GeneRatio) / DOSE::parse_ratio(BgRatio)) %>%
-  group_by(Description) %>%
-  ggplot(.)+
-  geom_point(aes(y=reorder(Description, odds.ratio), x=odds.ratio, size=Count, color=p.adjust))+
-  ylab("")
-ggsave("figures/dotplot.ORA_DGE_5tissues_allsigbackground.png", dpi = 96, height= 5, width= 8)
-
-parsed.ora.res.all%>%
-  mutate("odds.ratio" = DOSE::parse_ratio(GeneRatio) / DOSE::parse_ratio(BgRatio)) %>%
-  group_by(Description) %>%
-  ggplot(.)+
-  geom_point(aes(y=reorder(Description, odds.ratio), x=odds.ratio, size=Count, color=p.adjust))+
-  ylab("")
-ggsave("figures/dotplot.ORA_DGE_5tissues_allbackground.png", dpi = 96, height= 5, width= 8)
-
-
-
-
-
-
-
-
-
-
-##########################
-#--- FISHER ---#
-##########################
-rpannot <- read.delim("../global_data/ribosomal_proteins_annotation_HGNC.txt", sep="\t")
-rpannot$RP <- "yes"
-
-DGEres <- lapply(DGEres, \(x) {x$ensembl <- gsub("\\..*", "", x$ensembl_gene_id)
-x})
-
-DGEres.annot <- lapply(DGEres, left_join, rpannot, by=c("ensembl"="GeneID"))
-DGEres.annot <- lapply(DGEres.annot, \(x) replace(x, is.na(x), "no"))
-DGEres.annot <- lapply(DGEres.annot, \(x){x$RP <- factor(x$RP, c("yes", "no"))
-x}) 
+# ##### Now rerun ORA but only with genes that are DGE across at least 5 tissues
+# sig.genes <- c()
+# all.genes <- c()
+# for(tissue in DGEres.entrez){
+#   genes <- tissue[tissue$fdr<=0.05, "entrez.id"]
+#   sig.genes <- c(sig.genes, genes)
+#   all.genes <- c(all.genes, tissue[,"entrez.id"])
+# }
+# 
+# shared.sig.entrez <- names(table(sig.genes)[table(sig.genes)>=5])
+# all.sig.entrez <- unique(sig.genes)
+# all.entrez <- unique(all.genes)
+# 
+# shared.sig.entrez%>%
+#   as.data.frame()%>%
+#   write_delim("output/list.shared_sig_genes.txt", quote="none", col_names=F)
+# all.entrez%>%
+#   as.data.frame()%>%
+#   write_delim("output/list.all_genes_background.txt", quote="none", col_names=F)
+# 
+# # execute function twice using 2 different backgrounds: all the significant DGE genes and all the tested genes
+# dbs <- c("GO:BP", "GO:MF", "GO:CC", "Hallmark","KEGG", "ReactomePA","DO","DisGeNET", "OMIM", "human_phenotype")
+# 
+# ora.res.shared.allsig <- ora.fun2(shared.sig.entrez, all.sig.entrez, dbs, keyType = "ENTREZID")
+# ora.res.shared.all <- ora.fun2(shared.sig.entrez, all.entrez, dbs, keyType = "ENTREZID")
+# 
+# 
+# # extract results
+# parsed.ora.res.allsig <-extract.ora.res.general(ora.res.shared.allsig, nested=F)
+# parsed.ora.res.all <- extract.ora.res.general(ora.res.shared.all, nested=F)
+# 
+# # plot results
+# parsed.ora.res.allsig%>%
+#   mutate("odds.ratio" = DOSE::parse_ratio(GeneRatio) / DOSE::parse_ratio(BgRatio)) %>%
+#   group_by(Description) %>%
+#   ggplot(.)+
+#   geom_point(aes(y=reorder(Description, odds.ratio), x=odds.ratio, size=Count, color=p.adjust))+
+#   ylab("")
+# ggsave("figures/dotplot.ORA_DGE_5tissues_allsigbackground.png", dpi = 96, height= 5, width= 8)
+# 
+# parsed.ora.res.all%>%
+#   mutate("odds.ratio" = DOSE::parse_ratio(GeneRatio) / DOSE::parse_ratio(BgRatio)) %>%
+#   group_by(Description) %>%
+#   ggplot(.)+
+#   geom_point(aes(y=reorder(Description, odds.ratio), x=odds.ratio, size=Count, color=p.adjust))+
+#   ylab("")
+# ggsave("figures/dotplot.ORA_DGE_5tissues_allbackground.png", dpi = 96, height= 5, width= 8)
+# 
 
 
-# Run Fisher test on RPs
-apply.fisher.test <- function(x){
-  x <- as.data.frame(x)
-  contingencytable <- as.matrix(table(x$fdr>0.05, x$RP))
-  print(contingencytable)
-  if(nrow(contingencytable)==1){contingencytable <- rbind(c(0,0), contingencytable)
-  print(contingencytable)}
-  colnames(contingencytable) <- c("RP", "nonRP")
-  rownames(contingencytable) <- c("DGE", "nonDGE")
-  return(fisher.test(contingencytable))
-}
-
-# compute enrichment on all tissues
-fisherres <- lapply(DGEres.annot, apply.fisher.test)
-
-# extract results and build data.frame
-fisherres.ext <- lapply(fisherres, \(x) data.frame("p.value"=unlist(x$p.value),
-                                                   "odds.ratio"=unlist(x$estimate)))
-fisher.res.df <- do.call(rbind.data.frame, fisherres.ext)
-fisher.res.df$p.adjust <- p.adjust(fisher.res.df$p.value, method="BH")
-fisher.res.df <- rownames_to_column(fisher.res.df, "tissue")
-fisher.res.df$nomsig <- ifelse(fisher.res.df$p.value<=0.05, "sig", "non.sig")
-fisher.res.df$adjsig <- ifelse(fisher.res.df$p.adjust<=0.05, "sig", "non.sig")
-
-fisher.res.df.long <- pivot_longer(fisher.res.df, c(2,4), values_to = "statistic", names_to = "p.value")
-fisher.res.df.long$p.value <- factor(fisher.res.df.long$p.value, levels=c("p.value","p.adjust"))
 
 
-ggplot(fisher.res.df.long)+
-  geom_col(aes(x=odds.ratio, y=reorder(tissue, statistic)))+
-  geom_point(aes(x=-0.3, y=tissue, col=nomsig), shape=15, size=4)+
-  scale_color_manual(values=c("blue", "red"))+
-  guides(col=guide_legend(title="P-value"))+
-  ggnewscale::new_scale_color()+
-  geom_point(aes(x=-0.7, y=tissue, col=adjsig), shape=15, size=4)+
-  scale_color_manual(values=c("darkblue", "darkred"))+
-  guides(col=guide_legend(title="FDR"))+
-  ylab("")+
-  scale_x_continuous(expand = c(0, 0))+
-  coord_cartesian(xlim=c(-1.5,23))
-ggsave("figures/barplot.fisher_DGE.png", dpi = 96, height= 8, width= 10)
 
+
+
+
+
+# ##########################
+# #--- FISHER ---#
+# ##########################
+# rpannot <- read.delim("../global_data/ribosomal_proteins_annotation_HGNC.txt", sep="\t")
+# rpannot$RP <- "yes"
+# 
+# DGEres <- lapply(DGEres, \(x) {x$ensembl <- gsub("\\..*", "", x$ensembl_gene_id)
+# x})
+# 
+# DGEres.annot <- lapply(DGEres, left_join, rpannot, by=c("ensembl"="GeneID"))
+# DGEres.annot <- lapply(DGEres.annot, \(x) replace(x, is.na(x), "no"))
+# DGEres.annot <- lapply(DGEres.annot, \(x){x$RP <- factor(x$RP, c("yes", "no"))
+# x}) 
+# 
+# 
+# # Run Fisher test on RPs
+# apply.fisher.test <- function(x){
+#   x <- as.data.frame(x)
+#   contingencytable <- as.matrix(table(x$fdr>0.05, x$RP))
+#   print(contingencytable)
+#   if(nrow(contingencytable)==1){contingencytable <- rbind(c(0,0), contingencytable)
+#   print(contingencytable)}
+#   colnames(contingencytable) <- c("RP", "nonRP")
+#   rownames(contingencytable) <- c("DGE", "nonDGE")
+#   return(fisher.test(contingencytable))
+# }
+# 
+# # compute enrichment on all tissues
+# fisherres <- lapply(DGEres.annot, apply.fisher.test)
+# 
+# # extract results and build data.frame
+# fisherres.ext <- lapply(fisherres, \(x) data.frame("p.value"=unlist(x$p.value),
+#                                                    "odds.ratio"=unlist(x$estimate)))
+# fisher.res.df <- do.call(rbind.data.frame, fisherres.ext)
+# fisher.res.df$p.adjust <- p.adjust(fisher.res.df$p.value, method="BH")
+# fisher.res.df <- rownames_to_column(fisher.res.df, "tissue")
+# fisher.res.df$nomsig <- ifelse(fisher.res.df$p.value<=0.05, "sig", "non.sig")
+# fisher.res.df$adjsig <- ifelse(fisher.res.df$p.adjust<=0.05, "sig", "non.sig")
+# 
+# fisher.res.df.long <- pivot_longer(fisher.res.df, c(2,4), values_to = "statistic", names_to = "p.value")
+# fisher.res.df.long$p.value <- factor(fisher.res.df.long$p.value, levels=c("p.value","p.adjust"))
+# 
+# 
+# ggplot(fisher.res.df.long)+
+#   geom_col(aes(x=odds.ratio, y=reorder(tissue, statistic)))+
+#   geom_point(aes(x=-0.3, y=tissue, col=nomsig), shape=15, size=4)+
+#   scale_color_manual(values=c("blue", "red"))+
+#   guides(col=guide_legend(title="P-value"))+
+#   ggnewscale::new_scale_color()+
+#   geom_point(aes(x=-0.7, y=tissue, col=adjsig), shape=15, size=4)+
+#   scale_color_manual(values=c("darkblue", "darkred"))+
+#   guides(col=guide_legend(title="FDR"))+
+#   ylab("")+
+#   scale_x_continuous(expand = c(0, 0))+
+#   coord_cartesian(xlim=c(-1.5,23))
+# ggsave("figures/barplot.fisher_DGE.png", dpi = 96, height= 8, width= 10)
+# 
 
