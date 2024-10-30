@@ -26,6 +26,7 @@ catch_args(0)
 data <- fread("pclavell/04_transcriptome_assembly/04_evaluation/05_mastertable/data/240909merge_reslongmeta_annot_sqanti_sj_gencodev47_quantification_novellocus_proteinInfo_updatedrecount_disambiguatedGenes_replacedFLAIRna&addedISMinfo_filteredINFO.tsv")
 metadata <- fread("pclavell/00_metadata/data/pantranscriptome_samples_metadata.tsv")
 metadata <- metadata[mixed_samples==F]
+metadata <- metadata[merged_run_mode==T]
 popcol <- metadata$color_pop
 names(popcol) <- metadata$population
 colsqanti <- c("#61814B", "#8EDE95", "#356CA1", "#C8773C",  "darkred", "#B5B5B5", "#4F4F4F", "#6E5353")
@@ -38,6 +39,26 @@ data[, filter:=factor(filter, levels=c("pass", "fail"))]
 filt <- data[filter=="pass"]
 
 # PLOT
+data[, EUR:=ifelse(CEU>0 | AJI>0, 1,
+                   ifelse(CEU==0 & AJI==0, 0, "error"))]
+data[, nonEUR:=ifelse(ITU>0 | HAC>0 | PEL>0 | LWK>0 | MPC>0 | YRI>0, 1, 0)]
+data[, eur_assembled := ifelse(EUR==1, 
+                               ifelse(nonEUR==1, "EUR & nonEUR", "EUR"), "nonEUR")]
+ggplot(data[filter=="pass" & structural_category%in%c("NIC","NNC")], aes(x=eur_assembled, y=exons, fill=eur_assembled))+
+  geom_violin(adjust=3, alpha=0.8)+
+  geom_boxplot(outliers=F, width=0.15)+
+  mytheme+
+  facet_wrap(~structural_category)+
+  labs(x="", y="# Exons")+
+  scale_fill_manual(values=c("#466995", "#76517B","#A53860"))+
+  scale_y_continuous()+
+  stat_summary(fun.data = n_fun, geom = "text", fun.args = list(y=-10))+
+  ggpubr::stat_compare_means(comparisons=list(c("EUR", "EUR & nonEUR"),c("EUR", "nonEUR")),
+                             method = "t.test", 
+                             method.args = list(alternative = "two.sided")) +
+  guides(fill="none")
+
+  
 # Transcript level
 ggplot(data, aes(x=structural_category, fill=structural_category))+
   geom_bar()+
@@ -440,3 +461,6 @@ ggplot(melt(filt, measure.vars = c("flair", "isoquant", "lyric", "espresso"), va
   scale_fill_manual(values=colsqanti)+
   geom_text(aes(label=after_stat(count)), stat="count", position=position_stack(vjust=0.5))+
   labs(x="", y="# Transcripts")
+
+
+

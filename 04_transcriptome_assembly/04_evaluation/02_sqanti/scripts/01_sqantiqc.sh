@@ -4,7 +4,7 @@ MYGTF=$1
 MYPREFIX=$2
 GENOME=/gpfs/projects/bsc83/Data/assemblies/GRCh38/modified/GRCh38.primary_assembly.sirvset4.genome.fa 
 GENCODE=/gpfs/projects/bsc83/Data/gene_annotations/gencode/v47/gencode.v47.primary_assembly.annotation.gtf
-MYGTF=$GENCODE
+
 module load anaconda
 conda init
 source activate base

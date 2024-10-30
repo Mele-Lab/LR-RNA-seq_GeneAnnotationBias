@@ -23,10 +23,12 @@ catch_args(0)
 ##
 ## 0----------------------------END OF HEADER----------------------------------0
 library(ggpmisc)
+library(ggpubr)
 
 data <- fread("04_transcriptome_assembly/04_evaluation/05_mastertable/data/240909merge_reslongmeta_annot_sqanti_sj_gencodev47_quantification_novellocus_proteinInfo_updatedrecount_disambiguatedGenes_replacedFLAIRna&addedISMinfo.tsv")
 metadata <- fread("00_metadata/data/pantranscriptome_samples_metadata.tsv")
-metadata <- metadata[mixed_samples==F]
+metadata <- metadata[mixed_samples==FALSE]
+metadata <- metadata[merged_run_mode==TRUE]
 popcol <- metadata$color_pop
 names(popcol) <- metadata$population
 colsqanti <- c("#61814B", "#8EDE95", "#356CA1", "#C8773C",  "darkred", "#B5B5B5", "#4F4F4F", "#6E5353")
@@ -39,6 +41,25 @@ n_fun <- function(x, y){
 
 # compute total mapped reads per population
 metadata[, population_throughput := sum(map_reads_assemblymap), by=population]
+
+
+# plot ESPRESSO discovered numbers
+espressodisc <- data[espresso==1][,.SD, .SDcols = c(grep("isoform", colnames(data)), grep("structural_category", colnames(data)),grep("^[A-Z]{3}[0-9]{1}$",colnames(data)))]
+espressodisc <- melt(espressodisc, id.vars=c("isoform", "structural_category"), variable.name="sample", value.name="detected")
+espressodisc <- espressodisc[detected==1]
+espressodisc <- metadata[, .(sample, population, map_reads_assemblymap)][espressodisc, on="sample"]
+ggplot(unique(espressodisc[, .(trx_per_sample=uniqueN(isoform), map_reads_assemblymap, population), by="sample"]), 
+       aes(x=map_reads_assemblymap/10^6, y=trx_per_sample))+
+  geom_smooth(method = "lm", color="darkgrey")+
+  geom_point(aes( color=population),size=3, alpha=0.8)+
+  mytheme+
+  labs(x="Mapped reads (M)", y="# Discovered Transcripts", color="Population")+
+  scale_color_manual(values=popcol)+
+  stat_cor(label.y=72500, label.x=9) +
+  stat_regline_equation(label.y=70000, label.x=9)
+system("mkdir -p 10_figures")
+ggsave("10_figures/fig_01/scatter_ESPRESSO_DiscoveredTranscripts.pdf", dpi=700, width = 12, height = 10,  units = "cm")
+
 
 # plot gene and transcript distribution
 ggplot(data, aes(x=structural_category, fill=structural_category))+

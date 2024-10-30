@@ -54,7 +54,8 @@ for(i in 1:nrow(array)){
 astsraw <- rbindlist(asts, use.names=TRUE)
 astsraw <- metadata[, .(samplecode, sample, population, map_reads_assemblymap)][astsraw, on="samplecode"]
 astsraw[, annot := ifelse(annot=="gencode", "GENCODEv47", "PODER")]
-
+# fwrite(astsraw, "data/ASTS_results_bothannots.tsv", quote=F, row.names = F, sep="\t")
+astsraw <- fread("data/ASTS_results_bothannots.tsv")
 asts <- astsraw[gene_testable==TRUE]
 
 # computed number of tested genes
@@ -536,14 +537,6 @@ astsmod[is.na(structural_category), structural_category:="FSM"]
 
 
 astsmod[, unique_trx_tencounts_tested:=uniqueN(transcriptid.v), by=c("sample", "annot", "structural_category", "trx_tencounts_tested")]
-ggplot(unique(astsmod[structural_category%in%c("FSM", "NIC", "NNC"), .(annot, sample, unique_trx_tencounts_tested,structural_category,trx_tencounts_tested)]), 
-       aes(x=annot, y=unique_trx_tencounts_tested, fill=structural_category))+
-  geom_violin()+
-  geom_boxplot(outliers = F)+
-  mytheme+
-  scale_fill_manual(values=colsqanti)+
-  facet_wrap(~trx_tencounts_tested)
-  
 ggplot(unique(astsmod[structural_category %in% c("FSM", "NIC", "NNC"), 
                       .(annot, sample, unique_trx_tencounts_tested, structural_category, trx_tencounts_tested)]), 
        aes(x = annot, y = unique_trx_tencounts_tested, fill = structural_category)) +
@@ -556,4 +549,138 @@ ggplot(unique(astsmod[structural_category %in% c("FSM", "NIC", "NNC"),
                                                                              "TRUE_TRUE"="Tested Transcripts")))+
   stat_summary(fun.data = n_fun, geom = "text", fun.args = list(y=3750), vjust=0.5)+
   labs(x="", fill="Structural Category", y="# Transcripts")
+ggplot(unique(astsmod[structural_category %in% c("FSM", "NIC", "NNC") & trx_tencounts_tested=="TRUE_TRUE", 
+                      .(annot, sample, unique_trx_tencounts_tested, structural_category, trx_tencounts_tested, population)]), 
+       aes(x = population, y = unique_trx_tencounts_tested, fill = structural_category)) +
+  geom_violin(position = position_dodge(width = 0.9), alpha = 0.5, scale="width") +  # Transparent violin plot for better overlap
+  geom_boxplot(aes(col=structural_category),width = 0.1, position = position_dodge(width = 0.9), outlier.shape = NA) +  # Narrow boxplot to overlap
+  mytheme +
+  scale_fill_manual(values = colsqanti) +
+  scale_color_manual(values = colsqanti) +
+  facet_wrap(~trx_tencounts_tested, labeller=labeller(trx_tencounts_tested=c("FALSE_NA"="Transcripts\n<10 counts",
+                                                                             "TRUE_NA"="Transcripts\n>=10 counts\nNot Tested Genes",
+                                                                             "TRUE_TRUE"="Tested Transcripts")))+
+  stat_summary(fun.data = n_fun, geom = "text", fun.args = list(y=3750), vjust=0.5)+
+  labs(x="", fill="Structural Category", y="# Transcripts")
 
+ggplot(unique(astsmod[annot=="PODER" & gene_testable==TRUE, .(sample, transcriptid.v, population, structural_category)]),
+       aes(x=population, fill=structural_category))+
+  geom_bar(position="fill")+
+  scale_fill_manual(values=colsqanti)+
+  mytheme+
+  labs(x="", y="Proportion of tested Transcripts", fill="Structural\nCategory")+
+  geom_text(aes(label=after_stat(count)), stat="count", position=position_fill(vjust=0.5))
+
+astsmod[gene_testable==TRUE, gene_with_noveltrx := 
+     any(structural_category %in% c("NIC", "NNC")), 
+   by = .("sample", "annot", "geneid.v")]
+astsmod[, morethan2trx :=ifelse(gene_numtrx>2, ">2", "=2")]
+astsmod[!is.na(gene_with_noveltrx) & annot=="PODER", numgenes_per2trx_per_noveltrx_sample :=uniqueN(geneid.v), by=c("morethan2trx", "annot", "sample", "gene_with_noveltrx")]
+
+# start from a subset dt
+asts <- unique(astsmod[annot=="PODER" & gene_testable==TRUE, .(sample, population, structural_category, geneid.v, transcriptid.v)])
+asts[, gene_with_novel := 
+         any(structural_category %in% c("NNC", "NIC")), 
+       by = c("geneid.v", "sample")][, gene_with_novel:=ifelse(gene_with_novel==FALSE, "Genes without\nnovel Transcripts", "Genes with\nnovel Trasncripts")]
+asts[, trxPerGene := uniqueN(transcriptid.v), by=c("sample", "geneid.v")][, twotrx := ifelse(trxPerGene>2, ">2 transcript/gene", "=2 transcripts/gene")]
+asts <- unique(asts[, .(geneid.v, sample, population, gene_with_novel, twotrx)])
+asts[, genes_per_cat := uniqueN(geneid.v), by=c("sample","gene_with_novel", "twotrx")]
+asts[, propgenes_per_cat := genes_per_cat/sum(uniqueN(geneid.v)), by=c("sample")]
+ggplot(unique(asts[, .(sample, propgenes_per_cat, population, gene_with_novel, twotrx)]), 
+       aes(x=population, y=propgenes_per_cat, fill=population))+
+  geom_violin(alpha=0.8, scale="width")+
+  geom_jitter()+
+  scale_fill_manual(values=popcols)+
+  labs(x="", y="# Tested Genes", fill="Population")+
+  mytheme+
+  facet_grid(gene_with_novel~twotrx)
+
+
+
+
+
+
+
+
+ggplot(unique(astsmod[!is.na(gene_with_noveltrx) & annot=="PODER", .(numgenes_per2trx_per_noveltrx_sample, morethan2trx,sample, population,gene_with_noveltrx)])[, numgenes_per2trx_per_noveltrx_sample_prop :=numgenes_per2trx_per_noveltrx_sample/sum(numgenes_per2trx_per_noveltrx_sample), by=c("sample")], 
+       aes(x=morethan2trx,y=numgenes_per2trx_per_noveltrx_sample_prop, color=population))+
+  facet_wrap(~gene_with_noveltrx, labeller=labeller(gene_with_noveltrx=c("FALSE"="Genes without novel transcripts", "TRUE"="Genes with novel transcripts")))+
+  geom_jitter(position=position_dodge(width = 0.5))+
+  geom_boxplot(width=0.1, position=position_dodge(width = 0.5))+
+  scale_color_manual(values=popcols)+
+  labs(x="# Tested Transcripts/Gene", y="Proportion of Tested Genes")+
+  mytheme
+ggplot(unique(astsmod[!is.na(gene_with_noveltrx) & annot=="PODER", .(numgenes_per2trx_per_noveltrx_sample, structural_category,morethan2trx,sample, population,gene_with_noveltrx)])[, numgenes_per2trx_per_noveltrx_sample_prop :=numgenes_per2trx_per_noveltrx_sample/sum(numgenes_per2trx_per_noveltrx_sample), by=c("sample")], 
+       aes(x=morethan2trx,y=numgenes_per2trx_per_noveltrx_sample_prop, fill=structural_category))+
+  facet_grid(gene_with_noveltrx~population, labeller=labeller(gene_with_noveltrx=c("FALSE"="Genes without novel transcripts", "TRUE"="Genes with novel transcripts")))+
+  geom_col()+
+  scale_fill_manual(values=colsqanti)+
+  labs(x="# Tested Transcripts/Gene", y="Proportion of Tested Genes")+
+  mytheme
+ggplot(unique(astsmod[!is.na(gene_with_noveltrx) & annot=="PODER", .(morethan2trx, gene_with_noveltrx,numgenes_per2trx_per_noveltrx_sample, sample, population)]), aes(x=morethan2trx,y=numgenes_per2trx_per_noveltrx_sample, color=population))+
+  facet_wrap(~gene_with_noveltrx, labeller=labeller(gene_with_noveltrx=c("FALSE"="No novel transcripts", "TRUE"="Gene with novel transcripts")))+
+  geom_jitter(position=position_dodge(width = 0.5))+
+  geom_boxplot(width=0.1, position=position_dodge(width = 0.5))+
+  mytheme+
+  scale_color_manual(values=popcols)+
+  labs(x="# Tested Transcripts/Gene", y="# Tested Genes")
+
+ggplot(unique(astsmod[structural_category %in% c("FSM", "NIC", "NNC"), 
+                      .(annot, structural_category,trx_tencounts_tested,transcriptid.v)][, structural_category:=factor(structural_category, levels=c("NNC", "NIC", "FSM"))]), 
+       aes(x = annot, fill = structural_category))+
+  geom_bar()+
+  facet_wrap(~trx_tencounts_tested, labeller=labeller(trx_tencounts_tested=c("FALSE_NA"="Transcripts\n<10 counts",
+                                                                             "TRUE_NA"="Transcripts\n>=10 counts\nNot Tested Genes",
+                                                                             "TRUE_TRUE"="Tested Transcripts")))+
+  mytheme +
+  scale_fill_manual(values = colsqanti)+
+  labs(x="", y="# Unique Transcripts across samples", fill="Structural\nCategory")+
+  geom_text(aes(label=after_stat(count)), stat="count", position=position_stack(vjust=0.5))
+asts_tested_noveltrx <-unique(astsmod[gene_testable==TRUE & structural_category%in%c("NIC", "NNC") , transcriptid.v])
+
+
+
+
+astsnoveltested <-melt(master[isoform%in%asts_tested_noveltrx], 
+     measure.vars=c("CEU", "AJI", "YRI", "LWK", "MPC", "ITU", "HAC", "PEL"),
+     value.name="detected",
+     variable.name="population")[detected>=1,]
+ggplot(astsnoveltested[!population%in%c("AJI", "MPC")],
+       aes(x=population, fill=structural_category))+
+  geom_bar()+
+  mytheme+
+  scale_fill_manual(values = colsqanti) +
+  labs(x="Discovered in", y="# ASTS tested novel transcripts", fill="Structural\nCategory")+
+  geom_text(aes(label=after_stat(count)), stat="count", position=position_stack(vjust=0.5))
+
+
+ggplot(master[isoform%in%asts_tested_noveltrx, ceu_detected:=CEU>0][!is.na(ceu_detected)],
+       aes(x=ceu_detected, fill=structural_category))+
+  geom_bar()+
+  mytheme+
+  scale_fill_manual(values = colsqanti) +
+  labs(x="CEU discovered", y="# ASTS tested novel transcripts", fill="Structural\nCategory")+
+  geom_text(aes(label=after_stat(count)), stat="count", position=position_stack(vjust=0.5))
+ggplot(master[isoform%in%asts_tested_noveltrx, ],
+       aes(x=ceu_detected, fill=structural_category))+
+  geom_bar()+
+  mytheme+
+  scale_fill_manual(values = colsqanti) +
+  labs(x="CEU discovered", y="# ASTS tested novel transcripts")
+astsrawwide <- dcast(astsraw, ... ~ annot, 
+                     value.var = c("trx_tested_per_gene", "trx_unfilt_per_gene"))
+subastsrawide <- astsrawwide[, .(geneid.v, gene_biotype, population, sample, 
+                                 map_reads_assemblymap, gene_testable, 
+                                 trx_tested_per_gene_GENCODEv47, trx_tested_per_gene_PODER, 
+                                 trx_unfilt_per_gene_GENCODEv47, trx_unfilt_per_gene_PODER)]
+subastsrawide[, `:=`(trxTestedPerGene_diff=trx_tested_per_gene_PODER-trx_tested_per_gene_GENCODEv47,
+                     trxUnfiltPerGene_diff=trx_unfilt_per_gene_PODER-trx_unfilt_per_gene_GENCODEv47)]
+ggplot(subastsrawide, aes(x=population, y=trxTestedPerGene_diff, col=population))+
+  geom_jitter()+
+  mytheme+
+  scale_color_manual(values=popcols)
+
+# number of tested and significant variables
+variantsub <-unique(asts[, .(variant, sample, population, FDR, annot)])[, sig:=FDR<0.05][, num_var := uniqueN(variant), 
+                                                           by=c("sample", "annot", )]
+ggplot()

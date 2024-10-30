@@ -25,3 +25,6 @@ Z_testsdir
 06_quantification/02_flairquantify/output
 06_quantification/02_flairquantify/std.out
 06_quantification/02_flairquantify/test
+10_figures
+09_prepare_vep_inputs/1000G_variants_in_exons.vcf
+09_prepare_vep_inputs/1000G_variants_in_genes.vcf.gz

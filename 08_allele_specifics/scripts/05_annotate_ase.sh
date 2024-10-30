@@ -12,6 +12,8 @@ if [ "$TYPE" = "gencode" ]; then
     GTF=/gpfs/projects/bsc83/Data/gene_annotations/gencode/v47/gencode.v47.primary_assembly.annotation.gtf
 elif [ "$TYPE" = "pantrx" ]; then
     GTF=/gpfs/projects/bsc83/Projects/pantranscriptome/novelannotations/merged/240926_filtered_with_genes.gtf
+elif [ "$TYPE" = "enhanced_gencode" ]; then
+    GTF=/gpfs/projects/bsc83/Projects/pantranscriptome/novelannotations/241018_v47_poder_merge.placeholder_gene_name.gtf
 else
     echo "Unknown TYPE: $TYPE"
 fi

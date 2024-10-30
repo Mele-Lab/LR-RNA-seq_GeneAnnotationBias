@@ -7,6 +7,8 @@ if [ "$TYPE" = "gencode" ]; then
     JUNCBED=/gpfs/projects/bsc83/Data/gene_annotations/gencode/v47/modified/gencode.v47.primary_assembly.sirvset4.annotation.junc.bed
 elif [ "$TYPE" = "pantrx" ]; then
     JUNCBED=/gpfs/projects/bsc83/Projects/pantranscriptome/novelannotations/merged/240926_filtered_with_genes.junc.bed
+elif [ "$TYPE" = "enhanced_gencode" ]; then
+    JUNCBED=/gpfs/projects/bsc83/Projects/pantranscriptome/novelannotations/241018_v47_poder_merge.placeholder_gene_name.junc.bed
 else
     echo "Unknown TYPE: $TYPE"
 fi
