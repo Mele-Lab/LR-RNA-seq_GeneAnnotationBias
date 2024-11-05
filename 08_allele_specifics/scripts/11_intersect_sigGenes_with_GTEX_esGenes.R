@@ -48,6 +48,7 @@ ase_poder <- fread("data/ASE_results_pantrx.tsv")[, annot:="PODER"]
 ase <-rbind.data.frame(ase_gencode, ase_poder)[, geneid:=gsub("\\..*", "", geneid.v)]
 rm(ase_gencode, ase_poder)
 asts <- fread("data/ASTS_results_bothannots.tsv")[, geneid:=gsub("\\..*", "", geneid.v)]
+asts <- asts[annot%in%c("GENCODEv47", "PODER")]
 asts <- asts[gene_testable==TRUE]
 ase <- unique(ase[, ASE:= ifelse(any(FDR < 0.05), "ASE", "not ASE"), by=c("geneid", "annot")][, .(geneid, ASE, annot)])
 asts <- unique(asts[, ASTS:= ifelse(any(FDR < 0.05), "ASTS", "not ASTS"), by=c("geneid", "annot")][, .(geneid, ASTS, annot)])
@@ -77,6 +78,7 @@ asqtl[, sGene:=factor(sGene, levels=c("sGene", "not sGene", "not Tested"))]
 # 
 # asemer[, ooa:=ifelse(population%in%c("YRI", "LWK"), "AFR", "OOA")]
 # astsmer[, ooa:=ifelse(population%in%c("YRI", "LWK"), "AFR", "OOA")]
+
 
 # overlap between ASE and ASTS
 ggplot(asqtl[ASTS!="not Tested"], aes(x=ASTS, fill=ASE))+
@@ -170,7 +172,7 @@ asqtl_sample[, trx_per_cat:=uniqueN(geneid), by=c("sample", "annot", "ase_valida
 ggplot(unique(asqtl_sample[!is.na(annot) & ase_validated!="not tested", .(ooa, trx_per_cat, annot, ase_validated)]), 
        aes(x=ooa, y=trx_per_cat, fill=ase_validated))+
   geom_violin(position = position_dodge(width = 0.2), alpha = 0.5, width = 0.2) +
-  ggbeeswarm::geom_quasirandom(aes(col=population), width=0.05, position=position_dodge())+
+  ggbeeswarm::geom_quasirandom(aes(col=population), width=0.05)+
   facet_wrap(~annot)+
   mytheme+
   scale_fill_manual(values=c("#356CA1","darkred", "darkgrey"))+
@@ -178,44 +180,52 @@ ggplot(unique(asqtl_sample[!is.na(annot) & ase_validated!="not tested", .(ooa, t
   
 
 ###### OVERLAP WITH GWAS CATALOG--------------------------------------------------------
-library(gwasrapidd)
-traits <- get_traits()
-trait <- data.frame(traits@traits)
-# Filter traits for immune-related phenotypes using keywords
-immune_traits <- trait[grepl("autoimmune disease", trait$trait, ignore.case = TRUE),]
 
-# Get all associations
-associations <- get_associations(efo_id=immune_traits$efo_id)
-
-# Extract genes from associations
-gwas_genes <- associations@ensembl_ids$ensembl_id
-gwas_genes <- gwas_genes[!is.na(gwas_genes)]
-gwas_genes <- as.data.table(data.frame(geneid=gwas_genes))
-gwas_genes[, gwas:="GWAS associated hit"]
-
-# add to dataframe
-asqtl <- gwas_genes[asqtl, on="geneid"]
-asqtl[is.na(gwas), gwas:="no hits"]
-
-run_fisher(asqtl, "PODER", "ASTS", "gwas")
-
-# load GWAS hits and gene name correspondence
-dict <- readRDS("/home/pclavell/mounts/mn5/Projects/scRNAseq/msopena/02_OneK1K_Age/robjects/15_OverlapGWAS/ordered_gene_dictionary.rds")
-genenames <- fread("../../../../Data/gene_annotations/gencode/v47/modified/gencode.v47.primary_assembly.sirvset4.all_genes.geneid_genename.tsv", header=F)
-genenamevec <- genenames$V1
-names(genenamevec) <- genenames$V2
-# substitute gene names by gene id
-dict_id <- lapply(dict, \(x) ifelse(!is.na(genenamevec[x]) & x!="HLA", genenamevec[x], genenamevec[grep(x, names(genenamevec))]))
-dict_id2 <- lapply(dict_id, \(x) x[!is.na(names(x))])
-dict_id3 <- dict_id2[lapply(dict_id2, length)>10]
-dict_id4 <- lapply(dict_id3, \(x) data.frame(gene=x))
-gwassets <- rbindlist(dict_id4, idcol="term")
-gwassets[, gene:=gsub("\\..*", "", gene)]
+gwassets <- fread("../../../../Data/GWAScatalog/modified/full_gwas_catalog.parsed4_enrichments.geneids.tsv")
 library(clusterProfiler)
-res_en <- enricher(gene=asqtl[annot=="GENCODEv47" & ASE=="ASE", geneid],
+res_ase_gencode <- enricher(gene=asqtl[annot=="GENCODEv47" & ASE=="ASE", geneid],
          universe=asqtl[annot=="GENCODEv47" & ASE!="not Tested", geneid],
-         TERM2GENE= gwassets,
-         qvalueCutoff=0.05)
+         TERM2GENE= gwassets)
+res_ase_poder <- enricher(gene=asqtl[annot=="PODER" & ASE=="ASE", geneid],
+                            universe=asqtl[annot=="PODER" & ASE!="not Tested", geneid],
+                            TERM2GENE= gwassets)
+res_astu_gencode <- enricher(gene=asqtl[annot=="GENCODEv47" & ASTS=="ASTS", geneid],
+                            universe=asqtl[annot=="GENCODEv47" & ASTS!="not Tested", geneid],
+                            TERM2GENE= gwassets,
+                            qvalueCutoff=0.02)
+res_astu_poder <- enricher(gene=asqtl[annot=="PODER" & ASTS=="ASTS", geneid],
+                          universe=asqtl[annot=="PODER" & ASTS!="not Tested", geneid],
+                          TERM2GENE= gwassets,
+                          qvalueCutoff=0.02)
+
+# PLOTS
+ggplot(as.data.frame(res_astu_gencode), aes(x=FoldEnrichment, size = Count, y=reorder(Description, Count), color = p.adjust)) +
+  geom_point(stat = "identity") +
+  scale_color_gradient(low = "#7F675B", high = "grey", name = "Adjusted P-value",    limits = c(0, 0.02)) +
+  labs(x = "Odds Ratio",
+    y = "",
+    size="Gene Count",
+    title="GENCODEv47 ASTU") +
+  theme(legend.position = "top")+
+  mytheme+
+  geom_vline(xintercept = 1, linetype="dashed", color="darkgrey")
+ggsave("../10_figures/suppfig/dotplot.GWASgencode.pdf", dpi=700, width = 18, height = 10,  units = "cm")
+
+
+
+res_astu_poder<-data.table(as.data.frame(res_astu_poder))
+res_astu_poder[, newdescription:=fifelse(grepl("DL|gly|cho",Description), "Lipoprotein Levels/Composition (x11 traits)", as.character(Description))]
+ggplot(res_astu_poder[p.adjust<0.02], aes(x=FoldEnrichment, size = Count, y=reorder(newdescription, Count), color = p.adjust)) +
+  geom_point(stat = "identity") +
+  scale_color_gradient(low = "#A2AD59", high = "grey", name = "Adjusted P-value",    limits = c(0, 0.02)) +
+  labs(x = "Odds Ratio",
+       y = "",
+       size="Gene Count",
+       title="PODER ASTU") +
+  theme(legend.position = "top")+
+  mytheme+
+  geom_vline(xintercept = 1, linetype="dashed", color="darkgrey")
+ggsave("../10_figures/fig_04/dotplot.GWASpoder.pdf", dpi=700, width = 20, height = 10,  units = "cm")
 
 
 ##########################----------------------------------------------------------

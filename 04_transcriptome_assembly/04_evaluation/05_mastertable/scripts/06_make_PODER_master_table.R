@@ -116,4 +116,14 @@ gene_trx_correspondence <- fread("../novelannotations/merged/240926_filtered_wit
 colnames(gene_trx_correspondence) <- c("isoform", "geneid.v")
 final <- gene_trx_correspondence[data, on="isoform"]
 
+# change genic genes
+# final <- fread("data/29102024_PODER_mastertable.tsv")
+final[structural_category=="Genic", geneid.v:=paste0("novelGenic_", geneid.v)]
+final[structural_category=="Genic", associated_gene_biotype:="Novel/Ambiguous Gene"]
+final[structural_category%in%c("FSM", "NIC", "NNC"), associated_gene_biotype_sub:=associated_gene_biotype]
+final[structural_category%in%c("Genic", "Intergenic", "Antisense"), associated_gene_biotype_sub:="Novel Gene"]
+final[structural_category%in%c("Fusion"), associated_gene_biotype_sub:="Fusion Gene"]
+
+
+
 fwrite(final,"data/29102024_PODER_mastertable.tsv", row.names = F, quote = F, sep="\t")

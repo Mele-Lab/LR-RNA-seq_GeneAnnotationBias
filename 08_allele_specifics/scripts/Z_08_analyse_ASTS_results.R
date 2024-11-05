@@ -24,18 +24,20 @@ catch_args(0)
 ## 0----------------------------END OF HEADER----------------------------------0
 library(ggpmisc)
 
-TYPE<-"pantrx"
+TYPE<-"enhanced_gencode"
 
 if(TYPE=="gencode"){
-  nametype <- "GENCODEv47 annotation"
-}else{nametype <- "PODER annotation"}
+  nametype <- "GENCODEv47"
+}else if(TYPE=="enhanced_gencode"){
+  nametype <- "Enhanced GENCODEv47"
+}else{nametype <- "PODER"}
 
 namevec <- c()
 all_samples <- list()
-for(file in list.files(paste0("data/", TYPE,"/05_calc_asts"), pattern="asts_annotated_variantgenefilt.tsv", full.names=T)){
+for(file in list.files(paste0("data/", TYPE,"/05_calc_asts"), pattern="asts_annotated_taggedresults.tsv", full.names=T)){
   tempdata <- fread(file)
   all_samples <- append(all_samples, list(tempdata[,geneid.v:=tstrsplit(geneid.v,",")[[1]]]))
-  namevec <- c(namevec, gsub(".*_","",gsub("_asts_annotated_variantgenefilt.tsv","",file)))
+  namevec <- c(namevec, gsub(".*_","",gsub("_asts_annotated_taggedresults.tsv","",file)))
 }
 names(all_samples) <- namevec
 data <- rbindlist(all_samples, idcol="sample")

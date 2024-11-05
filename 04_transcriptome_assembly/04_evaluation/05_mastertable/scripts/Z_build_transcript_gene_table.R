@@ -27,3 +27,25 @@ data <- fread("04_transcriptome_assembly/04_evaluation/02_sqanti/data/240909merg
 
 fwrite(unique(data[,.(isoform, associated_gene)]), "04_transcriptome_assembly/04_evaluation/02_sqanti/data/240909merge/240909merge_associatedgene.tsv", 
        quote = F, row.names = F, col.names = F, sep="\t")
+
+
+# prepare Enhanced annotation gene-transcript-biotype table
+podermastertable <- fread("04_transcriptome_assembly/04_evaluation/05_mastertable/data/29102024_PODER_mastertable.tsv")
+enhanced <- fread("../novelannotations/241018_v47_poder_merge.gtf")
+poder <- fread("../novelannotations/merged/poder_v1.gtf")
+
+gencode <- fread("../../../Data/gene_annotations/gencode/v47/modified/gencode.v47.primary_assembly.annotation.transcript_parsed.tsv")
+gencode <- gencode[, .(geneid.v, transcriptid.v, gene_biotype)]
+
+#given these genes, add them the transcripts from gencode and the novel transcripts from poder
+enhanced <- enhanced[V3=="transcript"]
+enhanced[, `:=`(geneid.v=tstrsplit(V9, "\"")[[2]])]
+enhanced <- enhanced[, .(geneid.v)]
+
+enhanced <- gencode[enhanced, on="geneid.v"]
+enhanced <- enhanced[!is.na(transcriptid.v)]
+
+podersub <-unique(podermastertable[structural_category!="FSM", .(structural_category, geneid.v, isoform, associated_gene_biotype)][, `:=`(transcriptid.v=isoform, isoform=NULL, gene_biotype=associated_gene_biotype, associated_gene_biotype=NULL, structural_category=NULL)])
+enhanced2 <- rbind.data.frame(enhanced, podersub)
+enhanced2[gene_biotype=="protein_coding", gene_biotype:="Protein Coding"]
+fwrite(enhanced2, "../novelannotations/241018_v47_poder_merge.gene_transcript_plusBiotypes.tsv", row.names = F, quote = F, sep="\t")

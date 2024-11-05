@@ -44,7 +44,7 @@ data[, EUR:=ifelse(CEU>0 | AJI>0, 1,
 data[, nonEUR:=ifelse(ITU>0 | HAC>0 | PEL>0 | LWK>0 | MPC>0 | YRI>0, 1, 0)]
 data[, eur_assembled := ifelse(EUR==1, 
                                ifelse(nonEUR==1, "EUR & nonEUR", "EUR"), "nonEUR")]
-ggplot(data[filter=="pass" & structural_category%in%c("NIC","NNC")], aes(x=eur_assembled, y=exons, fill=eur_assembled))+
+ggplot(data[structural_category%in%c("NIC","NNC")], aes(x=eur_assembled, y=exons, fill=eur_assembled))+
   geom_violin(adjust=3, alpha=0.8)+
   geom_boxplot(outliers=F, width=0.15)+
   mytheme+
@@ -233,7 +233,7 @@ ggplot(unique(popsplong[, .(population, eurpop, structural_category, popdepth, s
   labs(x="Total population mapped reads", y="# Transcripts")+
   ggnewscale::new_scale_color()+
   geom_point(aes(color=eurpop, size=eurpop, alpha=eurpop))+
-  scale_color_manual(values=c("red", "grey"))+
+  scale_color_manual(values=c("#466995", "#A53860"))+
   scale_size_manual(values=c(5,3))+
   scale_alpha_manual(values=c(0.6, 0.9))+
   ylim(c(0, 265))

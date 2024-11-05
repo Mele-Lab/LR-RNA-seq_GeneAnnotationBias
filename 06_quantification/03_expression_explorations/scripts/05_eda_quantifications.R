@@ -85,13 +85,13 @@ tcounts <- as.matrix(tcounts)
 tcpm <- cpm(tcounts)
 
 # Transform to long format data.table
-tcpm <- tcpm[rowSums(tcpm>=0.1)>0,]
+tcpm <- tcpm[rowSums(tcpm>0)>0,]
 tcpm <- rownames_to_column(as.data.frame(tcpm), var="transcriptid.v")
 tcpm_long <- melt(tcpm, id.vars="transcriptid.v", variable.name="cell_line_id", value.name = "CPM")
 setDT(tcpm_long)
 tcpm_long <- unique(data[, .(associated_gene_biotype, geneid.v, isoform,structural_category)])[tcpm_long, on=c("isoform"="transcriptid.v")]
 tcpm_long <- metadata[, .(sample, cell_line_id, population, map_reads_generalmap,total_pop_throughput)][tcpm_long, on="cell_line_id"]
-tcpm_long[, Expressed:=fifelse(CPM>=0.1, "Expressed", "Not Expressed")]
+tcpm_long[, Expressed:=fifelse(CPM>0.1, "Expressed", "Not Expressed")]
 tcpm_long[, count_expressed:=uniqueN(isoform), by=c("sample", "Expressed")]
 tcpm_long[, count_expressed_cat_biotype:=uniqueN(isoform), by=c("sample", "Expressed", "associated_gene_biotype", "structural_category")]
 tcpm_long[, count_expressed_cat:=uniqueN(isoform), by=c("sample", "Expressed", "structural_category")]
@@ -110,6 +110,41 @@ ggplot(unique(tcpm_long[, .(population, total_pop_throughput,map_reads_generalma
   theme(legend.position = "top")
 ggsave("10_figures/suppfig_09/jitter_ExpressedTrx_PerPopulation.pdf", dpi=700, width = 15, height = 13,  units = "cm")
 
+tcpm_long[, afr:=fifelse(population%in%c("YRI", "MPC", "LWK"), "African", "OOA")]
+tcpm_long[, expressed_transcripts_per_gene_persample:=uniqueN(isoform)/map_reads_generalmap*10^6, by=c("sample", "geneid.v")]
+ggplot(unique(tcpm_long[, .(population, sample, total_pop_throughput, afr, eur,geneid.v, expressed_transcripts_per_gene_persample)]),
+       aes(x=afr, y=expressed_transcripts_per_gene_persample, fill=afr))+
+  geom_violin(alpha=0.7, adjust=2 )+
+  geom_boxplot(width=0.1, outliers = F)+
+  scale_fill_manual(values=c("#F7D257", "#496F5D"))+
+  mytheme+
+  stat_summary(fun.data = n_fun, geom = "text", position = position_dodge(0.9),fun.args = list(y=-2))+
+  stat_compare_means(comparisons = list(c("African", "OOA")),method = "t.test",
+                   method.args = list(alternative = "two.sided"))+
+  scale_y_continuous(trans="log10")+
+  labs(x="", y="# Expressed Transcripts/Sample normalized by M reads")+
+  annotation_logticks(sides = "l")+
+  guides(fill="none")
+ggplot(unique(tcpm_long[, .(population, sample, total_pop_throughput, afr, eur,geneid.v, expressed_transcripts_per_gene_persample)]),
+       aes(x=eur, y=expressed_transcripts_per_gene_persample, fill=eur))+
+  geom_violin(alpha=0.7, adjust=2 )+
+  geom_boxplot(width=0.1, outliers = F)+
+  scale_fill_manual(values = c("#466995", "#A53860")) +
+  mytheme+
+  stat_summary(fun.data = n_fun, geom = "text", position = position_dodge(0.9),fun.args = list(y=-2))+
+  stat_compare_means(comparisons = list(c("European", "non-European")),method = "t.test",
+                     method.args = list(alternative = "two.sided"))+
+  scale_y_continuous(trans="log10")+
+  labs(x="", y="# Expressed Transcripts/Sample normalized by M reads")+
+  annotation_logticks(sides = "l")+
+  guides(fill="none")
+ggplot(unique(tcpm_long[, .(population, sample, total_pop_throughput, eur,geneid.v, expressed_transcripts_per_gene_persample)]),
+       aes(x=population, y=expressed_transcripts_per_gene_persample, fill=population))+
+  geom_violin(alpha=0.7)+
+  geom_boxplot(width=0.1, outliers = F)+
+  scale_fill_manual(values =popcol) +
+  mytheme+
+  stat_summary(fun.data = n_fun, geom = "text", position = position_dodge(0.9),fun.args = list(y=0))
 # design <- c(
 #   "
 # AABBCC
@@ -133,20 +168,23 @@ ggsave("10_figures/suppfig_09/jitter_ExpressedTrx_PerBiotype&Population.pdf", dp
 
 
 
-
-
-ggplot(unique(tcpm_long[Expressed=="Expressed", .(eur, population,structural_category,total_pop_throughput,map_reads_generalmap, count_expressed_cat)]), 
-       aes(x=eur, y=count_expressed_cat, fill=eur))+
-  geom_violin(alpha=0.75)+
-  geom_boxplot(outliers = F, width=0.05)+
-  geom_quasirandom(width = 0.3, alpha=0.6, aes(size=map_reads_generalmap/10^6, color=population))+
-  mytheme+
-  labs(x="", y="# PODER transcripts", color="", size="Reads (M)")+
-  facet_wrap(~structural_category)+
-  scale_color_manual(values=popcol)+
-  scale_fill_manual(values=c("#466995", "#A53860"))+
-  geom_pwc(ref.group="European",
-           method="t_test")+
-  stat_summary(fun.data = n_fun, geom = "text", fun.args = list(y = 30000), 
-               position = position_dodge(0.9))
-  
+n_fun <- function(x) {
+  min_y <- min(x) - 0.05 * abs(min(x))  # Place label just below the minimum value with a small margin
+  return(data.frame(y = min_y, label = paste0("n = ", length(x))))
+}
+ggplot(unique(tcpm_long[Expressed == "Expressed", .(eur, population, structural_category, total_pop_throughput, map_reads_generalmap, count_expressed_cat)]), 
+       aes(x = eur, y = count_expressed_cat, fill = eur)) +
+  geom_violin(alpha = 0.75) +
+  geom_boxplot(outliers = FALSE, width = 0.05) +
+  geom_quasirandom(width = 0.3, alpha = 0.6, aes(size = map_reads_generalmap / 10^6, color = population)) +
+  mytheme +
+  labs(x = "", y = "# PODER transcripts", color = "Population", size = "Reads (M)", fill = "") +
+  facet_wrap(~structural_category, scales = "free_y") +
+  scale_color_manual(values = popcol) +
+  scale_fill_manual(values = c("#466995", "#A53860")) +
+  geom_pwc(ref.group = "European", method = "t_test") +
+  stat_summary(fun.data = n_fun, geom = "text", position = position_dodge(0.9)) +
+  guides(fill = guide_legend(override.aes = list(shape = NA)))+
+  scale_y_continuous(expand = expansion(mult = c(0.1, 0.1)))+
+  theme(legend.position = c(0.65, 0.1),legend.box = "horizontal")
+ggsave("10_figures/suppfig_09/jitter_ExpressedTrx_PerBiotype&EURnonEUR.pdf", dpi=700, width = 20, height = 20,  units = "cm")

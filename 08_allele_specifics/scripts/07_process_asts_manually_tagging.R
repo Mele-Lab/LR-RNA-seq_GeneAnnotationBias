@@ -26,14 +26,16 @@ catch_args(3, "SAMPLE", "CELLINE", "TYPE") # celline not used
 # load array to run all samples
 arraygen <- fread("array_gencode", header = F)
 arraypan <- fread("array_pantrx", header = F)
+arrayenh <- fread("array_enhanced_gencode", header = F)
+
 array <- rbind.data.frame(arraygen, arraypan)
+array <- rbind.data.frame(array, arrayenh)
 
 # load annotations
 poder <- fread("../../novelannotations/merged/240926_filtered_with_genes.transcript2gene_with_biotypes.tsv")
 gencode <- fread("../../../../Data/gene_annotations/gencode/v47/modified/gencode.v47.primary_assembly.annotation.transcript_parsed.tsv")
 gencode <- gencode[, .(geneid.v, transcriptid.v, gene_biotype)]
-
-
+enhanced <- fread("../../novelannotations/241018_v47_poder_merge.gene_transcript_plusBiotypes.tsv")
 
 for(i in 1:nrow(array)){
   # prepare loop
@@ -47,6 +49,8 @@ for(i in 1:nrow(array)){
     annot <- gencode
   }else if(TYPE=="pantrx"){
     annot <- poder
+  }else if(TYPE=="enhanced_gencode"){
+    annot <- enhanced
   }
   
   # load data

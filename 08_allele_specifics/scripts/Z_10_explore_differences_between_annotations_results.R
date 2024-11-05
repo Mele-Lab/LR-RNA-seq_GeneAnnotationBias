@@ -32,14 +32,18 @@ popcols <- unique(metadata$color_pop)
 names(popcols) <- unique(metadata$population)
 
 
-nametype <- c("gencode", "poder")
+nametype <- c("gencode", "poder", "enhanced_gencode")
 # load data
 ase <-list(fread("data/ASE_results_gencode.tsv"))
 ase <- append(ase,
               list(fread("data/ASE_results_pantrx.tsv")))
+ase <- append(ase,
+              list(fread("data/ASE_results_enhanced.tsv")))
 asts <- list(fread("data/ASTS_results_gencode_variantgenefilt.tsv"))  
 asts <- append(asts, 
                list(fread("data/ASTS_results_pantrx_variantgenefilt.tsv")))
+asts <- append(asts, 
+               list(fread("data/ASTS_results_enhanced_variantgenefilt.tsv")))
 
 names(ase) <- nametype
 names(asts) <- nametype

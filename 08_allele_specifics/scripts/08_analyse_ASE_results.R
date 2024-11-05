@@ -51,6 +51,19 @@ data[, filter:=ifelse(GENOTYPE_WARNING==0 & BLACKLIST==0 & MULTI_MAPPING==0 & OT
 data[filter=="pass", fdr:=p.adjust(BINOM_P, method="BH"), by="sample"]
 data[, significant:=ifelse(fdr<0.05, "FDR<0.05", "ns")]
 hist(data[sample=="LWK4" & filter=="pass"]$BINOM_P  )
+
+# sigificant-tested plot
+ggplot(unique(data[filter=="pass", .(significant_genes, tested_genes, population, map_reads_assemblymap, annot, sample)]), aes(x=tested_genes, y=significant_genes))+
+  stat_poly_line(color="darkgrey")+
+  stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")),
+               formula = y ~ x, parse = TRUE, label.x.npc = "left", label.y.npc = 0.9, size = 5) +  # Equation and R-squared
+  geom_point(aes(col=population,size=map_reads_assemblymap/10^6), alpha=0.7)+
+  mytheme+
+  labs(y="# ASTU Significant Genes", x="# ASTU Tested Genes", size="Reads (M)", col="Population")+
+  scale_color_manual(values=popcols)+
+  facet_wrap(~annot)
+
+
 # plot number of significant variants and variants passing threshold
 ggplot(data, aes(x=reorder(sample, map_reads_assemblymap), fill=filter))+
   geom_bar()+
@@ -110,29 +123,55 @@ ggplot(unique(datapassannotsig[gene_biotype%in%c("protein_coding", "lncRNA"), .(
 #   geom_point()+
 #   mytheme
 
+library(ggpmisc)
+library(ggpubr)
+metadataraw <- fread("../00_metadata/data/pantranscriptome_samples_metadata.tsv")
+metadataraw <- metadataraw[mixed_samples==FALSE]
+metadata <- metadataraw[merged_run_mode==TRUE]
+metadata[, samplecode:=paste(lab_number_sample, lab_sampleid, cell_line_id, sep="_")]
 
+popcols <- unique(metadata$color_pop)
+names(popcols) <- unique(metadata$population)
 
-library(rrvgo)
-# input enrichments to reduce the number of terms
-simMatrix <- calculateSimMatrix(res$ID,
-                                orgdb="org.Hs.eg.db",
-                                ont="BP",
-                                method="Rel")
-simMatrix2 <- calculateSimMatrix(res$ID,
-                                 annoDb="org.Hs.eg.db",
-                                ont="BP",
-                                method="Rel")
-scores <- setNames(-log10(res$qvalue), res$ID)
-reducedTerms <- reduceSimMatrix(simMatrix,
-                                scores,
-                                threshold=0.7,
-                                orgdb="org.Hs.eg.db")
-setDT(reducedTerms)
-reducedTerms[, countTerms := .N, by="parentTerm"]
-reducedTerms[, percentTerms := countTerms/.N]
+n_fun <- function(x, y){
+  return(data.frame(y = y, label = paste0("n = ",length(x))))
+}
+# load data
+arraygen <- fread("array_gencode", header = F)
+arraypan <- fread("array_pantrx", header = F)
+arrayenh <- fread("array_enhanced_gencode", header = F)
+array <- rbind.data.frame(arraygen, arraypan)
+array <- rbind.data.frame(array, arrayenh)
 
-ggplot(reducedTerms, aes(x=percentTerms, y=reorder(parentTerm,percentTerms), size=countTerms))+
-  geom_point()
+asts <- list()
 
+for(i in 1:nrow(array)){
+  TYPE<-array[i, V3]
+  SAMPLE<- array[i, V1]
+  print(TYPE)
+  print(SAMPLE)
+  temp <- fread(paste0("data/", TYPE,"/04_calc_ase/", SAMPLE,"_ase_annotated_filtered.tsv"))
+  temp[, `:=`(annot=TYPE, samplecode=SAMPLE)]
+  ase <- append(asts, list(temp))}
 
+aseraw <- rbindlist(ase, use.names=TRUE)
+aseraw <- metadata[, .(samplecode, sample, population, map_reads_assemblymap)][aseraw, on="samplecode"]
+aseraw[, annot := ifelse(annot=="gencode", "GENCODEv47", 
+                          ifelse(annot=="enhanced_gencode", "Enhanced\nGENCODEv47", "PODER"))]
+aseraw[, annot:=factor(annot, levels=c("GENCODEv47", "PODER", "Enhanced\nGENCODEv47"))]
 
+ase <- aseraw[filter=="pass"]
+
+# computed number of tested genes
+ase[, tested_genes:=uniqueN(geneid.v), by=c("sample", "annot")]
+ase[FDR<0.05, significant_genes:=uniqueN(geneid.v), by=c("sample", "annot")]
+ase[, afr:=fifelse(population%in%c("YRI", "LWK", "MPC"), "African", "OOA")]
+ggplot(unique(ase[, .(significant_genes, tested_genes, population, map_reads_assemblymap, annot, sample)]), aes(x=tested_genes, y=significant_genes))+
+  stat_poly_line(color="darkgrey")+
+  stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")),
+               formula = y ~ x, parse = TRUE, label.x.npc = "left", label.y.npc = 0.9, size = 5) +  # Equation and R-squared
+  geom_point(aes(col=population,size=map_reads_assemblymap/10^6), alpha=0.7)+
+  mytheme+
+  labs(y="# ASTU Significant Genes", x="# ASTU Tested Genes", size="Reads (M)", col="Population")+
+  scale_color_manual(values=popcols)+
+  facet_wrap(~annot)

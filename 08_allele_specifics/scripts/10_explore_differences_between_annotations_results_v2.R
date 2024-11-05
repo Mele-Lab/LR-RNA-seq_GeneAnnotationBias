@@ -38,7 +38,9 @@ n_fun <- function(x, y){
 # load data
 arraygen <- fread("array_gencode", header = F)
 arraypan <- fread("array_pantrx", header = F)
+arrayenh <- fread("array_enhanced_gencode", header = F)
 array <- rbind.data.frame(arraygen, arraypan)
+array <- rbind.data.frame(array, arrayenh)
 
 asts <- list()
 
@@ -53,24 +55,61 @@ for(i in 1:nrow(array)){
 
 astsraw <- rbindlist(asts, use.names=TRUE)
 astsraw <- metadata[, .(samplecode, sample, population, map_reads_assemblymap)][astsraw, on="samplecode"]
-astsraw[, annot := ifelse(annot=="gencode", "GENCODEv47", "PODER")]
-# fwrite(astsraw, "data/ASTS_results_bothannots.tsv", quote=F, row.names = F, sep="\t")
-astsraw <- fread("data/ASTS_results_bothannots.tsv")
+astsraw[, annot := ifelse(annot=="gencode", "GENCODEv47", 
+                          ifelse(annot=="enhanced_gencode", "Enhanced\nGENCODEv47", "PODER"))]
+astsraw[, annot:=factor(annot, levels=c("GENCODEv47", "PODER", "Enhanced\nGENCODEv47"))]
+# fwrite(astsraw, "data/ASTS_results_threeannots.tsv", quote=F, row.names = F, sep="\t")
+# astsraw <- fread("data/ASTS_results_threeannots.tsv")
 asts <- astsraw[gene_testable==TRUE]
 
 # computed number of tested genes
 asts[, tested_genes:=uniqueN(geneid.v), by=c("sample", "annot")]
-asts[FDR<0.05, significant_genes:=uniqueN(geneid.v), by=c("sample", "annot")]
+unique_sig_count <- asts[FDR < 0.05, .(sig_genes=uniqueN(geneid.v)), by=c("sample", "annot")]
+asts <- unique_sig_count[asts, on=c("sample", "annot")]
 
-ggplot(unique(asts[, .(significant_genes, tested_genes, population, map_reads_assemblymap, annot, sample)]), aes(x=tested_genes, y=significant_genes))+
+asts[, afr:=fifelse(population%in%c("YRI", "LWK", "MPC"), "African", "OOA")]
+ggplot(unique(asts[, .(sig_genes, tested_genes, population, map_reads_assemblymap, annot, sample)]), 
+       aes(x=tested_genes, y=sig_genes))+
   stat_poly_line(color="darkgrey")+
   stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")),
                formula = y ~ x, parse = TRUE, label.x.npc = "left", label.y.npc = 0.9, size = 5) +  # Equation and R-squared
   geom_point(aes(col=population,size=map_reads_assemblymap/10^6), alpha=0.7)+
   mytheme+
-  labs(y="# ASTS Significant Genes", x="# ASTS Tested Genes", size="Reads (M)")+
+  labs(y="# ASTU Significant Genes", x="# ASTU Tested Genes", size="Reads (M)", col="Population")+
   scale_color_manual(values=popcols)+
   facet_wrap(~annot)
+# number of tested genes per annot?
+
+ggplot(unique(asts[, .(sample, annot, sig_genes, afr, population, map_reads_assemblymap)]), 
+       aes(x=annot, y=sig_genes, fill=annot))+
+  geom_violin(alpha=0.7)+
+  geom_boxplot(outliers = F, width=0.1)+
+  ggbeeswarm::geom_quasirandom(aes(color=population, size=map_reads_assemblymap/10^6),alpha=0.8)+
+  scale_color_manual(values=c(popcols))+
+  mytheme+
+  labs(x="", y="# Significant ASTU Genes", size="Mapped Reads (M)", col="Population", fill="")+
+  stat_compare_means(comparisons = list(c("PODER", "GENCODEv47"), 
+                                        c("Enhanced\nGENCODEv47", "PODER"),
+                                        c("Enhanced\nGENCODEv47", "GENCODEv47")),method = "t.test",
+                     method.args = list(alternative = "two.sided", paired=TRUE))+
+  scale_fill_manual(values=c( "#7F675B", "#A2AD59", "#62531C"))+
+  guides(fill="none")
+ggplot(unique(asts[, .(sample, annot, tested_genes, afr, population, map_reads_assemblymap)]), 
+       aes(x=annot, y=tested_genes, fill=annot))+
+  geom_violin(alpha=0.7)+
+  geom_boxplot(outliers = F, width=0.1)+
+  ggbeeswarm::geom_quasirandom(aes(color=population, size=map_reads_assemblymap/10^6),alpha=0.8)+
+  scale_color_manual(values=c(popcols))+
+  mytheme+
+  labs(x="", y="# Tested Genes", size="Mapped Reads (M)", col="Population", fill="")+
+  stat_compare_means(comparisons = list(c("PODER", "GENCODEv47"), 
+                                        c("Enhanced\nGENCODEv47", "PODER"),
+                                        c("Enhanced\nGENCODEv47", "GENCODEv47")),method = "t.test",
+                     method.args = list(alternative = "two.sided", paired=TRUE))+
+  scale_fill_manual(values=c( "#7F675B", "#A2AD59", "#62531C"))+
+  guides(fill="none")
+
+
 
 # Explore how many more genes are tested in each annot
 astswide <- dcast(unique(asts[, .(sample, annot, tested_genes)]), sample ~ annot, value.var = "tested_genes") 
@@ -125,6 +164,7 @@ ggplot(astswidemeta, aes(x=map_reads_assemblymap/10^6, y=ratio_tested_genes))+
   geom_hline(yintercept=1, linetype="dashed", color="black")+
   facet_wrap(~population)
 
+
 # check  normality and homocedasticity
 car::leveneTest(ratio_tested_genes ~ population, data = astswidemeta[, .(sample, population, ratio_tested_genes)])
 bartlett.test(ratio_tested_genes ~ population, data = astswidemeta[, .(sample, population, ratio_tested_genes)])
@@ -132,7 +172,7 @@ shapiro.test(astswidemeta$ratio_tested_genes)
 qqnorm(astswidemeta$ratio_tested_genes)
 qqline(astswidemeta$ratio_tested_genes, col = "red")
 my_comparisons <- list( c("CEU", "HAC"), c("CEU", "ITU"), c("CEU", "LWK"),c("CEU", "PEL"), c("CEU", "YRI") )
-ggplot(astswidemeta, aes(x=population, y=ratio_tested_genes))+
+ggplot(astswidemeta, aes(x=population, y=ratio_sig_genes))+
   mytheme+
   geom_boxplot(outliers=F)+
   geom_jitter(alpha=0.8, aes(col=population, size=map_reads_assemblymap/10^6))+
@@ -144,16 +184,16 @@ ggplot(astswidemeta, aes(x=population, y=ratio_tested_genes))+
 ggplot(astswidemeta, aes(x=population, y=map_reads_assemblymap/10^6))+
   mytheme+
   geom_boxplot(outliers=F)+
-  geom_jitter(alpha=0.8, aes(col=population, size=ratio_tested_genes))+
+  geom_jitter(alpha=0.8, aes(col=population, size=ratio_sig_genes))+
   scale_color_manual(values=popcols)+
   labs(x="", y="Mapped reads (M)", size="Ratio tested genes\nPODER/GENCODE", col="Population")+
   stat_compare_means(comparisons = my_comparisons,method = "wilcox.test",
                      method.args = list(alternative = "less")) 
 
 # check biotypes of tested genes
-astsgenes <- unique(asts[, .(annot, sample, population, map_reads_assemblymap, geneid.v, gene_biotype, gene_testable)])
+astsgenes <- unique(asts[, .(annot, sample, population, map_reads_assemblymap, geneid.v, gene_biotype, gene_testable, sig_genes)])
 
-ggplot(unique(astsgenes[, .(annot, geneid.v, gene_biotype)]), aes(x=annot, fill=gene_biotype))+
+ggplot(unique(astsgenes[, .(annot, ggplot(unique(astsgenes[, .(annot, ggplot(unique(astsgenes[, .(annot, geneid.v, gene_biotype)]), aes(x=annot, fill=gene_biotype))+
   geom_bar()+
   mytheme+
   scale_fill_manual(values=c( "purple","#F79D5C","darkgrey","#297373" ))+
@@ -164,7 +204,7 @@ ggplot(unique(astsgenes[, .(annot, geneid.v, gene_biotype)]), aes(x=annot, fill=
 # which genes are tested with PODER and GENCODE
 # astsgenesannot[, tested:="Tested"]
 
-astsgenesannotwide <- dcast(unique(astsgenes[, .(annot, geneid.v, gene_biotype, gene_testable)]), ...~annot, fill="Not Tested")
+astsgenesannotwide <- dcast(unique(astsgenes[annot%in%c("GENCODEv47", "PODER"), .(annot, geneid.v, gene_biotype, gene_testable)]), ...~annot, fill="Not Tested")
 astsgenesannotwide[, wheretested := case_when(
   GENCODEv47 == TRUE & PODER == TRUE ~ "Both",
   is.na(GENCODEv47) & PODER == TRUE ~ "Only PODER",
@@ -192,6 +232,8 @@ ggplot(unique(astsgenesannotwideplussamples[, .(wheretested, geneid.v, gene_biot
   scale_x_discrete(labels = c("gencode" = "GENCODEv47", "poder"="PODER"))+
   labs(x="", y="# ASTS Tested Genes", fill="Tested in")+
   scale_x_discrete(guide = guide_axis(n.dodge=2))
+
+
 
 # # are we testing (and finding sig) more novel genes than expected by whats in PODER?
 # chiinput <-rbind.data.frame(summary(factor(unique(poder[, .(geneid.v, gene_biotype)])$gene_biotype)),
@@ -684,3 +726,109 @@ ggplot(subastsrawide, aes(x=population, y=trxTestedPerGene_diff, col=population)
 variantsub <-unique(asts[, .(variant, sample, population, FDR, annot)])[, sig:=FDR<0.05][, num_var := uniqueN(variant), 
                                                            by=c("sample", "annot", )]
 ggplot()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+###################### CHECK THE SAME FOR ENHANCED GENCODE THAN FOR PODER
+# Explore how many more genes are tested in each annot
+astswide <- dcast(unique(asts[, .(sample, annot, tested_genes)]), sample ~ annot, value.var = "tested_genes") 
+astswide[, diff_tested_genes:=`Enhanced GENCODEv47`-GENCODEv47]
+astswide[, ratio_tested_genes:=`Enhanced GENCODEv47`/GENCODEv47]
+
+astswidemeta <- metadata[, .(sample, population, map_reads_assemblymap)][astswide, on="sample"]
+astswidemeta[, eur:=ifelse(population %in% c("LWK", "YRI"), "AFR",
+                           ifelse(population %in% c("PEL", "HAC", "ITU"), "nonEUR-OOA", "EUR"))]
+ggplot(astswidemeta, aes(x=sample, y=diff_tested_genes, fill=population))+
+  geom_col()+
+  mytheme+
+  scale_fill_manual(values=popcols)
+ggplot(astswidemeta, aes(x=map_reads_assemblymap/10^6, y=diff_tested_genes))+
+  mytheme+
+  stat_poly_line(color="darkgrey")+
+  stat_poly_eq(use_label(c( "p", "n")),label.y=0.9)+
+  stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")),
+               formula = y ~ x, parse = TRUE, label.x.npc = "left", label.y.npc = 0.95, size = 5) +  # Equation and R-squared
+  geom_point(alpha=0.8, size=3, aes(col=population))+
+  scale_color_manual(values=popcols)+
+  labs(x="Mapped Reads (M)", y="Increment of genes tested by\nEnhanced GENCODE against GENCODE", color="Population")+
+  ylim(c(0,115))
+ggplot(astswidemeta, aes(x=map_reads_assemblymap/10^6, y=ratio_tested_genes))+
+  mytheme+
+  stat_poly_line(color="darkgrey")+
+  stat_poly_eq(use_label(c( "p", "n")),label.y=0.9)+
+  stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")),
+               formula = y ~ x, parse = TRUE, label.x.npc = "left", label.y.npc = 0.95, size = 5) +  # Equation and R-squared
+  geom_point(alpha=0.8, size=3, aes(col=population))+
+  scale_color_manual(values=popcols)+
+  labs(x="Mapped Reads (M)", y="Ratio of genes tested by PODER against GENCODE")+
+  geom_hline(yintercept=1, linetype="dashed", color="black")
+
+# are EUR beign the least benefitted?
+ggplot(astswidemeta, aes(x=map_reads_assemblymap/10^6, y=diff_tested_genes))+
+  mytheme+
+  stat_poly_line(color="darkgrey")+
+  stat_poly_eq(use_label(c( "p", "n")),label.y=0.9)+
+  stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")),
+               formula = y ~ x, parse = TRUE, label.x.npc = "left", label.y.npc = 0.95, size = 5) +  # Equation and R-squared
+  geom_point(alpha=0.8, size=3, aes(col=population))+
+  scale_color_manual(values=popcols)+
+  labs(x="Mapped Reads (M)", y="Increment of genes tested by PODER against GENCODE")+
+  ylim(c(0,115))+
+  facet_wrap(~eur)
+ggplot(astswidemeta, aes(x=map_reads_assemblymap/10^6, y=ratio_tested_genes))+
+  mytheme+
+  geom_point(alpha=0.8, size=3, aes(col=population))+
+  scale_color_manual(values=popcols)+
+  labs(x="Mapped Reads (M)", y="Ratio of genes tested by PODER against GENCODE")+
+  geom_hline(yintercept=1, linetype="dashed", color="black")+
+  facet_wrap(~population)
+
+# check  normality and homocedasticity
+car::leveneTest(ratio_tested_genes ~ population, data = astswidemeta[, .(sample, population, ratio_tested_genes)])
+bartlett.test(ratio_tested_genes ~ population, data = astswidemeta[, .(sample, population, ratio_tested_genes)])
+shapiro.test(astswidemeta$ratio_tested_genes)
+qqnorm(astswidemeta$ratio_tested_genes)
+qqline(astswidemeta$ratio_tested_genes, col = "red")
+my_comparisons <- list( c("CEU", "HAC"), c("CEU", "ITU"), c("CEU", "LWK"),c("CEU", "PEL"), c("CEU", "YRI") )
+ggplot(astswidemeta, aes(x=population, y=ratio_tested_genes))+
+  mytheme+
+  geom_boxplot(outliers=F)+
+  ggbeeswarm::geom_quasirandom(alpha=0.8, aes(col=population, size=map_reads_assemblymap/10^6))+
+  scale_color_manual(values=popcols)+
+  labs(x="", y="Ratio of genes tested by\nEnhanced GENCODE against GENCODE", size="Mapped Reads (M)", col="Population")+
+  stat_compare_means(comparisons = my_comparisons,method = "t.test",
+                     method.args = list(alternative = "less")) # Add pairwise comparisons p-value
+
+ggplot(astswidemeta, aes(x=population, y=map_reads_assemblymap/10^6))+
+  mytheme+
+  geom_boxplot(outliers=F)+
+  geom_jitter(alpha=0.8, aes(col=population, size=ratio_tested_genes))+
+  scale_color_manual(values=popcols)+
+  labs(x="", y="Mapped reads (M)", size="Ratio tested genes\nPODER/GENCODE", col="Population")+
+  stat_compare_means(comparisons = my_comparisons,method = "wilcox.test",
+                     method.args = list(alternative = "less")) 
