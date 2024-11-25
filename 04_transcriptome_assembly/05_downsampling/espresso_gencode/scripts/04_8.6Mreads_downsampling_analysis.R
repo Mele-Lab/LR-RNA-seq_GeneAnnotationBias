@@ -36,7 +36,7 @@ colsqanti <- c("#61814B", "#8EDE95", "#356CA1", "#C8773C")
 names(colsqanti) <- c("FSM", "ISM", "NIC", "NNC")
 
 data <- data.frame()
-for(SAMPLE in list.files("data/espresso_q")){
+for(SAMPLE in list.files("data/espresso_q")[!grepl("samples",list.files("data/espresso_q"))]){
   sub <-fread(paste0("data/espresso_q/",SAMPLE,"/espresso_q_summary.txt"), sep=":", skip = 1)[25:28,]
   sub <-sub[, structural_category:=c("FSM", "ISM", "NIC", "NNC")][, transcripts:=V2][, `:=`(V1=NULL, V2=NULL)][, sample:=SAMPLE]
   data <- rbind.data.frame(data, sub)
@@ -64,6 +64,8 @@ ggplot(unique(data[, .(sample, eur, total_transcripts, population)]), aes(x = eu
   labs(x = "", y = "# Transcripts")+
   guides(fill="none")+
   scale_color_manual(values=popcols)
+ggsave("../../../10_figures/test/test1.pdf", dpi=700,width = 3.8, height = 2.6,  units = "in")
+
 
 ggplot(data, aes(x = eur, y = transcripts, fill = eur)) +
   geom_violin(position = position_dodge(0.9), alpha = 0.8) + 
@@ -140,9 +142,9 @@ gc()
 # add sqanti to annot_expanded
 newannot <- sqanti[, .(isoform, structural_category)][annot_expanded, on=c("isoform"="transcript")]
 newannot[, cell_line_id := tstrsplit(sample, "_")[[3]]]
-newannotmeta <- metadata[, .(cell_line_id, population, map_reads_assemblymap)][newannot, on="cell_line_id"]
+newannotmeta <- metadata[, .(cell_line_id, population, map_reads_assemblymap, sample)][newannot, on="cell_line_id"]
 newannotmeta[, trx_per_sample:=uniqueN(isoform), by="sample"]
-newannotmeta[, eur := ifelse(population%in%c("CEU", "AJI"), "European", "non-European")]
+newannotmeta[, eur := ifelse(population%in%c("CEU", "AJI"), "European", "Non-European")]
 library(ggpubr)
 ggplot(unique(newannotmeta[, .(map_reads_assemblymap, trx_per_sample, population)]), 
        aes(x=map_reads_assemblymap/10^6, y=trx_per_sample))+
@@ -158,19 +160,20 @@ ggplot(unique(newannotmeta[, .(map_reads_assemblymap, trx_per_sample, population
 ggplot(unique(newannotmeta[, .(trx_per_sample, population, eur)]), aes(x = eur, y = trx_per_sample, fill = eur)) +
   geom_violin(position = position_dodge(0.9), alpha = 0.6) + 
   geom_boxplot(outliers = FALSE, width = 0.15, position = position_dodge(0.9)) +
-  ggbeeswarm::geom_quasirandom(alpha = 0.95, width = 0.1, dodge.width = 0.8, aes(col=population), size=4) +
+  ggbeeswarm::geom_quasirandom(alpha = 0.95, width = 0.1, dodge.width = 0.8, aes(col=population), size=1) +
   mytheme +
-  ggpubr::stat_compare_means(comparisons=list(c("European", "non-European")),
+  ggpubr::stat_compare_means(comparisons=list(c("European", "Non-European")),
                              method = "t.test", 
-                             method.args = list(alternative = "two.sided")) +
+                             method.args = list(alternative = "two.sided"),size=7*0.35) +
   scale_fill_manual(values = c("#466995", "#A53860")) +
   stat_summary(fun.data = n_fun, geom = "text", fun.args = list(y = 32500), 
-               position = position_dodge(0.9)) +
+               position = position_dodge(0.9),size=7*0.35) +
   labs(x = "", y = "# Discovered Transcripts", col="Population")+
   guides(fill="none")+
-  scale_color_manual(values=popcols)
-system("mkdir -p figures")
-ggsave("figures/violin_EURvsNonEUR_DiscoveredTranscripts.pdf", dpi=700, width = 12, height = 10,  units = "cm")
+  scale_color_manual(values=popcols)+
+  theme(legend.key.size = unit(0.2, "cm"))+
+  ylim(c(32500, 45200))
+ggsave("../../../10_figures/fig_01/violin_EURvsNonEUR_DiscoveredTranscripts.pdf", dpi=700, width = 3, height = 2.25,  units = "in")
 
 
 
@@ -182,7 +185,7 @@ p <- ggplot(unique(newannotmeta[structural_category%in%c("FSM", "ISM", "NIC", "N
        aes(x = eur, y = trx_per_sample_cat, fill = eur)) +
   geom_violin(position = position_dodge(0.9), alpha = 0.6) + 
   geom_boxplot(outliers = FALSE, width = 0.15, position = position_dodge(0.9)) +
-  ggbeeswarm::geom_quasirandom(alpha = 0.95, width = 0.2, dodge.width = 0.8, aes(col=population)) +
+  ggbeeswarm::geom_quasirandom(alpha = 0.6, width = 0.2, dodge.width = 0.8, aes(col=population)) +
   mytheme +
   # ggpubr::stat_compare_means(aes(label=..p.adj..), comparisons=list(c("European", "non-European")),
   #                            method = "t.test", 
@@ -190,14 +193,15 @@ p <- ggplot(unique(newannotmeta[structural_category%in%c("FSM", "ISM", "NIC", "N
   #                            p.adjust.method ="fdr") +
   scale_fill_manual(values = c("#466995", "#A53860")) +
   stat_summary(fun.data = n_fun, geom = "text", fun.args = list(y = 0), 
-               position = position_dodge(0.9)) +
-  labs(x = "", y = "# Transcripts", col="Population")+
+               position = position_dodge(0.9), size=7*0.35) +
+  labs(x = "", y = "# Discovered Transcripts", col="Population")+
   facet_wrap(~structural_category, nrow=1)+
   guides(fill="none")+
   scale_color_manual(values=popcols)+
+  theme(legend.key.size = unit(0.2, "cm"))+
   geom_pwc(ref.group="European",
-           method="t_test"
-  )
+           method="t_test", label.size=7*0.35
+  )+ylim(c(0,31000))
 ggadjust_pvalue(
   p=p,
   p.adjust.method = "BH",
@@ -205,5 +209,49 @@ ggadjust_pvalue(
   hide.ns = NULL,
   output = c("plot"))
 
-system("mkdir -p figures")
-ggsave("figures/violin_EURvsNonEUR_DiscoveredTranscripts_PerSqantiCategoryFSMtoNNC.pdf", dpi=700, width = 25, height = 14,  units = "cm")
+
+ggsave("../../../10_figures/fig_01/violin_EURvsNonEUR_DiscoveredTranscripts_PerSqantiCategoryFSMtoNNC.pdf", dpi=700, width = 5.91, height = 2.7,  units = "in")
+
+
+
+## NOW CHECK THE POPULATION SPECIFIC TRANSCRIPTS
+newannotmeta <-newannotmeta[!sample%in%c("ITU1", "CEU1", "LWK1", "YRI1", "YRI2", "AJI1", "AJI2", "PEL1", "PEL2", "HAC2", "HAC2")]
+newannotmeta[, sample_detected:=1][, sample_per_pop_detected:=sum(sample_detected), by=c("isoform", "population")]
+newannotmeta[, i.sample:=NULL][, cell_line_id:=NULL][, nrow:=NULL]
+newannotmeta[, populations_detected := uniqueN(population), by = "isoform"]
+
+colsqanti <- c("#61814B",  "#356CA1", "#C8773C",  "darkred", "#B5B5B5", "#4F4F4F", "#6E5353","#8EDE95")
+names(colsqanti) <- unique(newannotmeta$structural_category)[c(1,4,3,2,7,5,8,6)]
+
+newannotmeta[, novelty:=factor(fifelse(structural_category%in%c("FSM", "ISM"), "Annotated", "Novel"), levels=rev(c("Annotated", "Novel")))]
+newannotmeta[, population:=factor(population, levels=c("MPC", "ITU", "CEU", "LWK", "YRI", "AJI", "PEL", "HAC"))]
+ggplot(newannotmeta[populations_detected==1 & sample_per_pop_detected>=2], aes(x=population, fill=structural_category))+
+  geom_bar(position="fill")+
+  mytheme+
+  scale_fill_manual(values=colsqanti)+
+  geom_text(aes(label=after_stat(count)), stat="count", position=position_fill(vjust=0.5))
+ggplot(newannotmeta[populations_detected==1 & sample_per_pop_detected>=2 & structural_category%in%c("FSM", "ISM", "NIC", "NNC")], aes(x=population, fill=structural_category))+
+  geom_bar(position="fill")+
+  mytheme+
+  scale_fill_manual(values=colsqanti)+
+  geom_text(aes(label=after_stat(count)), stat="count", position=position_fill(vjust=0.5))+
+  labs(x="", y="Proportion of Population Specific Transcripts", fill="")
+ggsave("figures/.pdf", dpi=700, width = 25, height = 14,  units = "cm")
+
+
+popsp <-newannotmeta[populations_detected==1 & sample_per_pop_detected>=2 & structural_category%in%c("FSM", "ISM", "NIC", "NNC")]
+isoform_counts <- popsp[novelty == "Annotated", uniqueN(isoform), by = population]
+
+# Step 2: Reorder `population` based on the counts calculated in Step 1
+# (Higher counts appear first)
+popsp$population <- factor(popsp$population, 
+                                  levels = isoform_counts[order(-V1)]$population)
+ggplot(popsp, 
+       aes(x=reorder(population,count ), fill=novelty))+
+  geom_bar()+
+  mytheme+
+  scale_fill_manual(values=rev(c("#5E8531","#A2331D")))+
+  geom_text(aes(label=after_stat(count)), stat="count", position=position_stack(vjust=0.5))+
+  labs(x="", y="Proportion of Population Specific Transcripts", fill="Intron Chain")+
+  theme(legend.position="top")
+ggsave("../../../10_figures/downsampling/barplotStack.annotatedVSnovelIntronChain_POPspecificTrx.pdf", dpi=700, width = 17, height = 14,  units = "cm")

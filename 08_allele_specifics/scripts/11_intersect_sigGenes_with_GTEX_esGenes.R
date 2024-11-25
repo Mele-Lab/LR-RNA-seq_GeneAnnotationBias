@@ -169,7 +169,7 @@ asqtl_sample[, `:=`(ase_validated=ifelse(ASE=="ASE" & eGene=="eGene", "validated
 asqtl_sample[, ooa:=ifelse(population%in%c("YRI", "LWK"), "AFR","OOA")]
 asqtl_sample[, trx_per_cat:=uniqueN(geneid), by=c("sample", "annot", "ase_validated")]
 
-ggplot(unique(asqtl_sample[!is.na(annot) & ase_validated!="not tested", .(ooa, trx_per_cat, annot, ase_validated)]), 
+ggplot(unique(asqtl_sample[!is.na(annot) & ase_validated!="not tested", .(ooa, trx_per_cat, annot, ase_validated, population)]), 
        aes(x=ooa, y=trx_per_cat, fill=ase_validated))+
   geom_violin(position = position_dodge(width = 0.2), alpha = 0.5, width = 0.2) +
   ggbeeswarm::geom_quasirandom(aes(col=population), width=0.05)+
@@ -214,6 +214,7 @@ ggsave("../10_figures/suppfig/dotplot.GWASgencode.pdf", dpi=700, width = 18, hei
 
 
 res_astu_poder<-data.table(as.data.frame(res_astu_poder))
+fwrite(res_astu_poder, "data/pantrx/ASTU_GWAS_PODER.tsv", sep="\t", row.names = F)
 res_astu_poder[, newdescription:=fifelse(grepl("DL|gly|cho",Description), "Lipoprotein Levels/Composition (x11 traits)", as.character(Description))]
 ggplot(res_astu_poder[p.adjust<0.02], aes(x=FoldEnrichment, size = Count, y=reorder(newdescription, Count), color = p.adjust)) +
   geom_point(stat = "identity") +

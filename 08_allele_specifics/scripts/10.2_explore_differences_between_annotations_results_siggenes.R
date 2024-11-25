@@ -135,6 +135,18 @@ ggplot(astswidemeta, aes(x=population, y=ratio_tested_genes))+
                      method.args = list(alternative = "less"))+
   geom_hline(yintercept=1.1)
 
+my_comparisons <- list( c("Eur", "non-Eur") )
+astswidemeta[, eur:=fifelse(population=="CEU", "Eur", "non-Eur")]
+ggplot(astswidemeta, aes(x=eur, y=ratio_tested_genes))+
+  mytheme+
+  geom_boxplot(outliers=F)+
+  geom_jitter(alpha=0.8, aes(col=population, size=map_reads_assemblymap/10^6))+
+  scale_color_manual(values=popcols)+
+  labs(x="", y="Ratio of significant genes by PODER against GENCODE", size="Mapped Reads (M)", col="Population")+
+  stat_compare_means(comparisons = my_comparisons,method = "t.test",
+                     method.args = list(alternative = "less"))+
+  geom_hline(yintercept=1.1)
+
 ggplot(astswidemeta, aes(x=population, y=map_reads_assemblymap/10^6))+
   mytheme+
   geom_boxplot(outliers=F)+

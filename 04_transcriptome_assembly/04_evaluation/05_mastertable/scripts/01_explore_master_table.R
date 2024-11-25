@@ -51,14 +51,18 @@ espressodisc <- metadata[, .(sample, population, map_reads_assemblymap)][espress
 ggplot(unique(espressodisc[, .(trx_per_sample=uniqueN(isoform), map_reads_assemblymap, population), by="sample"]), 
        aes(x=map_reads_assemblymap/10^6, y=trx_per_sample))+
   geom_smooth(method = "lm", color="darkgrey")+
-  geom_point(aes( color=population),size=3, alpha=0.8)+
+  geom_point(aes( color=population),size=1, alpha=0.8)+
   mytheme+
-  labs(x="Mapped reads (M)", y="# Discovered Transcripts", color="Population")+
+  labs(x="Mapped Reads (M)", y="# Discovered Transcripts", color="Population")+
   scale_color_manual(values=popcol)+
-  stat_cor(label.y=72500, label.x=9) +
-  stat_regline_equation(label.y=70000, label.x=9)
-system("mkdir -p 10_figures")
-ggsave("10_figures/fig_01/scatter_ESPRESSO_DiscoveredTranscripts.pdf", dpi=700, width = 12, height = 10,  units = "cm")
+  stat_cor(label.y=72500, label.x=9, size=7*0.35) +
+  stat_regline_equation(label.y=70000, label.x=9, size=7*0.35)+
+  theme(
+    legend.key.size = unit(0.2, "cm"),                     # Reduce key size
+    # legend.margin = margin(2, 2, 2, 2),                    # Compact margin
+    # legend.spacing = unit(0.1, "cm"),                      # Compact spacing
+  )
+ggsave("10_figures/fig_01/scatter_ESPRESSO_DiscoveredTranscripts.pdf", dpi=700, width = 3, height = 2.25,  units = "in")
 
 
 # plot gene and transcript distribution
@@ -107,7 +111,7 @@ ggplot(unique(data[, .(isoform, structural_category)][melt(mytools, variable.nam
   labs(x="", y="# Transcripts")
 
 
-ggplot(data, aes(x=tools, fill=sample_sharing_factor))+
+ggplot(data, aes(x=tools, fill=structural_category))+
   geom_bar()+
   mytheme+
   facet_wrap(~structural_category)+
@@ -171,142 +175,148 @@ ggplot(unique(transcript_sharing_sqanti[, .(samples,isoform,structural_category)
   scale_fill_manual(values=colsqanti)
 
 # Define custom breaks
-breaks <- c(0, 1,3, 43)
+breaks <- c(0, 1, 43)
 # Add the 'bins' column
-transcript_sharing_sqanti$bins <- cut(transcript_sharing_sqanti$samples, breaks = breaks, include.lowest = F, right = TRUE, labels=c("1", "2-3", ">3"))
+transcript_sharing_sqanti$bins <- cut(transcript_sharing_sqanti$samples, breaks = breaks, include.lowest = F, right = TRUE, labels=c("1", ">2"))
 setDT(transcript_sharing_sqanti)
 transcript_sharing_sqanti[, transcripts_bin := .N, by=c("bins", "structural_category")]
 toplot<- unique(transcript_sharing_sqanti[, .(bins, transcripts_bin, structural_category)])
 ggplot(toplot, aes(x=bins, y=transcripts_bin, fill=structural_category))+
   geom_col()+
-  labs(x="# Samples where a transcript is found", y="# Transcripts")+
+  labs(x="# Samples where a Transcript\nis Discovered", y="# Transcripts", fill="Structural\nCategory")+
   mytheme+
-  geom_text(aes(label=transcripts_bin),position = position_stack(vjust = 0.5))+
-  ylim(0, 190000)+
-  scale_fill_manual(values=colsqanti)
-
-ggplot(data, aes(x=sample_sharing, fill=factor(tool_sharing)))+
-  geom_bar()+
-  mytheme+
-  labs(x="Sample sharing", fill="Tool sharing", y="# transcripts")+
-  scale_fill_manual(values=c("#B44F4F", "#D2C63D", "#579A1D", "#52339A"))
-
-
-###### POPULATION SPECIFICITY----------------------------------------------------------------------------------------
-# compute total mapped reads per population
-metadata[, population_throughput := sum(map_reads_assemblymap), by=population]
-# Are there population specific transcripts?
-popsp <-data[population_sharing==1 & sample_sharing>1, .(isoform,structural_category, AJI, CEU, ITU, HAC, PEL, MPC, YRI, LWK)]
-popsp_long <- melt(popsp, variable.name = "population", value.name = "samples")
-popsp_long <- popsp_long[samples!=0]
-popsp_long <- unique(metadata[,.(population, population_throughput)])[popsp_long, on="population"]
-popsp_long[, pop_specific_transcripts:=.N, by=.(population, structural_category)]
-popsp_long$structural_category <- factor(popsp_long$structural_category , levels=names(colsqanti))
-ggplot(popsp_long, aes(x=reorder(population, population_throughput), fill=structural_category))+
-  geom_bar()+
+  geom_text(aes(label = ifelse(!structural_category %in% c("FSM", "ISM", "NIC", "NNC"), NA, transcripts_bin)),
+            position = position_stack(vjust = 0.5),
+            size=6*0.35)+
+  ylim(0, 205000)+
   scale_fill_manual(values=colsqanti)+
-  mytheme+
-  labs(x="", y="# Population specific transcripts (>1 sample)")+
-  facet_wrap(~structural_category)+
-  geom_text(aes(label = after_stat(count), x=population), stat="count", vjust=-0.5)+
-  ylim(c(0,420))
-ggplot(popsp_long, aes(x=reorder(population, population_throughput), fill=structural_category))+
-  geom_bar()+
-  scale_fill_manual(values=colsqanti)+
-  mytheme+
-  labs(x="", y="# Population specific transcripts (>1 sample)")+
-  geom_text(aes(label = after_stat(count), x=population), stat="count", position = position_stack(vjust = 0.5))
+  theme(legend.key.size = unit(0.2, "cm"),
+        legend.margin = margin(0, 0, 0, 0),
+        legend.box.margin = margin(-10, 3, -10, -7))
+ggsave("10_figures/01_plots/supp/06_filter_thresh/barplot_sample_sharing_SQANTI.pdf", dpi=700, width = 2.5, height = 2.15,  units = "in")
 
-ggplot(popsp_long, aes(x=reorder(population, population_throughput), fill=structural_category))+
-  geom_bar(position="fill")+
-  scale_fill_manual(values=colsqanti)+
-  mytheme+
-  labs(x="", y="# Population specific transcripts (>1 sample)")+
-  geom_text(aes(label = after_stat(count), x=population), stat="count", position = position_fill(vjust = 0.5))
-
-popsp_long[, isoform:=NULL]
-ggplot(unique(popsp_long), aes( fill=structural_category, y=pop_specific_transcripts, x=population_throughput))+
-  geom_area()+
-  scale_fill_manual(values=colsqanti)+
-  mytheme
-ggplot(popsp_long, aes(x=reorder(population, population_throughput), fill=structural_category))+
-  geom_bar(position="fill")+
-  scale_fill_manual(values=colsqanti)+
-  mytheme+
-  labs(x="", y="Proportion population specific\ntranscripts (>2 sample)")
-rm(popsp, popsp_long, popspupset, pop_specific_transcripts)
-####--------------------------------------------------------------------------------------------------------------
-
-### TRANSCRIPT DISCOVERY BY GENE
-# is the number of annontated and discovered isoforms related?
-trxpergene <- unique(data[!is.na(associated_transcripts_per_gene), .(discovered_transcripts_per_gene, associated_transcripts_per_gene, associated_gene_biotype)])
-
-# Create bins for discovered and associated transcripts using data.table
-trxpergene[, All_Discovered_Transcripts := cut(discovered_transcripts_per_gene,
-                                               breaks = c(0, 1, 2, 6, seq(10,100, by=10) ,Inf),
-                                               labels = c("0", "1", "2-5", "6-9", "10-19", "20-29", "30-39","40-49", "50-59", "60-69", "70-79", "80-89","90-99" ,"100+"),
-                                               include.lowest = TRUE)]
-
-trxpergene[, Annotated_Transcripts := cut(associated_transcripts_per_gene,
-                                          breaks = c(0, 1, 2, 6, seq(10,100, by=10) ,Inf),
-                                          labels = c("0", "1", "2-5", "6-9", "10-19", "20-29", "30-39","40-49", "50-59", "60-69", "70-79", "80-89","90-99" ,"100+"),
-                                          include.lowest = TRUE)]
-
-# Count the number of genes in each combination of novel and annotated transcript bins
-binned_data_pc <- trxpergene[associated_gene_biotype=="protein_coding"][, .N, by = .(Annotated_Transcripts, All_Discovered_Transcripts)]
-binned_data_lnc <- trxpergene[associated_gene_biotype=="lncRNA"][, .N, by = .(Annotated_Transcripts, All_Discovered_Transcripts)]
+# ggplot(data, aes(x=sample_sharing, fill=factor(tool_sharing)))+
+#   geom_bar()+
+#   mytheme+
+#   labs(x="Sample sharing", fill="Tool sharing", y="# transcripts")+
+#   scale_fill_manual(values=c("#B44F4F", "#D2C63D", "#579A1D", "#52339A"))
 
 
-
-# Create the heatmap plot
-ggplot(binned_data_pc, aes(x = Annotated_Transcripts, y = All_Discovered_Transcripts, fill = N)) +
-  geom_tile(color = "white") +                             # Heatmap tiles
-  viridis::scale_fill_viridis( breaks = c(0, 25,50, 75,100), na.value = "white") +  # Log scale for colors
-  labs(x = "Annotated transcripts/gene", 
-       y = "Discovered transcripts/gene") +        # Axis labels
-  theme(legend.position = "right")+
-  mytheme+
-  labs(fill="Protein-coding\ngenes")
-ggplot(binned_data_lnc, aes(x = Annotated_Transcripts, y = All_Discovered_Transcripts, fill = N)) +
-  geom_tile(color = "white") +                             # Heatmap tiles
-  viridis::scale_fill_viridis( breaks = c(0, 25,50, 75,100), na.value = "white") +  # Log scale for colors
-  labs(x = "Annotated transcripts/gene", 
-       y = "Discovered transcripts/gene") +        # Axis labels
-  theme(legend.position = "right")+
-  mytheme+
-  labs(fill="lncRNA\ngenes")
-
-ggplot(unique(data[associated_gene_biotype%in%c("protein_coding", "lncRNA"), .(associated_transcripts_per_gene,associated_gene_biotype, associated_geneid.v)]),
-       aes(x=associated_transcripts_per_gene+1, fill=associated_gene_biotype))+
-  geom_density(alpha=0.4)+mytheme+
-  labs(x="Log10(annotated transcripts/gene+1)", fill="")+
-  scale_x_continuous(
-    trans = "log10",
-  )
-data[, associated_gene_category:=ifelse(structural_category%in%c("full-splice_match", "incomplete-splice_match","novel_in_catalog", "novel_not_in_catalog") & associated_gene_biotype%in%c("protein_coding", "lncRNA"), associated_gene_biotype,
-                                        ifelse(structural_category%in%c("full-splice_match", "incomplete-splice_match","novel_in_catalog", "novel_not_in_catalog") & !(associated_gene_biotype%in%c("protein_coding", "lncRNA")), "other_annotated_gene",
-                                               ifelse(structural_category=="intergenic", "novel intergenic gene", "fusion/antisense/genic")))]
-data[,associated_gene_category:=factor(associated_gene_category, levels=rev(c("protein_coding", "lncRNA", "other_annotated_gene", "fusion/antisense/genic", "novel intergenic gene")))]
-
-
-ggplot(unique(data[, .(discovered_transcripts_per_gene, associated_gene_category, associated_geneid.v)]),
-       aes(x=discovered_transcripts_per_gene+1, y=associated_gene_category, fill=associated_gene_category))+
-  ggridges::geom_density_ridges(alpha=0.4)+mytheme+
-  guides(fill="none")+
-  labs(x="Log10(discovered transcripts/gene+1)", fill="", y="")+
-  scale_x_continuous(
-    trans = "log10",
-  )
-ggplot(unique(data[, .(discovered_transcripts_per_gene, associated_gene_biotype, associated_geneid.v,associated_gene_category)]),
-       aes(x=discovered_transcripts_per_gene+1, y=associated_gene_biotype, fill=associated_gene_category))+
-  ggridges::geom_density_ridges(alpha=0.4)+mytheme+
-  labs(x="Log10(discovered transcripts/gene+1)", fill="", y="")+
-  scale_x_continuous(
-    trans = "log10",
-  )
-ggplot(data[structural_category=="intergenic", .(discovered_transcripts_per_gene)],
-       aes(x=discovered_transcripts_per_gene+1))+
-  geom_density(alpha=0.4)+mytheme
+# ###### POPULATION SPECIFICITY----------------------------------------------------------------------------------------
+# # compute total mapped reads per population
+# metadata[, population_throughput := sum(map_reads_assemblymap), by=population]
+# # Are there population specific transcripts?
+# popsp <-data[population_sharing==1 & sample_sharing>1, .(isoform,structural_category, AJI, CEU, ITU, HAC, PEL, MPC, YRI, LWK)]
+# popsp_long <- melt(popsp, variable.name = "population", value.name = "samples")
+# popsp_long <- popsp_long[samples!=0]
+# popsp_long <- unique(metadata[,.(population, population_throughput)])[popsp_long, on="population"]
+# popsp_long[, pop_specific_transcripts:=.N, by=.(population, structural_category)]
+# popsp_long$structural_category <- factor(popsp_long$structural_category , levels=names(colsqanti))
+# ggplot(popsp_long, aes(x=reorder(population, population_throughput), fill=structural_category))+
+#   geom_bar()+
+#   scale_fill_manual(values=colsqanti)+
+#   mytheme+
+#   labs(x="", y="# Population specific transcripts (>1 sample)")+
+#   facet_wrap(~structural_category)+
+#   geom_text(aes(label = after_stat(count), x=population), stat="count", vjust=-0.5)+
+#   ylim(c(0,420))
+# ggplot(popsp_long, aes(x=reorder(population, population_throughput), fill=structural_category))+
+#   geom_bar()+
+#   scale_fill_manual(values=colsqanti)+
+#   mytheme+
+#   labs(x="", y="# Population specific transcripts (>1 sample)")+
+#   geom_text(aes(label = after_stat(count), x=population), stat="count", position = position_stack(vjust = 0.5))
+# 
+# ggplot(popsp_long, aes(x=reorder(population, population_throughput), fill=structural_category))+
+#   geom_bar(position="fill")+
+#   scale_fill_manual(values=colsqanti)+
+#   mytheme+
+#   labs(x="", y="# Population specific transcripts (>1 sample)")+
+#   geom_text(aes(label = after_stat(count), x=population), stat="count", position = position_fill(vjust = 0.5))
+# 
+# popsp_long[, isoform:=NULL]
+# ggplot(unique(popsp_long), aes( fill=structural_category, y=pop_specific_transcripts, x=population_throughput))+
+#   geom_area()+
+#   scale_fill_manual(values=colsqanti)+
+#   mytheme
+# ggplot(popsp_long, aes(x=reorder(population, population_throughput), fill=structural_category))+
+#   geom_bar(position="fill")+
+#   scale_fill_manual(values=colsqanti)+
+#   mytheme+
+#   labs(x="", y="Proportion population specific\ntranscripts (>2 sample)")
+# rm(popsp, popsp_long, popspupset, pop_specific_transcripts)
+# ####--------------------------------------------------------------------------------------------------------------
+# 
+# ### TRANSCRIPT DISCOVERY BY GENE
+# # is the number of annontated and discovered isoforms related?
+# trxpergene <- unique(data[!is.na(associated_transcripts_per_gene), .(discovered_transcripts_per_gene, associated_transcripts_per_gene, associated_gene_biotype)])
+# 
+# # Create bins for discovered and associated transcripts using data.table
+# trxpergene[, All_Discovered_Transcripts := cut(discovered_transcripts_per_gene,
+#                                                breaks = c(0, 1, 2, 6, seq(10,100, by=10) ,Inf),
+#                                                labels = c("0", "1", "2-5", "6-9", "10-19", "20-29", "30-39","40-49", "50-59", "60-69", "70-79", "80-89","90-99" ,"100+"),
+#                                                include.lowest = TRUE)]
+# 
+# trxpergene[, Annotated_Transcripts := cut(associated_transcripts_per_gene,
+#                                           breaks = c(0, 1, 2, 6, seq(10,100, by=10) ,Inf),
+#                                           labels = c("0", "1", "2-5", "6-9", "10-19", "20-29", "30-39","40-49", "50-59", "60-69", "70-79", "80-89","90-99" ,"100+"),
+#                                           include.lowest = TRUE)]
+# 
+# # Count the number of genes in each combination of novel and annotated transcript bins
+# binned_data_pc <- trxpergene[associated_gene_biotype=="protein_coding"][, .N, by = .(Annotated_Transcripts, All_Discovered_Transcripts)]
+# binned_data_lnc <- trxpergene[associated_gene_biotype=="lncRNA"][, .N, by = .(Annotated_Transcripts, All_Discovered_Transcripts)]
+# 
+# 
+# 
+# # Create the heatmap plot
+# ggplot(binned_data_pc, aes(x = Annotated_Transcripts, y = All_Discovered_Transcripts, fill = N)) +
+#   geom_tile(color = "white") +                             # Heatmap tiles
+#   viridis::scale_fill_viridis( breaks = c(0, 25,50, 75,100), na.value = "white") +  # Log scale for colors
+#   labs(x = "Annotated transcripts/gene", 
+#        y = "Discovered transcripts/gene") +        # Axis labels
+#   theme(legend.position = "right")+
+#   mytheme+
+#   labs(fill="Protein-coding\ngenes")
+# ggplot(binned_data_lnc, aes(x = Annotated_Transcripts, y = All_Discovered_Transcripts, fill = N)) +
+#   geom_tile(color = "white") +                             # Heatmap tiles
+#   viridis::scale_fill_viridis( breaks = c(0, 25,50, 75,100), na.value = "white") +  # Log scale for colors
+#   labs(x = "Annotated transcripts/gene", 
+#        y = "Discovered transcripts/gene") +        # Axis labels
+#   theme(legend.position = "right")+
+#   mytheme+
+#   labs(fill="lncRNA\ngenes")
+# 
+# ggplot(unique(data[associated_gene_biotype%in%c("protein_coding", "lncRNA"), .(associated_transcripts_per_gene,associated_gene_biotype, associated_geneid.v)]),
+#        aes(x=associated_transcripts_per_gene+1, fill=associated_gene_biotype))+
+#   geom_density(alpha=0.4)+mytheme+
+#   labs(x="Log10(annotated transcripts/gene+1)", fill="")+
+#   scale_x_continuous(
+#     trans = "log10",
+#   )
+# data[, associated_gene_category:=ifelse(structural_category%in%c("full-splice_match", "incomplete-splice_match","novel_in_catalog", "novel_not_in_catalog") & associated_gene_biotype%in%c("protein_coding", "lncRNA"), associated_gene_biotype,
+#                                         ifelse(structural_category%in%c("full-splice_match", "incomplete-splice_match","novel_in_catalog", "novel_not_in_catalog") & !(associated_gene_biotype%in%c("protein_coding", "lncRNA")), "other_annotated_gene",
+#                                                ifelse(structural_category=="intergenic", "novel intergenic gene", "fusion/antisense/genic")))]
+# data[,associated_gene_category:=factor(associated_gene_category, levels=rev(c("protein_coding", "lncRNA", "other_annotated_gene", "fusion/antisense/genic", "novel intergenic gene")))]
+# 
+# 
+# ggplot(unique(data[, .(discovered_transcripts_per_gene, associated_gene_category, associated_geneid.v)]),
+#        aes(x=discovered_transcripts_per_gene+1, y=associated_gene_category, fill=associated_gene_category))+
+#   ggridges::geom_density_ridges(alpha=0.4)+mytheme+
+#   guides(fill="none")+
+#   labs(x="Log10(discovered transcripts/gene+1)", fill="", y="")+
+#   scale_x_continuous(
+#     trans = "log10",
+#   )
+# ggplot(unique(data[, .(discovered_transcripts_per_gene, associated_gene_biotype, associated_geneid.v,associated_gene_category)]),
+#        aes(x=discovered_transcripts_per_gene+1, y=associated_gene_biotype, fill=associated_gene_category))+
+#   ggridges::geom_density_ridges(alpha=0.4)+mytheme+
+#   labs(x="Log10(discovered transcripts/gene+1)", fill="", y="")+
+#   scale_x_continuous(
+#     trans = "log10",
+#   )
+# ggplot(data[structural_category=="intergenic", .(discovered_transcripts_per_gene)],
+#        aes(x=discovered_transcripts_per_gene+1))+
+#   geom_density(alpha=0.4)+mytheme
 
 ### TOOL SHARING ------------------------------------------------------------------------------------------
 ggplot(data, aes(x=tool_sharing, fill=structural_category))+
@@ -329,8 +339,19 @@ ggplot(tool_sharing2, aes(x=tools, fill=structural_category))+
   geom_bar()+
   mytheme+
   scale_fill_manual(values=colsqanti)+
-  geom_text(stat="count",aes( label=after_stat(count)),position= position_stack(v=0.5))+
-  labs(x="Tool sharing", y="# Transcripts")
+  labs(x="Tool sharing", y="# Transcripts", fill="Structural\nCategory")+
+  geom_text(aes(label =after_stat(count), alpha=structural_category), stat="count",
+            position = position_stack(vjust = 0.5),
+            size=6*0.35)+
+  ylim(0, 200000)+
+  scale_alpha_manual(values=c(1,1,1,1,0,0,0,0))+
+  scale_fill_manual(values=colsqanti)+
+  theme(legend.key.size = unit(0.2, "cm"),
+        legend.margin = margin(0, 0, 0, 0),
+        legend.box.margin = margin(-10, 3, -10, -7))+
+  guides(alpha="none")
+ggsave("10_figures/01_plots/supp/06_filter_thresh/barplot_tool_sharing_SQANTI.pdf", dpi=700, width = 2.5, height = 2.15,  units = "in")
+
 
 
 
@@ -343,21 +364,24 @@ cutoff <- 25
 ggplot(unique(data[associated_gene_biotype%in%c("protein_coding", "lncRNA"), .(associated_gene_biotype, sj_less_recountsupported_counts, isoform)]), 
        aes(x=associated_gene_biotype, y=sj_less_recountsupported_counts+1, fill=associated_gene_biotype))+
   geom_violin(alpha=0.7)+
-  geom_boxplot(outliers=F, width=0.15)+
+  geom_boxplot(outliers=F, width=0.15, show.legend=F)+
   mytheme+
-  labs(x="", y="Recounts Counts of\nleast supported SJ/transcript")+
+  labs(x="", y="Recount3 Counts of\nleast supported SJ in Transcript", fill="Gene Biotype")+
   scale_y_continuous(trans="log10")+
-  scale_fill_manual(values=c("darkred", "#356CA1"))+
-  geom_hline(yintercept=lncrnacutoff, col="darkred", linetype="dashed")+
-  geom_hline(yintercept=pccutoff, col="#356CA1", linetype="dashed")+
+  scale_fill_manual(values=rev(c("#4C8C36","#ee9b00")))+
+  geom_hline(yintercept=lncrnacutoff, col="#ee9b00", linetype="dashed")+
+  geom_hline(yintercept=pccutoff, col="darkgrey", linetype="dashed")+
   # Proportion above threshold
-  annotate("text", col = "#356CA1", x = "protein_coding", y = 1e9, label = paste0("pass ",round(nrow(data[associated_gene_biotype %in% c("protein_coding") & sj_less_recountsupported_counts >= pccutoff]) / nrow(data[associated_gene_biotype %in% c("protein_coding")]), digits = 2) * 100, " %"), vjust = 0) +
-  annotate("text", col = "darkred", x = "lncRNA", y = 1e9, label = paste0("pass ",round(nrow(data[associated_gene_biotype %in% c("lncRNA") & sj_less_recountsupported_counts >= lncrnacutoff]) / nrow(data[associated_gene_biotype %in% c("lncRNA")]), digits = 2) * 100, " %"), vjust = 0) +
-  stat_summary(fun.data = n_fun, geom = "text", fun.args = list(y=10))+
+  annotate("text", col = "#4C8C36", x = "protein_coding", y = 1e9, size=5*0.35,
+           label = paste0("pass ",round(nrow(data[associated_gene_biotype %in% c("protein_coding") & sj_less_recountsupported_counts >= pccutoff]) / nrow(data[associated_gene_biotype %in% c("protein_coding")]), digits = 2) * 100, " %"), vjust = 0) +
+  annotate("text", col = "#ee9b00", x = "lncRNA", y = 1e9, size=5*0.35,
+           label = paste0("pass ",round(nrow(data[associated_gene_biotype %in% c("lncRNA") & sj_less_recountsupported_counts >= lncrnacutoff]) / nrow(data[associated_gene_biotype %in% c("lncRNA")]), digits = 2) * 100, " %"), vjust = 0) +
+  stat_summary(fun.data = n_fun, geom = "text", fun.args = list(y=10),size=5*0.35)+
   # Threshold labels
-  annotate("text", col = "#356CA1", x = 2.15, y = pccutoff, label = pccutoff, vjust = -0.5, hjust = 0.5) +
-  annotate("text", col = "darkred", x = 1.15, y = lncrnacutoff, label = lncrnacutoff, vjust = -0.5, hjust = 0.5)+
-  annotation_logticks(sides="l")
+  annotate("text", col = "#4C8C36", x = 2.15, y = pccutoff, label = pccutoff, vjust = -0.5, size=5*0.35,hjust = 0.5) +
+  annotate("text", col = "#ee9b00", x = 1.15, y = lncrnacutoff, label = lncrnacutoff, vjust = -0.5, size=5*0.35,hjust = 0.5)+
+  annotation_logticks(sides="l")+
+  guides(fill="none")
 
 data[, structural_category:=factor(structural_category, levels=names(colsqanti))]
 data[, pass_percentage := round(
@@ -369,45 +393,47 @@ ggplot(unique(data[, .(structural_category, sj_less_recountsupported_counts, iso
   geom_violin(alpha=0.7)+
   geom_boxplot(outliers=F, width=0.05)+
   mytheme+
-  labs(x="", y="Recounts Counts of\nleast supported SJ/transcript")+
+  labs(x="", y="Recount3 Counts of\nleast supported SJ in Transcript")+
   scale_y_continuous(trans="log10")+
   scale_fill_manual(values=colsqanti)+
   annotation_logticks(sides="l")+
-  stat_summary(fun.data = n_fun, geom = "text", fun.args = list(y=10))+
-  geom_hline(yintercept=cutoff, col="black", linetype="dashed")+
-  scale_x_discrete(guide = guide_axis(n.dodge=2))+
+  stat_summary(fun.data = n_fun, geom = "text", fun.args = list(y=10), size=6*0.35)+
+  geom_hline(yintercept=cutoff, col="darkgrey", linetype="dashed")+
+  scale_x_discrete(guide = guide_axis(n.dodge=1))+
   geom_text(data = unique(data[, .(structural_category, pass_percentage)]), 
             aes(x = structural_category, y = 1e9, label = paste0("pass ", pass_percentage, " %"), 
                 color = structural_category), 
-            vjust = 0)+
+            vjust = 0, size=6*0.35)+
   scale_color_manual(values = colsqanti)+
-  annotate("text", label=">=25", y=85, x=0.75)
+  annotate("text", label="25", y=85, x=0.75,size=6*0.35)+
+  guides(fill="none", color="none")
+ggsave("10_figures/01_plots/supp/06_filter_thresh/violin_recount3_trx_SQANTI.pdf", dpi=700, width = 6, height = 2.33,  units = "in")
 
-ggplot(data, aes(x=sample_sharing, y=log10(sj_less_recountsupported_counts+1), color=structural_category))+
-  stat_poly_line(color="darkred") +
-  geom_point(alpha=0.2)+
-  mytheme+
-  ylab("Recount3 counts of\nleast supported sj")+
-  scale_color_manual(values=colsqanti)+
-  facet_wrap(~structural_category)+
-  stat_poly_eq(use_label(c("eq", "R2")), color="black")
+# ggplot(data, aes(x=sample_sharing, y=log10(sj_less_recountsupported_counts+1), color=structural_category))+
+#   stat_poly_line(color="darkred") +
+#   geom_point(alpha=0.2)+
+#   mytheme+
+#   ylab("Recount3 counts of\nleast supported sj")+
+#   scale_color_manual(values=colsqanti)+
+#   facet_wrap(~structural_category)+
+#   stat_poly_eq(use_label(c("eq", "R2")), color="black")
 library(ggridges)
 
 # how is the distribution of recount support by structural category?
 data$structural_category <- factor(data$structural_category, levels=rev(names(colsqanti)))
-ggplot(data, aes( x=log10(sj_less_recountsupported_counts+1), y=structural_category, fill=structural_category))+
-  ggridges::geom_density_ridges() +  
-  mytheme+
-  xlab("Recount3 log10(counts) of\nleast supported SJ")+
-  ylab("")+
-  scale_fill_manual(values=colsqanti)
-
-ggplot(data, aes( x=log10(sj_less_recountsupported_counts+1), y=structural_category, fill=structural_category))+
-  ggridges::geom_density_ridges() +  
-  mytheme+
-  xlab("Recount3 log10(counts) of\nleast supported SJ")+
-  ylab("")+
-  scale_fill_manual(values=colsqanti)
+# ggplot(data, aes( x=log10(sj_less_recountsupported_counts+1), y=structural_category, fill=structural_category))+
+#   ggridges::geom_density_ridges() +  
+#   mytheme+
+#   xlab("Recount3 log10(counts) of\nleast supported SJ")+
+#   ylab("")+
+#   scale_fill_manual(values=colsqanti)
+# 
+# ggplot(data, aes( x=log10(sj_less_recountsupported_counts+1), y=structural_category, fill=structural_category))+
+#   ggridges::geom_density_ridges() +  
+#   mytheme+
+#   xlab("Recount3 log10(counts) of\nleast supported SJ")+
+#   ylab("")+
+#   scale_fill_manual(values=colsqanti)
 
 breaks <- c(0, 1,3, 43)
 
@@ -415,31 +441,31 @@ breaks <- c(0, 1,3, 43)
 data[, structural_category:=factor(structural_category, levels=names(colsqanti))]
 # filter by expression levels
 
-ggplot(data, aes(x=log10(flair_total_counts+1), y=log10(sj_less_recountsupported_counts+1), col=structural_category))+
-  geom_point(alpha=0.3)+
-  stat_poly_line(color="darkred") +
-  theme_bw()+
-  labs(y="Recount counts of less supported SJ\nlog10(y+1)", x="Total counts\nlog10(x+1)")+
-  facet_wrap(~structural_category)+
-  scale_color_manual(values=colsqanti)+
-  stat_poly_eq(use_label(c("eq", "R2")), color="black")
+# ggplot(data, aes(x=log10(flair_total_counts+1), y=log10(sj_less_recountsupported_counts+1), col=structural_category))+
+#   geom_point(alpha=0.3)+
+#   stat_poly_line(color="darkred") +
+#   theme_bw()+
+#   labs(y="Recount counts of less supported SJ\nlog10(y+1)", x="Total counts\nlog10(x+1)")+
+#   facet_wrap(~structural_category)+
+#   scale_color_manual(values=colsqanti)+
+#   stat_poly_eq(use_label(c("eq", "R2")), color="black")
 
 data[, sj_less_recount_counts_info:=factor(sj_less_recount_counts_info, levels=c("knownSJ", "novelSJ_knownSS_2", "novelSJ_knownSS_1", "novelSJ_knownSS_0"))]
-ggplot(data, aes(x=sj_less_recount_counts_info, fill=all_canonical))+
-  geom_bar()+
-  mytheme+
-  labs(x="SJ with the least counts\nin recount3 per transcript", y="# transcripts", fill="")+
-  scale_fill_manual(values=c("#3C6822", "darkred"))+
-  facet_wrap(~structural_category)+
-  scale_x_discrete(guide = guide_axis(n.dodge = 2))
-
-ggplot(data, aes(x=sj_less_recount_counts_info, fill=all_canonical, y=log10(flair_total_counts+1)))+
-  geom_boxplot(outliers = F)+
-  mytheme+
-  labs(x="SJ with the least counts\nin recount3 per transcript", y="Total counts log10(y+1)", fill="")+
-  scale_fill_manual(values=c("#3C6822", "darkred"))+
-  facet_wrap(~structural_category)+
-  scale_x_discrete(guide = guide_axis(n.dodge = 2))
+# ggplot(data, aes(x=sj_less_recount_counts_info, fill=all_canonical))+
+#   geom_bar()+
+#   mytheme+
+#   labs(x="SJ with the least counts\nin recount3 per transcript", y="# transcripts", fill="")+
+#   scale_fill_manual(values=c("#3C6822", "darkred"))+
+#   facet_wrap(~structural_category)+
+#   scale_x_discrete(guide = guide_axis(n.dodge = 2))
+# 
+# ggplot(data, aes(x=sj_less_recount_counts_info, fill=all_canonical, y=log10(flair_total_counts+1)))+
+#   geom_boxplot(outliers = F)+
+#   mytheme+
+#   labs(x="SJ with the least counts\nin recount3 per transcript", y="Total counts log10(y+1)", fill="")+
+#   scale_fill_manual(values=c("#3C6822", "darkred"))+
+#   facet_wrap(~structural_category)+
+#   scale_x_discrete(guide = guide_axis(n.dodge = 2))
 
 # GENCODE junctions to find recount3 threshold
 # load and parse data
@@ -472,16 +498,20 @@ ggplot(gencodesj_recount[gene_biotype%in%c("protein_coding", "lncRNA")], aes(x=g
   geom_violin(alpha=0.7)+
   geom_boxplot(outliers=F, width=0.15)+
   mytheme+
-  labs(x="", y="Recounts Counts")+
+  labs(x="", y="Recount3 Counts\nof GENCODE Splice Junctions")+
   scale_y_continuous(trans="log10")+
-  scale_fill_manual(values=c("darkred", "#356CA1"))+
-  geom_hline(yintercept=lncrnacutoff, col="darkred", linetype="dashed")+
-  geom_hline(yintercept=pccutoff, col="#356CA1", linetype="dashed")+
-  annotate("text", col="#356CA1", x="protein_coding", y=pccutoff, label=round(nrow(gencodesj_recount[gene_biotype%in%c("protein_coding") & counts>pccutoff])/nrow(gencodesj_recount[gene_biotype%in%c("protein_coding")]), digits=2), vjust=0, hjust=0)+
-  annotate("text", col="darkred", x="lncRNA", y=lncrnacutoff, label=round(nrow(gencodesj_recount[gene_biotype%in%c("lncRNA") & counts>lncrnacutoff])/nrow(gencodesj_recount[gene_biotype%in%c("lncRNA")]), digits=2), vjust=0, hjust=0)+
-  annotate("text", col="#356CA1", x=0, y=pccutoff, label=pccutoff, vjust=0, hjust=0)+
-  annotate("text", col="darkred", x=0, y=lncrnacutoff, label=lncrnacutoff, vjust=0, hjust=0)+
-  annotation_logticks(sides="l")
+  stat_summary(fun.data = n_fun, geom = "text", fun.args = list(y=11), size=6*0.35)+
+  scale_fill_manual(values=rev(c("#4C8C36","#ee9b00")))+
+  geom_hline(yintercept=lncrnacutoff, col="#ee9b00", linetype="dashed")+
+  geom_hline(yintercept=pccutoff, col="#4C8C36", linetype="dashed")+
+  annotate("text", col="black", x="protein_coding", y=max(gencodesj_recount$counts), size=6*0.35,label=paste0("pass=",round(nrow(gencodesj_recount[gene_biotype%in%c("protein_coding") & counts>pccutoff])/nrow(gencodesj_recount[gene_biotype%in%c("protein_coding")]), digits=2)*100, "%"), vjust=0)+
+  annotate("text", col="black", x="lncRNA", y=max(gencodesj_recount$counts),  size=6*0.35,label=paste0("pass=",round(nrow(gencodesj_recount[gene_biotype%in%c("lncRNA") & counts>lncrnacutoff])/nrow(gencodesj_recount[gene_biotype%in%c("lncRNA")]), digits=2)*100, "%"), vjust=0)+
+  annotate("text", col="#4C8C36", x=1.5, y=pccutoff, label=pccutoff,  size=6*0.35,vjust=0)+
+  annotate("text", col="#ee9b00", x=1.5, y=lncrnacutoff, label=lncrnacutoff,  size=6*0.35,vjust=0)+
+  annotation_logticks(sides="l")+
+  guides(color="none", fill="none")+
+  scale_x_discrete(labels = c("lncRNA", "protein_coding" = "Protein Coding"))
+ggsave("10_figures/01_plots/supp/06_filter_thresh/violin_recount3_SJ_GENCODE.pdf", dpi=700, width = 2.2, height = 2.15,  units = "in")
 
 gencodesub <- gencodesj_recount[gene_biotype%in%c("protein_coding", "lncRNA")]
 gencodesub[, minsupport := min(counts), by = transcriptid.v]
@@ -494,14 +524,24 @@ ggplot(unique(gencodesub[, .(gene_biotype, minsupport, transcriptid.v)]), aes(x=
   mytheme+
   labs(x="", y="Recounts Counts of\nleast supported SJ/transcript")+
   scale_y_continuous(trans="log10")+
-  scale_fill_manual(values=c("darkred", "#356CA1"))+
-  geom_hline(yintercept=lncrnacutoff, col="darkred", linetype="dashed")+
-  geom_hline(yintercept=pccutoff, col="#356CA1", linetype="dashed")+
-  annotate("text", col="#356CA1", x="protein_coding", y=pccutoff, label=round(nrow(gencodesub[gene_biotype%in%c("protein_coding") & minsupport>=pccutoff])/nrow(gencodesub[gene_biotype%in%c("protein_coding")]), digits=2), vjust=0, hjust=0)+
-  annotate("text", col="darkred", x="lncRNA", y=lncrnacutoff, label=round(nrow(gencodesub[gene_biotype%in%c("lncRNA") & minsupport>=lncrnacutoff])/nrow(gencodesub[gene_biotype%in%c("lncRNA")]), digits=2), vjust=0, hjust=0)+
-  annotate("text", col="#356CA1", x=0, y=pccutoff, label=pccutoff, vjust=0, hjust=0)+
-  annotate("text", col="darkred", x=0, y=lncrnacutoff, label=lncrnacutoff, vjust=0, hjust=0)+
-  annotation_logticks(sides="l")
+  # scale_fill_manual(values=c("darkred", "#356CA1"))+
+  # geom_hline(yintercept=lncrnacutoff, col="darkred", linetype="dashed")+
+  # geom_hline(yintercept=pccutoff, col="#356CA1", linetype="dashed")+
+  # annotate("text", col="#356CA1", x="protein_coding", y=pccutoff, label=round(nrow(gencodesub[gene_biotype%in%c("protein_coding") & minsupport>=pccutoff])/nrow(gencodesub[gene_biotype%in%c("protein_coding")]), digits=2), vjust=0, hjust=0)+
+  # annotate("text", col="darkred", x="lncRNA", y=lncrnacutoff, label=round(nrow(gencodesub[gene_biotype%in%c("lncRNA") & minsupport>=lncrnacutoff])/nrow(gencodesub[gene_biotype%in%c("lncRNA")]), digits=2), vjust=0, hjust=0)+
+  # annotate("text", col="#356CA1", x=0, y=pccutoff, label=pccutoff, vjust=0, hjust=0)+
+  # annotate("text", col="darkred", x=0, y=lncrnacutoff, label=lncrnacutoff, vjust=0, hjust=0)+
+  annotation_logticks(sides="l")+
+  stat_summary(fun.data = n_fun, geom = "text", fun.args = list(y=11), size=6*0.35)+
+  scale_fill_manual(values=rev(c("#4C8C36","#ee9b00")))+
+  geom_hline(yintercept=lncrnacutoff, col="darkgrey", linetype="dashed")+
+  annotate("text", col="black", x="protein_coding", y=max(gencodesj_recount$counts), size=6*0.35,label=paste0("pass=",round(nrow(gencodesub[gene_biotype%in%c("protein_coding") & minsupport>=pccutoff])/nrow(gencodesub[gene_biotype%in%c("protein_coding")]), digits=2)*100, "%"), vjust=0)+
+  annotate("text", col="black", x="lncRNA", y=max(gencodesj_recount$counts),  size=6*0.35,label=paste0("pass=",round(nrow(gencodesub[gene_biotype%in%c("lncRNA") & minsupport>=lncrnacutoff])/nrow(gencodesub[gene_biotype%in%c("lncRNA")]), digits=2)*100, "%"), vjust=0)+
+  annotate("text", col="black", x=1.5, y=pccutoff, label=pccutoff,  size=6*0.35,vjust=0)+
+  annotation_logticks(sides="l")+
+  guides(color="none", fill="none")+
+  scale_x_discrete(labels = c("lncRNA", "protein_coding" = "Protein Coding"))
+ggsave("10_figures/01_plots/supp/06_filter_thresh/violin_recount3_trx_biotype_GENCODE.pdf", dpi=700, width = 2.5, height = 2.15,  units = "in")
 
 #### QUANTIFICATION LEVEL EXPLORATION-----------------------------------------------------------------
 ggplot(annot, aes(x=sample_sharing, y=flair_expressed_samples))+
@@ -590,48 +630,49 @@ ggplot(data, aes(x=associated_transcripts_per_gene, y=`trx_pergene_count_full-sp
 # find filters for quantification
 # data$flair_max_counts <- replace_na(data$flair_max_counts, 0)
 cutoff <- 3
-data[, pass_quanti_percentage := round(sum(flair_max_counts>=cutoff)*100/.N,  digits=2), by=structural_category]
+data[, pass_quanti_percentage := round(sum(flair_max_counts>=cutoff)*100/.N,  digits=0), by=structural_category]
 ggplot(data, aes(x=structural_category, y=flair_max_counts+1, fill=structural_category))+
   geom_violin( alpha=0.7,adjust = 4)+
   geom_boxplot(outliers = F, width=0.1)+
-  labs(x="", y="FLAIR max counts")+
+  labs(x="", y="FLAIR highest # of Counts\nacross Samples")+
   guides(fill="none", color="none")+
   scale_y_continuous(trans="log10")+
   scale_fill_manual(values=colsqanti)+
   annotation_logticks(sides="l")+
-  stat_summary(fun.data = n_fun, geom = "text", fun.args = list(y=6))+
-  geom_hline(yintercept=cutoff, col="black", linetype="dashed")+
-  scale_x_discrete(guide = guide_axis(n.dodge=2))+
+  stat_summary(fun.data = n_fun, geom = "text", fun.args = list(y=5), size=6*0.35)+
+  geom_hline(yintercept=cutoff, col="darkgrey", linetype="dashed")+
+  scale_x_discrete(guide = guide_axis(n.dodge=1))+
   geom_text(data = unique(data[, .(structural_category, pass_quanti_percentage)]), 
-            aes(x = structural_category, y = 0.5e6, label = paste0("pass ", pass_quanti_percentage, " %"), 
+            aes(x = structural_category, y = 10000, label = paste0("pass ", pass_quanti_percentage, " %"), 
                 color = structural_category), 
-            vjust = 0)+
+            vjust = 1, size=6*0.35)+
   scale_color_manual(values = colsqanti)+
-  annotate("text", label=as.character(cutoff), y=cutoff, x=0.75)+
+  annotate("text", label=as.character(cutoff), y=cutoff, x=0.75, size=6*0.35)+
   mytheme
+ggsave("10_figures/01_plots/supp/06_filter_thresh/violin_FLAIR_trx_maxcount_SQANTI.pdf", dpi=700, width = 6, height = 2.33, units = "in")
 
   
   
 ## EXPLORE ISM
-ggplot(data[structural_category=="incomplete-splice_match" & `trx_per_asstrx_count_full-splice_match`==FALSE], 
+ggplot(data[structural_category=="ISM" & `trx_per_asstrx_count_full-splice_match`==FALSE], 
        aes(x=flair_mean_counts))+
   mytheme+
   geom_density(adjust=2)+
   xlab("")+
 xlim(c(0,10))
 
-ggplot(data[structural_category=="incomplete-splice_match" & `trx_per_asstrx_count_full-splice_match`==FALSE], 
+ggplot(data[structural_category=="ISM" & `trx_per_asstrx_count_full-splice_match`==FALSE], 
        aes(y=flair_mean_counts, x=sample_sharing))+
   mytheme+
   geom_jitter(alpha=0.5)+
   xlab("")+
   ylim(c(0,10))
-ggplot(data[structural_category=="incomplete-splice_match" & `trx_per_asstrx_count_full-splice_match`==FALSE], 
+ggplot(data[structural_category=="ISM" & `trx_per_asstrx_count_full-splice_match`==FALSE], 
        aes(x=`trx_per_asstrx_count_incomplete-splice_match`))+
   mytheme+
   geom_bar()+
   labs(x="# ISM/ISM associated transcript missing FSM", y="# Transcript Models")
-ggplot(data[structural_category=="incomplete-splice_match" & `trx_per_asstrx_count_full-splice_match`==FALSE], 
+ggplot(data[structural_category=="ISM" & `trx_per_asstrx_count_full-splice_match`==FALSE], 
        aes(y=`trx_per_asstrx_count_incomplete-splice_match`, x=ref_exons))+
   mytheme+
   geom_point(alpha = 0.3, color="grey")+
@@ -640,20 +681,41 @@ ggplot(data[structural_category=="incomplete-splice_match" & `trx_per_asstrx_cou
 ##### EXPLORE LENGTHS
 cutoff <- 300
 data[, pass_length_percentage := round(sum(length>=cutoff)*100/.N,  digits=2), by=structural_category]
-ggplot(data[filter=="pass"], aes(x=structural_category, y=length, fill=structural_category))+
+ggplot(data, aes(x=structural_category, y=length, fill=structural_category))+
   geom_violin(scale="width", alpha=0.7)+
   geom_boxplot(outliers = F, width=0.1)+
   guides(fill="none", color="none")+
   scale_y_continuous(trans="log10")+
   scale_fill_manual(values=colsqanti)+
   annotation_logticks(sides="l")+
-  stat_summary(fun.data = n_fun, geom = "text", fun.args = list(y=6))+
-  geom_hline(yintercept=cutoff, col="black", linetype="dashed")+
-  scale_x_discrete(guide = guide_axis(n.dodge=2))+
+  stat_summary(fun.data = n_fun, geom = "text", fun.args = list(y=4.5), size=6*0.35)+
+  geom_hline(yintercept=cutoff, col="darkgrey", linetype="dashed")+
+  scale_x_discrete(guide = guide_axis(n.dodge=1))+
   geom_text(data = unique(data[, .(structural_category, pass_length_percentage)]), 
-            aes(x = structural_category, y = 0.5e6, label = paste0("pass ", pass_length_percentage, " %"), 
+            aes(x = structural_category, y = 15000, label = paste0("pass ", pass_length_percentage, " %"), 
                 color = structural_category), 
-            vjust = 0)+
+            vjust = 0, size=6*0.35)+
   scale_color_manual(values = colsqanti)+
-  annotate("text", label=as.character(cutoff), y=cutoff, x=0.75)+
-  mytheme
+  annotate("text", label=as.character(cutoff), y=cutoff, x=0.75, size=6*0.35)+
+  mytheme+
+  labs(x="", y="Transcript Length (nt)")
+ggsave("10_figures/01_plots/supp/06_filter_thresh/violin_length_SQANTI.pdf", dpi=700, width = 6, height = 2.33,  units = "in")
+
+
+### EXPLORE ISM
+ggplot(data[structural_category=="ISM" & existsFSMinTranscript=="TRUE"][, .(multiple_subchains=uniqueN(isoform), subcategory, isoform), by=c("associated_transcriptid.v")][, .(subcategory, isoform,multiple=ifelse(multiple_subchains>1, "Multiple", "Unique"))],
+       aes(x=subcategory, fill=multiple))+
+  geom_bar()+
+  mytheme+
+  scale_x_discrete(labels=c("3prime_fragment"="3' Fragment",
+                            "5prime_fragment"="5' Fragment",
+                            "internal_fragment"="Internal Fragment",
+                            "intron_retention"="Intron Retention"))+
+  labs(x="Structural Subcategory", y="# ISM replaced", fill="# Subchains of\nAssociated\nAnnotated Transcript")+
+  geom_text(aes(label=after_stat(count)), stat="count", position=position_stack(vjust=0.5), size=6*0.35)+
+  theme(legend.position= c(0.8, 0.75))+
+  scale_fill_manual(values=rev(c("#BBBAC6", "#8F7E4F")))+
+  scale_x_discrete(guide = guide_axis(n.dodge=2))
+  
+ggsave("10_figures/01_plots/supp/06_filter_thresh/barplot_ISM_filtering.pdf", dpi=700, width = 3, height = 2.33,  units = "in")
+

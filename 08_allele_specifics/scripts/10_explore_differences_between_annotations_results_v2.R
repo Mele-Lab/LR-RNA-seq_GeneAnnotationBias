@@ -59,7 +59,7 @@ astsraw[, annot := ifelse(annot=="gencode", "GENCODEv47",
                           ifelse(annot=="enhanced_gencode", "Enhanced\nGENCODEv47", "PODER"))]
 astsraw[, annot:=factor(annot, levels=c("GENCODEv47", "PODER", "Enhanced\nGENCODEv47"))]
 # fwrite(astsraw, "data/ASTS_results_threeannots.tsv", quote=F, row.names = F, sep="\t")
-# astsraw <- fread("data/ASTS_results_threeannots.tsv")
+astsraw <- fread("data/ASTS_results_threeannots.tsv")
 asts <- astsraw[gene_testable==TRUE]
 
 # computed number of tested genes

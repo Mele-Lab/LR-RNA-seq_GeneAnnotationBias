@@ -39,24 +39,24 @@ data[, filter:=factor(filter, levels=c("pass", "fail"))]
 filt <- data[filter=="pass"]
 
 # PLOT
-data[, EUR:=ifelse(CEU>0 | AJI>0, 1,
-                   ifelse(CEU==0 & AJI==0, 0, "error"))]
-data[, nonEUR:=ifelse(ITU>0 | HAC>0 | PEL>0 | LWK>0 | MPC>0 | YRI>0, 1, 0)]
-data[, eur_assembled := ifelse(EUR==1, 
-                               ifelse(nonEUR==1, "EUR & nonEUR", "EUR"), "nonEUR")]
-ggplot(data[structural_category%in%c("NIC","NNC")], aes(x=eur_assembled, y=exons, fill=eur_assembled))+
-  geom_violin(adjust=3, alpha=0.8)+
-  geom_boxplot(outliers=F, width=0.15)+
-  mytheme+
-  facet_wrap(~structural_category)+
-  labs(x="", y="# Exons")+
-  scale_fill_manual(values=c("#466995", "#76517B","#A53860"))+
-  scale_y_continuous()+
-  stat_summary(fun.data = n_fun, geom = "text", fun.args = list(y=-10))+
-  ggpubr::stat_compare_means(comparisons=list(c("EUR", "EUR & nonEUR"),c("EUR", "nonEUR")),
-                             method = "t.test", 
-                             method.args = list(alternative = "two.sided")) +
-  guides(fill="none")
+# data[, EUR:=ifelse(CEU>0 | AJI>0, 1,
+#                    ifelse(CEU==0 & AJI==0, 0, "error"))]
+# data[, nonEUR:=ifelse(ITU>0 | HAC>0 | PEL>0 | LWK>0 | MPC>0 | YRI>0, 1, 0)]
+# data[, eur_assembled := ifelse(EUR==1, 
+#                                ifelse(nonEUR==1, "EUR & nonEUR", "EUR"), "nonEUR")]
+# ggplot(data[structural_category%in%c("NIC","NNC")], aes(x=eur_assembled, y=exons, fill=eur_assembled))+
+#   geom_violin(adjust=3, alpha=0.8)+
+#   geom_boxplot(outliers=F, width=0.15)+
+#   mytheme+
+#   facet_wrap(~structural_category)+
+#   labs(x="", y="# Exons")+
+#   scale_fill_manual(values=c("#466995", "#76517B","#A53860"))+
+#   scale_y_continuous()+
+#   stat_summary(fun.data = n_fun, geom = "text", fun.args = list(y=-10))+
+#   ggpubr::stat_compare_means(comparisons=list(c("EUR", "EUR & nonEUR"),c("EUR", "nonEUR")),
+#                              method = "t.test", 
+#                              method.args = list(alternative = "two.sided")) +
+#   guides(fill="none")
 
   
 # Transcript level
@@ -66,15 +66,18 @@ ggplot(data, aes(x=structural_category, fill=structural_category))+
   labs(x="", y="# Transcripts")+
   mytheme+
   guides(fill="none")+
-  geom_text(aes(label=after_stat(count)), stat="count", vjust=0)+
-  facet_wrap(~filter)
-ggplot(data, aes(x=structural_category, fill=filter))+
-  geom_bar(position="fill")+
-  scale_fill_manual(values=rev(c("darkred","#356CA1" )))+
-  labs(x="", y="# Transcripts")+
-  mytheme+
-  guides(fill="none")+
-  geom_text(aes(label=after_stat(count)), stat="count",position = position_fill(vjust = 0.5))
+  geom_text(aes(label=after_stat(count)), stat="count", vjust=0, size=6*0.35)+
+  facet_wrap(~filter, labeller = labeller(filter = c("pass" = "Passed Filters", "fail" = "Filtered Out")))
+ggsave("pclavell/10_figures/01_plots/supp/05_filtering/barplotStack.filtered_trx_perSQANTI.pdf", dpi=700, width = 6.1, height = 2.5,  units = "in")
+
+
+# ggplot(data, aes(x=structural_category, fill=filter))+
+#   geom_bar(position="fill")+
+#   scale_fill_manual(values=rev(c("darkred","#356CA1" )))+
+#   labs(x="", y="# Transcripts")+
+#   mytheme+
+#   guides(fill="none")+
+#   geom_text(aes(label=after_stat(count)), stat="count",position = position_fill(vjust = 0.5))
 
 # gene level
 ggplot(unique(data[,.(associated_geneid.v, structural_category, filter)]), aes(x=structural_category, fill=structural_category))+
@@ -83,8 +86,10 @@ ggplot(unique(data[,.(associated_geneid.v, structural_category, filter)]), aes(x
   labs(x="", y="# Genes")+
   mytheme+
   guides(fill="none")+
-  geom_text(aes(label=after_stat(count)), stat="count", vjust=0)+
-  facet_wrap(~filter)
+  geom_text(aes(label=after_stat(count)), stat="count", vjust=0, size=6*0.35)+
+  facet_wrap(~filter, labeller = labeller(filter = c("pass" = "Passed Filters", "fail" = "Filtered Out")))
+ggsave("pclavell/10_figures/01_plots/supp/05_filtering/barplotStack.filtered_genes_perSQANTI.pdf", dpi=700, width = 6.1, height = 2.5,  units = "in")
+
 ggplot(unique(data[,.(associated_geneid.v, structural_category, filter)]), aes(x=structural_category, fill=filter))+
   geom_bar(position="fill")+
   scale_fill_manual(values=rev(c("darkred","#356CA1" )))+
@@ -174,22 +179,28 @@ ggplot(myfilters_nofsm,
        aes(x=filter_sharing, fill=structural_category))+
   geom_bar()+
   mytheme+
-  labs(x="# Filters removing a transcript", y="# Transcripts")+
+  labs(x="# Filters removing a Transcript", y="# Filtered Out Transcripts", fill="Structural\nCategory")+
   scale_fill_manual(values=colsqanti)+
-  geom_text(stat = "count",aes(label =after_stat(count)),position=position_stack(vjust = 0.5))
+  geom_text(stat = "count",aes(label =after_stat(count)),position=position_stack(vjust = 0.5), size=6*0.35)+
+  theme(legend.key.size = unit(0.2, "cm"),
+        legend.margin = margin(0, 0, 0, 0),
+        legend.box.margin = margin(-10, 3, -10, -7))
+ggsave("pclavell/10_figures/01_plots/supp/07_filter_overlap/barplot_number_filters_removing_transcript_SQANTI.pdf", dpi=700, width = 3.3, height = 2.25,  units = "in")
 
-
-UpSetR::upset(myfilters[structural_category=="NIC", .(f_length, f_sample, f_expression)],
+colnames(myfilters) <- c("structural_category", "Sample", "Tool", "Length", "Expression", "Recount3 Support", "filter_sharing")
+pdf("pclavell/10_figures/01_plots/supp/07_filter_overlap/barplot_NIC_filter_overlap.pdf",  width = 6, height = 2.25)
+UpSetR::upset(myfilters[structural_category=="NIC", .(Length, Sample, Expression)],
               order.by = "freq", 
               decreasing = T,
               matrix.color= colsqanti["NIC"],
               main.bar.color=colsqanti["NIC"])
-UpSetR::upset(myfilters[structural_category=="NNC", .(f_length, f_sample, f_tool, f_recount, f_expression)],
+dev.off()
+UpSetR::upset(myfilters[structural_category=="NNC", .(Length, Sample, Tool, `Recount3 Support`, Expression)],
               order.by = "freq", 
               decreasing = T,
               matrix.color= colsqanti["NNC"],
               main.bar.color=colsqanti["NNC"])
-UpSetR::upset(myfilters[structural_category%in%c("Intergenic"), .(f_length, f_sample, f_tool, f_recount, f_expression)],
+UpSetR::upset(myfilters[structural_category%in%c("Intergenic"), .(Length, Sample, Tool, `Recount3 Support`, Expression)],
               order.by = "freq", 
               decreasing = T,
               matrix.color= colsqanti["Intergenic"],
@@ -461,6 +472,7 @@ ggplot(melt(filt, measure.vars = c("flair", "isoquant", "lyric", "espresso"), va
   scale_fill_manual(values=colsqanti)+
   geom_text(aes(label=after_stat(count)), stat="count", position=position_stack(vjust=0.5))+
   labs(x="", y="# Transcripts")
+
 
 
 
