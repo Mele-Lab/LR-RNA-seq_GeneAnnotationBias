@@ -22,6 +22,7 @@ setup_script(relative_path, 3, 48)
 catch_args(1, "TYPE")
 ##
 ## 0----------------------------END OF HEADER----------------------------------0
+TYPE<- "pantrx"
 library("variancePartition")
 library("edgeR")
 library("BiocParallel")
@@ -174,4 +175,6 @@ ggplot(unique(data[, .(droppedCEU, contrast_name, totaldeg, popincontrast)]), ae
                              unique(metadataraw[metadataraw$population=="MPC", c("color_pop")]),
                              "darkgreen",
                              "darkgrey"))+
-  labs(x="Dropped CEU", y="# DEGs", fill="")
+  labs(x="Dropped Individual", y="# DEGs", fill="")+
+  theme(legend.position=c(0.85,0.1 ))
+ggsave(paste0("../10_figures/01_plots/supp/25_deseqdropout/heatmap_DGE_PODER_dropout.pdf"), dpi=700, width = 7, height = 5,  units = "in")

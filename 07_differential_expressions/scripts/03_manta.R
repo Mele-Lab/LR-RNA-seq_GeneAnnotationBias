@@ -217,228 +217,77 @@ colnames(res)[grep("ref", colnames(res))] <- "reference"
 colnames(res)[grep("sigenes", colnames(res))] <- "sigDTU"
 colnames(res)[grep("p_value", colnames(res))] <- "pval"
 fwrite(res, paste0("data/04_DTUres_", TYPE,".tsv"), sep="\t", row.names = F, quote = F)
+
+
+#### PLOT
+
+TYPE <- "pantrx"
+resultsdt <- fread(paste0("data/04_DTUres_", TYPE,".tsv"))
+if(TYPE=="gencode"){
+  nametype <- "GENCODE"
+}else if(TYPE=="pantrx"){
+  nametype <- "PODER"
+}
+
 res <- fread(paste0("data/04_DTUres_", TYPE,".tsv"))
 
 
 # Create the heatmap
 
-melted_df <-unique(res[,.(contrast, ref, sigenes)])
-melted_df <- melted_df[order(contrast, ref)]
+melted_df <-unique(res[,.(contrast, reference, sigDTU)])
+melted_df <- melted_df[order(contrast, reference)]
 
 
 # Step 1: Prepare the data by creating a full matrix and filling in the diagonal and lower triangle with NAs
 # Combine `contrast` and `ref` to create pairs
 dt_full <- rbind(
   melted_df, 
-  melted_df[, .(contrast = ref, ref = contrast, sigenes = sigenes)]
+  melted_df[, .(contrast = reference, reference = contrast, sigDTU = sigDTU)]
 )
 
 # Remove duplicated pairs (i.e., where contrast == ref)
 dt_full <- unique(dt_full)
 
 # Step 2: Create a complete matrix of all possible combinations of contrast and ref
-all_groups <- unique(c(melted_df$contrast, melted_df$ref))
-dt_grid <- CJ(contrast = all_groups, ref = all_groups)
+all_groups <- unique(c(melted_df$contrast, melted_df$reference))
+dt_grid <- CJ(contrast = all_groups, reference = all_groups)
 
 # Merge the full data with the grid
-dt_heatmap <- merge(dt_grid, dt_full, by = c("contrast", "ref"), all.x = TRUE)
+dt_heatmap <- merge(dt_grid, dt_full, by = c("contrast", "reference"), all.x = TRUE)
 
 # Remove the lower diagonal and diagonal elements by setting sigenes to NA for one side
-dt_heatmap[contrast >= ref, sigenes := NA]
+dt_heatmap[contrast >= reference, sigDTU := NA]
 
 
 # Step 3: Plot the heatmap using ggplot2
-ggplot(dt_heatmap, aes(x = contrast, y = ref, fill = sigenes)) +
+ggplot(dt_heatmap, aes(x = contrast, y = reference, fill = sigDTU)) +
   geom_tile(color = "white") +
-  scale_fill_gradient(low = "white", high = "#D2932D", na.value = "grey90", name = "DTU Genes") +
-  theme_minimal() +
+  scale_fill_gradient(low = "white", high = "#D2932D", na.value = "#9AC7CB", name = "# DTUs", limits=c(0,300)) +
+  mytheme+
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   labs(x = "", y = "", title = nametype)+
-  geom_text(aes(label=sigenes, size=sigenes))+
-  scale_size_continuous(range=c(3,5))+
+  geom_text(aes(label=sigDTU, size=sigDTU))+
   guides(size="none")+
-  mytheme
-# 3. add additional gene information ----
-# 3.1 number of samples (donors) included in gene model
-# 3.2 number of annotated & expressed transcripts
-# 3.3 most & least contributing transcripts
+  scale_size_continuous(range=c(4.5,8)*0.35)
+ggsave(paste0("../10_figures/01_plots/supp/24_dgedtu/heatmap_DTU_",nametype,".pdf"), dpi=700, width = 3, height = 2.85,  units = "in")
 
 
+#### COMPARE NUMBER OF TESTED GENES
 
-##### RAQUEL'S FUNCTIONS
-# # functions ----
-# manta_residuals_fun <- function(formula, data, transform = "sqrt", type = "I", contrasts = NULL, subset = NULL, fit = FALSE){
-#   
-#   ## Checks
-#   transform <- match.arg(transform, c("none", "sqrt", "log"))
-#   type <- match.arg(type, c("I", "II", "III"))
-#   
-#   ## Save call, build model frame, obtain responses
-#   cl <- match.call()
-#   m <- match(c("formula", "data"), names(cl), 0L)
-#   mf <- cl[c(1L, m)]
-#   mf$drop.unused.levels <- TRUE
-#   mf$na.action = "na.omit"
-#   # The rows with at least one NA either in Y or X 
-#   # (only considering variables used in the formula) 
-#   # will be removed before transforming/centering
-#   mf[[1L]] <- quote(stats::model.frame)
-#   mf <- eval(mf, parent.frame())               
-#   mt <- attr(mf, "terms")
-#   response <- model.response(mf, "numeric")
-#   
-#   ## Checks
-#   if (NCOL(response) < 2){
-#     stop("The number of response variables should be >= 2")
-#   }
-#   if (length(attr(mt, "term.labels")) < 1) {
-#     stop("The model should contain at least one predictor (excluding the intercept)")
-#   }
-#   
-#   ## Transform and center responses, update model frame
-#   if(transform == "none"){
-#     Y <- response
-#   } else if (transform == "sqrt"){
-#     if (any(response < 0)) {
-#       stop("'sqrt' transformation requires all response values >= 0")
-#     }
-#     Y <- sqrt(response)
-#   } else if (transform == "log"){
-#     if (any(response <= 0)) {
-#       stop("'log' transformation requires all response values > 0")
-#     }
-#     Y <- log(response)
-#   }
-#   Y <- scale(Y, center = TRUE, scale = FALSE)
-#   mf[[1L]] <- Y
-#   
-#   ## Define contrasts
-#   if(is.null(contrasts)){
-#     contrasts <- list(unordered = "contr.sum", ordered = "contr.poly")
-#     dc <- attr(mt, "dataClasses")[-1]
-#     contr.list <- lapply(dc, FUN = function(k){
-#       # No contrast for quantitative predictors
-#       # Sum contrasts for unordered categorical predictors
-#       # Polynomial contrasts for ordered categorical predictors
-#       contr.type <- switch(k, "factor" = contrasts$unordered,
-#                            "ordered" = contrasts$ordered)
-#       return(contr.type)
-#     })
-#     contr.list <- contr.list[!unlist(lapply(contr.list, is.null))]
-#   } else {
-#     contr.list <- contrasts
-#   }
-#   
-#   ## Build model matrix
-#   X <- model.matrix(mt, mf, contr.list)
-#   
-#   ## Fit lm
-#   lmfit <- lm.fit(X, Y)
-#   return(lmfit$residuals)
-# }
-# 
-# post_hoc_analyses <- function(gene, measurement = "relative_abundance"){
-#   
-#   # prepare the data to test if the transcript relative abundance is different between AA and EA
-#   d <- as.data.frame(manta_residuals_obj[[gene]])
-#   d$sample <- rownames(d)
-#   data <- melt(d)   
-#   colnames(data) <- c("sample", "transcript", "value")
-#   data <- merge(data, sample_metadata, by = "sample")
-#   
-#   # non-parametric Mann-Whitneu U test + multiple test correction
-#   p_value <- sapply(unique(data$transcript), function(transcript) 
-#     wilcox.test(data[data$transcript==transcript & data$inferred_ancestry == "AA", "value"],
-#                 data[data$transcript==transcript & data$inferred_ancestry == "EA", "value"])$p.value)
-#   fdr <- p.adjust(p_value, method = "fdr")
-#   df <- cbind.data.frame(unique(data$transcript), p_value, fdr)
-#   colnames(df)[1] <- "transcript"
-#   
-#   return(df)
-# }
+gencode <- fread(paste0("data/04_DTUres_gencode.tsv"))[, annot:="GENCODE"]
+poder <- fread(paste0("data/04_DTUres_pantrx.tsv"))[, annot:="PODER"]
 
-
-# 
-# # 4. calculate residuals ----
-# run_manta_residuals <- function(gene){
-#   # relative abundances of all gene transcripts
-#   input_data <- t(relative_abundances[relative_abundances$trId %in% transcript_annotation[transcript_annotation$ensembl_gene_id == gene, "ensembl_transcript_id"], 3:ncol(relative_abundances)])
-#   
-#   # calculate residuals (model without variable of interest)
-#   residuals <- manta_residuals_fun(
-#     formula = as.formula(paste("input_data ~  ", paste(c(covariates[covariates != "inferred_ancestry"]), collapse = " + "))),
-#     data = sample_metadata,
-#     transform = "sqrt",
-#     type = "I")
-#   return(residuals)
-# }
-# 
-# # get residual values
-# start_time <- Sys.time()
-# #manta_residuals_obj <- mclapply(unique(relative_abundances$geneId), function(gene) {print(gene); run_manta_residuals(gene)}, mc.cores = n_cores)
-# manta_residuals_obj <- lapply(unique(relative_abundances$geneId), function(gene) {print(gene); run_manta_residuals(gene)})
-# names(manta_residuals_obj) <- unique(relative_abundances$geneId)
-# end_time <- Sys.time()
-# print("Running time for manta residuals")
-# print(end_time - start_time)
-
-# # 5. post-hoc non parametric two-tailed Mann Whitney U test ----
-# #post_hoc_results <- mclapply(manta_results[manta_results$fdr < 0.05, "ensembl_gene_id"], function(gene) {print(gene); post_hoc_analyses(gene)}, mc.cores = n_cores)
-# post_hoc_results <- lapply(manta_results[manta_results$fdr < 0.05, "ensembl_gene_id"], function(gene) {print(gene); post_hoc_analyses(gene)})
-# names(post_hoc_results) <- manta_results[manta_results$fdr < 0.05, "ensembl_gene_id"]
-# end_time <- Sys.time()
-# print("Running time for post-hoc analysis")
-# print(end_time - start_time)
-# 
-# # 6. add post-hoc to manta results ----
-# rownames(manta_results) <- manta_results$ensembl_gene_id
-# manta_results$number_DU_trascripts <- sapply(manta_results$ensembl_gene_id, function(gene) ifelse(manta_results[gene, "fdr"] < 0.05,
-#                                                                                                   sum(post_hoc_results[[gene]]$fdr < 0.05),
-#                                                                                                   NA))
-# 
-# # 7. add information about the DU transcipts ----
-# transcripts_DU <- function(gene){
-#   df <- post_hoc_results[[gene]][order(post_hoc_results[[gene]]$fdr, decreasing = F),]
-#   DU_transcripts <- as.character(df[df$fdr < 0.05, "transcript"])
-#   if(length(DU_transcripts)==0){
-#     return(NA)
-#   }else if(length(DU_transcripts)==1){
-#     return(DU_transcripts)
-#   }else{
-#     DU_transcripts <- paste(DU_transcripts, collapse = "; ")
-#     return(DU_transcripts)
-#   }
-# }
-# manta_results$DU_trascripts <- sapply(manta_results$ensembl_gene_id, function(gene) ifelse(manta_results[gene, "fdr"] < 0.05,
-#                                                                                            transcripts_DU(gene),
-#                                                                                            NA))
-# DU_transcripts_biotype <- function(gene){
-#   df <- post_hoc_results[[gene]][order(post_hoc_results[[gene]]$fdr, decreasing = F),]
-#   DU_transcripts <- as.character(df[df$fdr < 0.05, "transcript"])
-#   if(length(DU_transcripts)==0){
-#     return(NA)
-#   }else{
-#     DU_transcripts_biotypes <- sapply(DU_transcripts, function(transcript) transcript_annotation[transcript_annotation$ensembl_transcript_id==transcript, "transcript_biotype"])
-#     if(length(DU_transcripts_biotypes)>1){DU_transcripts_biotypes <- paste(DU_transcripts_biotypes, collapse = "; ")}
-#     return(DU_transcripts_biotypes)
-#   }
-# }
-# manta_results$DU_transcripts_biotypes <- sapply(manta_results$ensembl_gene_id, function(gene) ifelse(manta_results[gene, "fdr"] < 0.05,
-#                                                                                                      DU_transcripts_biotype(gene),
-#                                                                                                      NA))
-# manta_results <- manta_results[order(manta_results$fdr, decreasing = F),]
-# 
-# # 8. Save results ----
-# 
-# saveRDS(relative_abundances,
-#         paste0(path_out, tissue, ".relative_abundances.rds"))
-# saveRDS(sqtl.seeker.results,
-#         paste0(path_out, tissue, ".sqtl.seeker.results.rds"))
-# saveRDS(manta_results,
-#         paste0(path_out, tissue, ".manta_results.rds"))
-# saveRDS(manta_residuals_obj,
-#         paste0(path_out, tissue, ".manta_residuals.rds"))
-# saveRDS(post_hoc_results,
-#         paste0(path_out, tissue, ".post_hoc_results.rds"))
-# saveRDS(filtering_summary_chr,
-#         paste0(path_out, tissue, ".genes_and_transcripts_kept.rds"))
+mix <- rbind.data.frame(gencode, poder)
+mix[, tested_genes:=uniqueN(geneid.v[!is.na(fdr)]), by=c("annot")]
+mix[, sig_genes:=uniqueN(geneid.v[fdr<0.05]), by=c("annot")]
+mix[, percent_sig:=round(sig_genes/tested_genes*100, digits=1)]
+mixlong <- melt(unique(mix[, .(annot, tested_genes, sig_genes)]), id.vars = "annot", variable.name = "testsig")
+ggplot(mixlong, aes(x=annot, y=value, fill=annot))+
+  geom_col(aes(alpha=testsig), position="identity")+
+  mytheme+
+  labs(x="", y="# Unique Genes across Contrasts", alpha="Genes\nin DTU\nAnalysis")+
+  scale_fill_manual(values=c( "#7F675B", "#A2AD59"))+
+  guides(fill="none")+
+  geom_text(size=6*0.35, aes(label=value), vjust=0)+
+  scale_alpha_manual(values=c(0.55, 1), labels=c("Tested", "Significant"))
+ggsave(paste0("../10_figures/01_plots/supp/24_dgedtu/heatmap_DTU_testedGenes_comparison.pdf"), dpi=700, width = 2.25, height = 2.85,  units = "in")

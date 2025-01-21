@@ -85,5 +85,6 @@ ggplot(datasig, aes(x=quantification_sharing, fill=popincontrast))+
                              unique(metadata[population=="MPC", color_pop]),
                              "darkgreen",
                              "darkgrey"))+
-  labs(y="# DEGs", x="Quantification Sharing (Assembly-Annotation pairs)", fill="")+
-  geom_text(aes(label=after_stat(count)), stat="count", position=position_stack(vjust=0.5))
+  labs(y="# DEGs", x="DEG Sharing (Assembly-Annotation pairs)", fill="")+
+  geom_text(aes(label=after_stat(count)), stat="count", position=position_stack(vjust=0.5), size=6*0.35)
+ggsave(paste0("../10_figures/01_plots/supp/28_deg_assemblies/heatmap_DGE_sharing.pdf"), dpi=700, width = 4, height = 2.75,  units = "in")

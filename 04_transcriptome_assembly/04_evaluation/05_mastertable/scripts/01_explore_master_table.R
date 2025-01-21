@@ -43,26 +43,26 @@ n_fun <- function(x, y){
 metadata[, population_throughput := sum(map_reads_assemblymap), by=population]
 
 
-# plot ESPRESSO discovered numbers
-espressodisc <- data[espresso==1][,.SD, .SDcols = c(grep("isoform", colnames(data)), grep("structural_category", colnames(data)),grep("^[A-Z]{3}[0-9]{1}$",colnames(data)))]
-espressodisc <- melt(espressodisc, id.vars=c("isoform", "structural_category"), variable.name="sample", value.name="detected")
-espressodisc <- espressodisc[detected==1]
-espressodisc <- metadata[, .(sample, population, map_reads_assemblymap)][espressodisc, on="sample"]
-ggplot(unique(espressodisc[, .(trx_per_sample=uniqueN(isoform), map_reads_assemblymap, population), by="sample"]), 
+# plot discovered numbers
+disc <- data[,.SD, .SDcols = c(grep("isoform", colnames(data)), grep("structural_category", colnames(data)),grep("^[A-Z]{3}[0-9]{1}$",colnames(data)))]
+disc <- melt(disc, id.vars=c("isoform", "structural_category"), variable.name="sample", value.name="detected")
+disc <- disc[detected==1]
+disc <- metadata[, .(sample, population, map_reads_assemblymap)][disc, on="sample"]
+ggplot(unique(disc[, .(trx_per_sample=uniqueN(isoform), map_reads_assemblymap, population), by="sample"]), 
        aes(x=map_reads_assemblymap/10^6, y=trx_per_sample))+
   geom_smooth(method = "lm", color="darkgrey")+
   geom_point(aes( color=population),size=1, alpha=0.8)+
   mytheme+
   labs(x="Mapped Reads (M)", y="# Discovered Transcripts", color="Population")+
   scale_color_manual(values=popcol)+
-  stat_cor(label.y=72500, label.x=9, size=7*0.35) +
-  stat_regline_equation(label.y=70000, label.x=9, size=7*0.35)+
+  stat_cor(label.y=87500, label.x=9, size=7*0.35) +
+  stat_regline_equation(label.y=85000, label.x=9, size=7*0.35)+
   theme(
     legend.key.size = unit(0.2, "cm"),                     # Reduce key size
     # legend.margin = margin(2, 2, 2, 2),                    # Compact margin
     # legend.spacing = unit(0.1, "cm"),                      # Compact spacing
   )
-ggsave("10_figures/fig_01/scatter_ESPRESSO_DiscoveredTranscripts.pdf", dpi=700, width = 3, height = 2.25,  units = "in")
+ggsave("10_figures/01_plots/supp/02_depth_discovery/scatter_uma_DiscoveredTranscripts.pdf", dpi=700, width = 4, height = 3.75,  units = "in")
 
 
 # plot gene and transcript distribution

@@ -26,7 +26,7 @@ setup_script <-function(relative_path, DIGITS=3, MNTHREADS=48){
   setwd(wd)
   cat("WORKING DIRECTORY HAS BEEN SET TO: ", wd, "... \n\n",sep = "")
   # set non-scientific notation with chosen # of DIGITS
-  options(scipen = 6, digits = DIGITS) # non-scientific notation
+  #options(scipen = 6, digits = DIGITS) # non-scientific notation
   
   ## load up the packages that we always use
   cat("LOADING LIBRARIES", sep = "")

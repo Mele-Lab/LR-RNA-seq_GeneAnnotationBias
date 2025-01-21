@@ -188,7 +188,8 @@ ggplot(myfilters_nofsm,
 ggsave("pclavell/10_figures/01_plots/supp/07_filter_overlap/barplot_number_filters_removing_transcript_SQANTI.pdf", dpi=700, width = 3.3, height = 2.25,  units = "in")
 
 colnames(myfilters) <- c("structural_category", "Sample", "Tool", "Length", "Expression", "Recount3 Support", "filter_sharing")
-pdf("pclavell/10_figures/01_plots/supp/07_filter_overlap/barplot_NIC_filter_overlap.pdf",  width = 6, height = 2.25)
+fwrite(myfilters, "pclavell/04_transcriptome_assembly/04_evaluation/05_mastertable/data/24222024_filtered_transcripts.tsv", quote = F, row.names = F, sep="\t")
+pdf("pclavell/10_figures/01_plots/supp/07_filter_overlap/barplot_NIC_filter_overlap.pdf",  width = 3, height = 2.33,onefile=FALSE)
 UpSetR::upset(myfilters[structural_category=="NIC", .(Length, Sample, Expression)],
               order.by = "freq", 
               decreasing = T,
@@ -218,7 +219,7 @@ UpSetR::upset(myfilters2,
               decreasing = T)
 
 # REPEAT THE POP SPECIFIC PART
-popsp <- filt[sample_sharing>=2 & population_sharing==1, .(AJI, CEU, YRI, LWK, MPC, ITU, HAC, PEL, isoform, structural_category, associated_geneid.v)]
+popsp <- data[sample_sharing>=2 & population_sharing==1, .(AJI, CEU, YRI, LWK, MPC, ITU, HAC, PEL, isoform, structural_category, associated_geneid.v)]
 popsplong <- melt(popsp, value.name = "detected", variable.name = "population", id.vars = c("isoform", "structural_category", "associated_geneid.v"))[detected>=2]
 popsplong <- unique(metadata[, .(population, map_reads_assemblymap)][, .(popdepth=sum(map_reads_assemblymap), samples_per_pop=.N), by="population"])[popsplong, on="population"]
 popsplong[, trx_per_pop_per_cat:=.N, by=c("population", "structural_category")]
@@ -474,5 +475,137 @@ ggplot(melt(filt, measure.vars = c("flair", "isoquant", "lyric", "espresso"), va
   labs(x="", y="# Transcripts")
 
 
+##### POPULATION SPECIFIC TRANSCRIPTS
+# LINE PLOT FOR 2 SAMPLES SHARING FACETED
+popsplong[, eur:=fifelse(eurpop=="EUR", "European", "Non-European")]
+popsplong[, total_throughput:=popdepth]
+popsplong[, trx_per_cat_per_pop:=trx_per_pop_per_cat]
+subpopsplongmeta<- popsplong
+
+ggplot(unique(popsplong[structural_category%in%c("FSM", "ISM", "NIC", "NNC"), .(population, eur, structural_category, total_throughput, samples_per_pop,trx_per_cat_per_pop)]), 
+       aes(x=total_throughput/10^6, y=trx_per_cat_per_pop))+
+  geom_line(data=unique(subpopsplongmeta[structural_category%in%c("FSM", "ISM", "NIC", "NNC")&eur=="Non-European", 
+                                         .(population, eur, structural_category, total_throughput,trx_per_cat_per_pop)]), 
+            linewidth=1, lty="11", color="darkgrey")+
+  geom_line(aes(col=structural_category),linewidth=1)+
+  mytheme+
+  scale_color_manual(values=colsqanti)+
+  labs(x="Total Mapped Reads per Population (M)", y="# Population Specific UMA Transcripts")+
+  guides(color="none")+
+  facet_wrap(~structural_category)+
+  labs(col="", alpha="", size="")+
+  # geom_segment(data=unique(subpopsplongmeta[structural_category%in%c("FSM"), 
+  #                                           .(population, eur, structural_category, total_throughput,trx_per_cat_per_pop)]),
+  #              aes(xend = total_throughput/10^6, # Adjust for arrow length
+  #                  yend = ifelse(eur == "European", trx_per_cat_per_pop + 25, trx_per_cat_per_pop - 25)),
+  #              arrow = arrow(length = unit(0.2, "cm")), # Arrow size
+  #              color = "darkgrey") +
+  # geom_segment(data=unique(subpopsplongmeta[structural_category%in%c("NIC", "NNC"), 
+  #                                           .(population, eur, structural_category, total_throughput,trx_per_cat_per_pop)]),
+  #              aes(xend = total_throughput/10^6, # Adjust for arrow length
+  #                  yend = ifelse(eur == "European", trx_per_cat_per_pop - 25, trx_per_cat_per_pop + 25)),
+  #              arrow = arrow(length = unit(0.2, "cm")), # Arrow size
+  #              color = "darkgrey") +
+  ggnewscale::new_scale_color()+
+  geom_text(data=unique(subpopsplongmeta[structural_category%in%c("FSM", "ISM"), 
+                                         .(population, eur, structural_category, total_throughput,trx_per_cat_per_pop)]),
+            aes(x = total_throughput/10^6,  # Position text away from point
+                y = ifelse(eur == "European", trx_per_cat_per_pop + 45, trx_per_cat_per_pop - 45),
+                label = population,
+                color=eur),
+            fontface="bold",
+            family="Helvetica",
+            size = 8*0.35,
+            alpha=0.6)+
+  scale_color_manual(values=c("#466995", "#A53860"))+
+  geom_text(data=unique(subpopsplongmeta[structural_category%in%c("NIC", "NNC"), 
+                                         .(population, eur, structural_category, total_throughput,trx_per_cat_per_pop)]),
+            aes(x = total_throughput/10^6,  # Position text away from point
+                y = ifelse(eur == "European", trx_per_cat_per_pop - 45, trx_per_cat_per_pop + 45),
+                label = population,
+                color=eur),
+            fontface="bold",
+            family="Helvetica",
+            size = 8*0.35,
+            alpha=0.6)+
+  scale_color_manual(values=c("#466995", "#A53860"))+
+  guides(color="none")+
+  theme(legend.position = c(0.9, 0.90))+
+  xlim(c(52, 105))+
+  ggnewscale::new_scale_color()+
+  geom_point(aes(color=eur, size=eur, alpha=eur))+
+  scale_color_manual(values=c("#466995", "#A53860"))+
+  scale_size_manual(values=c(4,1.5))+
+  scale_alpha_manual(values=c(0.75, 0.9))+
+  labs(alpha="", size="", color="")
+ggsave("pclavell/10_figures/01_plots/supp/15_uma_popsp/line_UMA_popSpecific_transcripts.2samplesSharing.faceted.pdf", dpi=700, width = 6, height = 6,  units = "in")
+ggsave("pclavell/10_figures/02_panels/svg/supp/15_uma_popsp.svg", dpi=700, width = 6, height = 6,  units = "in")
+ggsave("pclavell/10_figures/02_panels/png/supp/15_uma_popsp.png", dpi=700, width = 6, height = 6,  units = "in")
 
 
+# LINE PLOT FOR 2 SAMPLES SHARING FACETED with ----- REFSEQ ----------
+refseq <- fread("pclavell/04_transcriptome_assembly/04_evaluation/02_sqanti/data/uma_evaluatedBy_RefSeq/uma_evaluatedBy_RefSeq_classification.txt")
+refseq <- refseq[, .(isoform, structural_category)]
+categories <-c("Antisense","Intergenic", "NNC", "FSM", "NIC", "ISM", "Genic", "Fusion" )
+names(categories) <- unique(refseq$structural_category)
+refseq[, structural_category_refseq:=categories[structural_category]]
+subpopsplongmeta_refseq <- refseq[, .(isoform, structural_category_refseq)][subpopsplongmeta, on="isoform"]
+subpopsplongmeta_refseq[, trx_per_cat_per_pop:=uniqueN(isoform), by=c("structural_category_refseq", "population")]
+
+
+ggplot(unique(subpopsplongmeta_refseq[structural_category_refseq%in%c("FSM", "ISM", "NIC", "NNC"),][,.(population, eur, structural_category_refseq, total_throughput,trx_per_cat_per_pop)]), 
+       aes(x=total_throughput/10^6, y=trx_per_cat_per_pop))+
+  geom_line(data=unique(subpopsplongmeta_refseq[structural_category_refseq%in%c("FSM", "ISM", "NIC", "NNC")&eur=="Non-European", 
+                                                .(population, eur, structural_category_refseq, total_throughput,trx_per_cat_per_pop)]), 
+            linewidth=1, lty="11", color="darkgrey")+
+  geom_line(aes(col=structural_category_refseq),linewidth=1)+
+  mytheme+
+  scale_color_manual(values=c(colsqanti, "ISM"="#8EDE95"))+
+  labs(x="Total Mapped Reads per Population (M)", y="# Population-Specific UMA Transcripts")+
+  guides(color="none")+
+  facet_wrap(~structural_category_refseq)+
+  labs(col="", alpha="", size="")+
+  geom_segment(data=unique(subpopsplongmeta_refseq[structural_category_refseq%in%c("FSM", "ISM"),
+                                                   .(population, eur, structural_category_refseq, total_throughput,trx_per_cat_per_pop)]),
+               aes(xend = total_throughput/10^6, # Adjust for arrow length
+                   yend = ifelse(eur == "European", trx_per_cat_per_pop + 25, trx_per_cat_per_pop - 25)),
+               color = "darkgrey") +
+  geom_segment(data=unique(subpopsplongmeta_refseq[structural_category_refseq%in%c("NIC", "NNC"),
+                                                   .(population, eur, structural_category_refseq, total_throughput,trx_per_cat_per_pop)]),
+               aes(xend = total_throughput/10^6, # Adjust for arrow length
+                   yend = ifelse(eur == "European", trx_per_cat_per_pop - 25, trx_per_cat_per_pop + 25)),
+               color = "darkgrey") +
+  ggnewscale::new_scale_color()+
+  geom_text(data=unique(subpopsplongmeta_refseq[structural_category_refseq%in%c("FSM", "ISM"), 
+                                                .(population, eur, structural_category_refseq, total_throughput,trx_per_cat_per_pop)]),
+            aes(x = total_throughput/10^6,  # Position text away from point
+                y = ifelse(eur == "European", trx_per_cat_per_pop + 35, trx_per_cat_per_pop - 35),
+                label = population,
+                color=population),
+            fontface="bold",
+            family="Helvetica",
+            size = 8*0.35,
+            alpha=0.6)+
+  geom_text(data=unique(subpopsplongmeta_refseq[structural_category_refseq%in%c("NIC", "NNC"), 
+                                                .(population, eur, structural_category_refseq, total_throughput,trx_per_cat_per_pop)]),
+            aes(x = total_throughput/10^6,  # Position text away from point
+                y = ifelse(eur == "European", trx_per_cat_per_pop - 35, trx_per_cat_per_pop + 35),
+                label = population,
+                color=population),
+            fontface="bold",
+            family="Helvetica",
+            size = 8*0.35,
+            alpha=0.6)+
+  scale_color_manual(values=popcol)+
+  guides(color="none")+
+  theme(legend.position = c(0.9, 0.90))+
+  xlim(c(52, 105))+
+  ggnewscale::new_scale_color()+
+  geom_point(aes(color=eur, size=eur, alpha=eur))+
+  scale_color_manual(values=c("#466995", "#A53860"))+
+  scale_size_manual(values=c(4,1.5))+
+  scale_alpha_manual(values=c(0.75, 0.9))+
+  labs(alpha="", size="", color="")
+ggsave("pclavell/10_figures/01_plots/supp/18_popsp_val_refseq_uma/line_UMA_popSpecific_transcripts.2samplesSharing.faceted_refseq_UMA.pdf", dpi=700, width = 7, height = 6,  units = "in")
+ggsave("pclavell/10_figures/02_panels/svg/supp/18_popsp_val_refseq_uma.svg", dpi=700, width = 7, height = 6,  units = "in")
+ggsave("pclavell/10_figures/02_panels/png/supp/18_popsp_val_refseq_uma.png", dpi=700, width = 7, height = 6,  units = "in")

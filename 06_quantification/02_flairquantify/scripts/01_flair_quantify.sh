@@ -4,7 +4,8 @@ module load anaconda bedops
 source activate base
 conda init
 conda activate /gpfs/projects/bsc83/utils/conda_envs/flair/
-PATHGTF=/gpfs/projects/bsc83/Projects/pantranscriptome/novelannotations/merged/240917_merge_geneEntry_correctedScaffolds_nochrEBV.gtf
+#PATHGTF=/gpfs/projects/bsc83/Projects/pantranscriptome/novelannotations/merged/240917_merge_geneEntry_correctedScaffolds_nochrEBV.gtf
+PATHGTF=/gpfs/projects/bsc83/Projects/pantranscriptome/novelannotations/merged/poder_v1.sorted.gtf
 FASTA=/gpfs/projects/bsc83/Data/assemblies/GRCh38/modified/GRCh38.primary_assembly.sirvset4.genome.fa 
 GTF=$(echo $(basename $PATHGTF) | sed 's/\.gtf//')
 
@@ -21,13 +22,13 @@ GTF=$(echo $(basename $PATHGTF) | sed 's/\.gtf//')
 echo "QUANTIFYING"
 OUTNAME=$(echo $(basename $1) | sed 's/\.txt//')
 
-mkdir -p data/240917_merge_geneEntry_correctedScaffolds_nochrEBV
+mkdir -p data/poder
 
 
 /gpfs/projects/bsc83/utils/conda_envs/flair/bin/flair quantify \
     -r $1 \
     --isoforms ref/$GTF.fa \
-    --output data/240917_merge_geneEntry_correctedScaffolds_nochrEBV/${OUTNAME}_stringent \
+    --output data/poder/${OUTNAME}_stringent \
     --threads 112 \
     --sample_id_only \
     --isoform_bed ref/$GTF.bed \

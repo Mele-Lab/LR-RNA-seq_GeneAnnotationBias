@@ -22,9 +22,8 @@ setup_script(relative_path, 3, 48)
 catch_args(0)
 ##
 ## 0----------------------------END OF HEADER----------------------------------0
-
 data <- fread("../novelannotations/analysis_tables/241108_n_t_structural_category_protein_category_subcategory.tsv")
-ourcat <- fread("../novelannotations/analysis_tables/241113_struct_cat_aa_cat.tsv")
+ourcat <- fread("../novelannotations/analysis_tables/241124_long_struct_cat_aa_cat.tsv")
 # orfs <- fread("../novelannotations/analysis_tables/241108_n_t_structural_category_protein_category_annot_aa.tsv")
 # orfs[, V1:=NULL]
 library(ggalluvial)
@@ -35,27 +34,24 @@ categories <- c("FSM", "ISM", "NIC", "NNC", "Intergenic","Genic", "Fusion", "Ant
 names(categories) <- unique(data$protein_splice_category)[c(2,5,7,8,6,4,3,1)]
 colsqanti <- c("#61814B", "#8EDE95", "#356CA1", "#C8773C",  "darkred", "#B5B5B5", "#4F4F4F", "#6E5353")
 names(colsqanti) <- c("FSM", "ISM", "NIC", "NNC", "Intergenic","Genic", "Fusion", "Antisense")
+ourcat[, structural_category_basic:=fifelse(structural_category%in%c("FSM", "FSM w/o CDS"), "FSM", structural_category)]
+ourcat[, structural_category_basic_novel:=fifelse(structural_category%in%c("NIC", "NNC"), "Novel", structural_category_basic)]
+
+# Compute %
+prop.table(table(ourcat$structural_category_basic, ourcat$aa_seq_novelty), margin = 1)
+prop.table(table(ourcat$structural_category_basic_novel, ourcat$aa_seq_novelty), margin = 1)
 
 # prepare data
-
-expanded_table <- ourcat %>%
-  uncount(weights = n_t)
-setDT(expanded_table)
-expanded_table[, transcript:=paste0("mock_", .I)][, V1:=NULL][, perc:=NULL][, n_total_t:=NULL]
-mydata <- merge(ourcat[, .(aa_seq_novelty, structural_category, n_t)], expanded_table, by = c("structural_category", "aa_seq_novelty"))
-newdata <-melt(mydata[, n_total_t:=NULL], id.vars = c("transcript"))
-
-target <- c("FSM", "ISM", "NIC", "NNC", "Intergenic","Genic", "Fusion", "Antisense", "TRUE", "FALSE")
-target_ordered <- newdata %>% arrange(factor(value, levels = target))
-target_ordered[, value :=fifelse(value=="TRUE", "Known\nORF", 
-                                 fifelse(value=="FALSE", "Novel\nORF", value))]
+newdata <- melt(ourcat[, .(isoform, structural_category, aa_seq_novelty)], id.vars = "isoform")
 
 newdata[, value:=fifelse(value=="Truncation", "Known\nTruncated", value)]
-ggplot(newdata[variable%in%c("structural_category", "aa_seq_novelty")],
-       aes(x=variable, stratum=value, fill=value, label=value, alluvium=transcript)) +
-  geom_flow(aes(order=value)) +
-  geom_stratum() +
-  geom_text(stat = "stratum", size = 6*0.35) +
+newdata[, value:=fifelse(value=="FSM w/o CDS", "FSM\nwithout\nCDS", value)]
+newdata[, variable:=factor(variable, levels=rev(c("structural_category", "aa_seq_novelty" )))]
+ggplot(newdata,
+       aes(x=variable, stratum=value, fill=value, label=value, alluvium=isoform)) +
+  geom_flow(aes(order=value),width = 0.5) +
+  geom_stratum(color=NA,width = 0.5) +
+  geom_text(stat = "stratum", size = 6*0.35, family="Helvetica") +
   mytheme+
   theme(
     axis.title.x = element_blank(),        # Removes x-axis title
@@ -70,8 +66,12 @@ ggplot(newdata[variable%in%c("structural_category", "aa_seq_novelty")],
   scale_x_discrete(labels = c("structural_category"="Transcript", "aa_seq_novelty"="Predicted\nORF"), expand = c(0, 0)) +
   scale_y_continuous( expand = c(0, 0)) +
   guides(fill = "none")+
-  scale_fill_manual(values = c(colsqanti, "Known"="#637831", "Known\nTruncated"="#94C595", "Novel"="#C2623C"))
-ggsave("10_figures/fig_02/alluvial_fromTrxtoOurORFcategory.pdf", dpi=700, width = 2, height = 2.5,  units = "in")
+  scale_fill_manual(values = c(colsqanti, "FSM\nwithout\nCDS"="#82A76A", "Known"="#61814B", "Known\nTruncated"="#94C595", "Novel"="#BC7EBF"))+
+  coord_flip()
+ggsave("10_figures/01_plots/main/fig_02/alluvial_fromTrxtoOurORFcategory.pdf", dpi=700, width = 3, height = 2,  units = "in")
+
+
+
 
 
 

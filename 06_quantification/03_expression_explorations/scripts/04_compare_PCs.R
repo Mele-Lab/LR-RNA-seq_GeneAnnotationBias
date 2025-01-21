@@ -71,7 +71,7 @@ pc1 <-cor_results$pc1
 pc2 <-cor_results$pc2
 
 # Step 2: Reshape the data from wide to long format
-long_cor_pc1 <- melt(as.matrix(pc2))
+long_cor_pc1 <- melt(as.matrix(pc1))
 
 # Step 3: Rename the columns for better clarity
 colnames(long_cor_pc1) <- c("Row", "Column", "Value")
@@ -81,10 +81,44 @@ long_cor_pc1[, `:=`(Row=gsub("pc._", "", Row), Column=gsub("pc._", "", Column))]
 ggplot(long_cor_pc1, aes(x = Row, y = Column, fill = Value)) +
   geom_tile() +
   scale_fill_gradient2(low = "blue", high = "darkred", mid = "white", 
-                       midpoint = 0.99, limit = c(0.98, 1), space = "Lab", 
+                       midpoint = 0.5, limit = c(0, 1), space = "Lab", 
                        name="Correlation") +
-  theme_minimal() +
   mytheme+
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
-  labs(title = "PC2", x = "Annotation-Feature Pair", y = "Annotation-Feature Pair")+
-  geom_text(aes(label=round(Value,digits=3)))
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), plot.title  = element_text(face="bold")) +
+  labs(title = "PC1", x = "", y = "")+
+  geom_text(aes(label=round(Value,digits=3)), size=6*0.35)+
+  scale_y_discrete(labels=c("PODER_Transcripts"= "PODER\nTranscripts",
+                            "PODER_Genes"="PODER\nGenes",
+                            "GENCODEv47_Transcripts"="GENCODE\nTranscripts",
+                            "GENCODEv47_Genes"="GENCODE\nGenes"))+
+  scale_x_discrete(labels=c("PODER_Transcripts"= "PODER\nTranscripts",
+                            "PODER_Genes"="PODER\nGenes",
+                            "GENCODEv47_Transcripts"="GENCODE\nTranscripts",
+                            "GENCODEv47_Genes"="GENCODE\nGenes"))
+ggsave("../10_figures/01_plots/supp/23_variance_part/heatmap_PC1_comparison.pdf", dpi=700, width = 3.5, height = 2.7,  units = "in")
+
+# PC2
+long_cor_pc2 <- melt(as.matrix(pc2))
+
+# Step 3: Rename the columns for better clarity
+colnames(long_cor_pc2) <- c("Row", "Column", "Value")
+setDT(long_cor_pc2)
+long_cor_pc2[, `:=`(Row=gsub("pc._", "", Row), Column=gsub("pc._", "", Column))]
+ggplot(long_cor_pc2, aes(x = Row, y = Column, fill = Value)) +
+  geom_tile() +
+  scale_fill_gradient2(low = "blue", high = "darkred", mid = "white", 
+                       midpoint = 0.5, limit = c(0, 1), space = "Lab", 
+                       name="Correlation") +
+  mytheme+
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1), plot.title  = element_text(face="bold")) +
+  labs(title = "PC2", x = "", y = "")+
+  geom_text(aes(label=round(Value,digits=3)), size=6*0.35)+
+  scale_y_discrete(labels=c("PODER_Transcripts"= "PODER\nTranscripts",
+                            "PODER_Genes"="PODER\nGenes",
+                            "GENCODEv47_Transcripts"="GENCODE\nTranscripts",
+                            "GENCODEv47_Genes"="GENCODE\nGenes"))+
+  scale_x_discrete(labels=c("PODER_Transcripts"= "PODER\nTranscripts",
+                            "PODER_Genes"="PODER\nGenes",
+                            "GENCODEv47_Transcripts"="GENCODE\nTranscripts",
+                            "GENCODEv47_Genes"="GENCODE\nGenes"))
+ggsave("../10_figures/01_plots/supp/23_variance_part/heatmap_PC2_comparison.pdf", dpi=700, width = 3.5, height = 2.7,  units = "in")

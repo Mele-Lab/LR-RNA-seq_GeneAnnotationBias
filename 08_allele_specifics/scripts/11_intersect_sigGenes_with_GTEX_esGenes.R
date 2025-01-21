@@ -26,7 +26,7 @@ library(ggpmisc)
 
 
 # load metadata
-metadata <- fread("..//00_metadata/data/pantranscriptome_samples_metadata.tsv")
+metadata <- fread("../00_metadata/data/pantranscriptome_samples_metadata.tsv")
 metadata <- metadata[mixed_samples==F]
 metadata <- metadata[merged_run_mode==T]
 popcols <- unique(metadata$color_pop)
@@ -60,9 +60,9 @@ egenes_sgenes <- merge(eGenes, sGenes, by = c("geneid"), all = TRUE)
 asqtl <- merge(ase_asts, egenes_sgenes, by = c("geneid"), all = TRUE)
 asqtl[is.na(asqtl)] <- "not Tested"
 asqtl[, sGene:=factor(sGene, levels=c("sGene", "not sGene", "not Tested"))]
-# asemer <- eGenes[][unique(ase[, .(geneid, annot, population, sample, sig)]), on=c("geneid")]
+# asemer <- eGenes[unique(ase[, .(geneid, annot, population, sample)]), on=c("geneid")]
 # asemer[is.na(eGene), eGene:=FALSE]
-# astsmer <- sGenes[unique(asts[, .(geneid, annot, population, sample, sig)]), on=c("geneid")]
+# astsmer <- sGenes[unique(asts[, .(geneid, annot, population, sample)]), on=c("geneid")]
 # astsmer[is.na(sGene), sGene:=FALSE]
 # 
 # asemer[, `:=`(
@@ -75,7 +75,6 @@ asqtl[, sGene:=factor(sGene, levels=c("sGene", "not sGene", "not Tested"))]
 #   validated_genes = uniqueN(geneid[sGene == TRUE]),
 #   validation_rate = (uniqueN(geneid[sGene == TRUE]) / uniqueN(geneid)) * 100
 # ), by = c( "annot", "sample")]
-# 
 # asemer[, ooa:=ifelse(population%in%c("YRI", "LWK"), "AFR", "OOA")]
 # astsmer[, ooa:=ifelse(population%in%c("YRI", "LWK"), "AFR", "OOA")]
 
@@ -87,7 +86,8 @@ ggplot(asqtl[ASTS!="not Tested"], aes(x=ASTS, fill=ASE))+
   facet_wrap(~annot)+
   scale_fill_manual(values=c("#356CA1","darkred", "darkgrey"))+
   labs(x="", y="# Genes", fill="")+
-  geom_text(aes(label=after_stat(count)), stat="count", position=position_stack(vjust=0.5))
+  geom_text(aes(label=after_stat(count)), stat="count", position=position_stack(vjust=0.5), size=6*0.35)
+ggsave("../10_figures/01_plots/supp/35_as_validation/barplot_ASTS_ASE_overlap.pdf", dpi=700, width=3.25, height = 3, units="in")
 
 # overlap betwen ASE and eGenes
 ggplot(asqtl[ASE!="not Tested"], aes(x=ASE, fill=eGene))+
@@ -143,6 +143,7 @@ ggplot(all_fishers, aes(x=odds_ratio, y=annot, color=annot, alpha=fdr_sig))+
   scale_color_manual(values=c( "#7F675B", "#A2AD59"))+
   facet_wrap(~analysis)+
   scale_alpha_manual(values=c(1, 0.5))
+ggsave("../10_figures/01_plots/supp/35_as_validation/dotplot_ASTS_ASE_enrichmentInESGenes.pdf", dpi=700, width=4, height = 3, units="in")
 
 
 ### Plot the validation
@@ -161,55 +162,93 @@ ase_asts_sample <- merge(ase_sample, asts_sample, by = c("geneid", "annot", "sam
 ase_asts_sample <- ase_asts_sample[geneid!=""]
 egenes_sgenes <- merge(eGenes, sGenes, by = c("geneid"), all = TRUE)
 asqtl_sample <- merge(ase_asts_sample, egenes_sgenes, by = c("geneid"), all = TRUE)
+asqtl_sample<- asqtl_sample[!is.na(annot)]
 asqtl_sample[, sGene:=factor(sGene, levels=c("sGene", "not sGene", "not Tested"))]
 asqtl_sample[, `:=`(ase_validated=ifelse(ASE=="ASE" & eGene=="eGene", "validated",
                                          ifelse(is.na(ASE), "not tested", "not validated")),
                     asts_validated=ifelse(ASTS=="ASTS" & sGene=="sGene", "validated",
-                                         ifelse(is.na(ASTS), "not tested", "not validated")))]
+                                          ifelse(is.na(ASTS), "not tested", "not validated")))]
 asqtl_sample[, ooa:=ifelse(population%in%c("YRI", "LWK"), "AFR","OOA")]
-asqtl_sample[, trx_per_cat:=uniqueN(geneid), by=c("sample", "annot", "ase_validated")]
+asqtl_sample[, trx_per_cat:=uniqueN(geneid), by=c("sample", "annot", "asts_validated")]
+asqtl_sample[, percent_validation:=uniqueN(geneid[ASTS=="ASTS" & asts_validated=="validated"])/uniqueN(geneid[ASTS=="ASTS"])*100, by=c("sample", "annot")]
+asqtl_sample[, percent_validation_ase:=uniqueN(geneid[ASE=="ASE" & ase_validated=="validated"])/uniqueN(geneid[ASE=="ASE"])*100, by=c("sample", "annot")]
 
-ggplot(unique(asqtl_sample[!is.na(annot) & ase_validated!="not tested", .(ooa, trx_per_cat, annot, ase_validated, population)]), 
-       aes(x=ooa, y=trx_per_cat, fill=ase_validated))+
-  geom_violin(position = position_dodge(width = 0.2), alpha = 0.5, width = 0.2) +
-  ggbeeswarm::geom_quasirandom(aes(col=population), width=0.05)+
+
+ggplot(unique(asqtl_sample[!is.na(annot) & ase_validated!="not tested", .(ooa, annot,  population,percent_validation, sample)]), 
+       aes(x=ooa, y=percent_validation, fill=ooa))+
+  geom_violin(alpha = 0.5) +
+  geom_boxplot(outliers = F, show.legend = F, width=0.1)+
+  ggbeeswarm::geom_quasirandom(aes(col=population), alpha=0.75, size=1)+
   facet_wrap(~annot)+
   mytheme+
-  scale_fill_manual(values=c("#356CA1","darkred", "darkgrey"))+
-  scale_color_manual(values=popcols)
-  
+  scale_fill_manual(values=c("#F7D257", "#496F5D"))+
+  scale_color_manual(values=popcols)+
+  guides(fill="none")+
+  labs(x="", y="% ASTU genes validated by sGenes", col="Population")+
+  ggpubr::stat_compare_means( comparisons=list(c("AFR", "OOA")),method = "wilcox.test", method.args = list(alternative="two.sided"), size=6*0.35)+
+  stat_summary(fun.data = n_fun, geom = "text", fun.args = list(y=33), vjust=0.5, size=6*0.35)+
+  ylim(c(20,77))
+ggsave("../10_figures/01_plots/supp/35_as_validation/violin_ASTS_validation.pdf", dpi=700, width = 3.2, height = 2.5,  units = "in")
+
+ggplot(unique(asqtl_sample[!is.na(annot) & ase_validated!="not tested", .(ooa, annot,  population,percent_validation_ase, sample)]), 
+       aes(x=ooa, y=percent_validation_ase, fill=ooa))+
+  geom_violin(alpha = 0.5) +
+  geom_boxplot(outliers = F, show.legend = F, width=0.1)+
+  ggbeeswarm::geom_quasirandom(aes(col=population), alpha=0.75, size=1)+
+  facet_wrap(~annot)+
+  mytheme+
+  scale_fill_manual(values=c("#F7D257", "#496F5D"))+
+  scale_color_manual(values=popcols)+
+  guides(fill="none")+
+  labs(x="", y="% ASE genes validated by sGenes", col="Population")+
+  ggpubr::stat_compare_means( comparisons=list(c("AFR", "OOA")),method = "wilcox.test", method.args = list(alternative="two.sided"), size=6*0.35)+
+  stat_summary(fun.data = n_fun, geom = "text", fun.args = list(y=20), vjust=0.5, size=6*0.35)+
+  ylim(c(20,77))
+ggsave("../10_figures/01_plots/supp/35_as_validation/violin_ASE_validation.pdf", dpi=700, width = 3.2, height = 2.5,  units = "in")
 
 ###### OVERLAP WITH GWAS CATALOG--------------------------------------------------------
 
 gwassets <- fread("../../../../Data/GWAScatalog/modified/full_gwas_catalog.parsed4_enrichments.geneids.tsv")
 library(clusterProfiler)
 res_ase_gencode <- enricher(gene=asqtl[annot=="GENCODEv47" & ASE=="ASE", geneid],
-         universe=asqtl[annot=="GENCODEv47" & ASE!="not Tested", geneid],
-         TERM2GENE= gwassets)
-res_ase_poder <- enricher(gene=asqtl[annot=="PODER" & ASE=="ASE", geneid],
-                            universe=asqtl[annot=="PODER" & ASE!="not Tested", geneid],
+                            universe=asqtl[annot=="GENCODEv47" & ASE!="not Tested", geneid],
                             TERM2GENE= gwassets)
+res_ase_poder <- enricher(gene=asqtl[annot=="PODER" & ASE=="ASE", geneid],
+                          universe=asqtl[annot=="PODER" & ASE!="not Tested", geneid],
+                          TERM2GENE= gwassets)
 res_astu_gencode <- enricher(gene=asqtl[annot=="GENCODEv47" & ASTS=="ASTS", geneid],
-                            universe=asqtl[annot=="GENCODEv47" & ASTS!="not Tested", geneid],
-                            TERM2GENE= gwassets,
-                            qvalueCutoff=0.02)
+                             universe=asqtl[annot=="GENCODEv47" & ASTS!="not Tested", geneid],
+                             TERM2GENE= gwassets,
+                             qvalueCutoff=0.02)
 res_astu_poder <- enricher(gene=asqtl[annot=="PODER" & ASTS=="ASTS", geneid],
-                          universe=asqtl[annot=="PODER" & ASTS!="not Tested", geneid],
-                          TERM2GENE= gwassets,
-                          qvalueCutoff=0.02)
+                           universe=asqtl[annot=="PODER" & ASTS!="not Tested", geneid],
+                           TERM2GENE= gwassets,
+                           qvalueCutoff=0.02)
 
+enhanced <- fread("data/ASTS_results_threeannots.tsv", sep="\t")
+enhanced <- unique(enhanced[annot=="EnhancedGENCODE" & !is.na(FDR), .(FDR, geneid.v)])
+enhanced[, geneid:=gsub("\\..*", "", geneid.v)]
+res_astu_enhanced <- enricher(gene=enhanced[FDR<0.05, geneid],
+                           universe=enhanced[, geneid],
+                           TERM2GENE= gwassets,
+                           qvalueCutoff=0.02)
 # PLOTS
 ggplot(as.data.frame(res_astu_gencode), aes(x=FoldEnrichment, size = Count, y=reorder(Description, Count), color = p.adjust)) +
   geom_point(stat = "identity") +
-  scale_color_gradient(low = "#7F675B", high = "grey", name = "Adjusted P-value",    limits = c(0, 0.02)) +
+  scale_color_gradient2(low = "#101108", mid="#A09384", high = "#F0E4CC", name = "FDR",    limits = c(0, 0.02), midpoint=0.01) +
   labs(x = "Odds Ratio",
-    y = "",
-    size="Gene Count",
-    title="GENCODEv47 ASTU") +
+       y = "",
+       size="Gene Count",
+       title="GENCODE ASTU") +
   theme(legend.position = "top")+
   mytheme+
-  geom_vline(xintercept = 1, linetype="dashed", color="darkgrey")
-ggsave("../10_figures/suppfig/dotplot.GWASgencode.pdf", dpi=700, width = 18, height = 10,  units = "cm")
+  geom_vline(xintercept = 1, linetype="dashed", color="darkgrey")+
+  theme(legend.key.size = unit(0.2, "cm"),
+        legend.margin = margin(0, 0, 0, 0),
+        legend.box.margin = margin(-10, 3, -10, -7),
+        plot.title = element_text(family="Helvetica", face="bold"))+
+  scale_size_continuous(range = c(0.5, 4))
+ggsave("../10_figures/01_plots/supp/36_gwas/dotplot.GWASgencode.pdf", dpi=700, width = 4, height = 2.5,  units = "in")
 
 
 
@@ -217,63 +256,98 @@ res_astu_poder<-data.table(as.data.frame(res_astu_poder))
 fwrite(res_astu_poder, "data/pantrx/ASTU_GWAS_PODER.tsv", sep="\t", row.names = F)
 res_astu_poder[, newdescription:=fifelse(grepl("DL|gly|cho",Description), "Lipoprotein Levels/Composition (x11 traits)", as.character(Description))]
 ggplot(res_astu_poder[p.adjust<0.02], aes(x=FoldEnrichment, size = Count, y=reorder(newdescription, Count), color = p.adjust)) +
-  geom_point(stat = "identity") +
-  scale_color_gradient(low = "#A2AD59", high = "grey", name = "Adjusted P-value",    limits = c(0, 0.02)) +
+  geom_point(stat = "identity", alpha=0.85) +
+  scale_color_gradient2(low = "#101108", mid="#929c4d", high = "#cfd5aa", name = "FDR",    limits = c(0, 0.02), midpoint=0.01) +
   labs(x = "Odds Ratio",
        y = "",
        size="Gene Count",
        title="PODER ASTU") +
-  theme(legend.position = "top")+
   mytheme+
-  geom_vline(xintercept = 1, linetype="dashed", color="darkgrey")
-ggsave("../10_figures/fig_04/dotplot.GWASpoder.pdf", dpi=700, width = 20, height = 10,  units = "cm")
+  geom_vline(xintercept = 1, linetype="dashed", color="darkgrey")+
+  theme(legend.key.size = unit(0.2, "cm"),
+        legend.margin = margin(0, 0, 0, 0),
+        legend.box.margin = margin(-10, 3, -10, -7),
+        plot.title = element_text(family="Helvetica", face="bold"))+
+  scale_size_continuous(range = c(0.5, 4))
+ggsave("../10_figures/01_plots/main/fig_04/dotplot.GWASpoder.pdf", dpi=700, width = 4, height = 2.5,  units = "in")
+
+
+
+
+res_astu_poder[, newdescription:=fifelse(grepl("DL|gly|cho",Description), "Lipoprotein Levels/Composition (x11 traits)", as.character(Description))]
+
+dt <- res_astu_poder[newdescription=="Lipoprotein Levels/Composition (x11 traits)",]
+
+
+res_astu_enhanced<-data.table(as.data.frame(res_astu_enhanced))
+res_astu_enhanced[, newdescription:=fifelse(grepl("DL|gly|cho",Description), "Lipoprotein Levels/Composition (x15 traits)", as.character(Description))]
+ggplot(res_astu_enhanced[p.adjust<0.02], aes(x=FoldEnrichment, size = Count, y=reorder(newdescription, Count), color = p.adjust)) +
+  geom_point(stat = "identity", alpha=0.85) +
+  scale_color_gradient2(low = "#101108", mid="#929c4d", high = "#cfd5aa", name = "FDR",    limits = c(0, 0.02), midpoint=0.01) +
+  labs(x = "Odds Ratio",
+       y = "",
+       size="Gene Count",
+       title="Enhanced GENCODE ASTU") +
+  mytheme+
+  geom_vline(xintercept = 1, linetype="dashed", color="darkgrey")+
+  theme(legend.key.size = unit(0.2, "cm"),
+        legend.margin = margin(0, 0, 0, 0),
+        legend.box.margin = margin(-10, 3, -10, -7),
+        plot.title = element_text(family="Helvetica", face="bold"))+
+  scale_size_continuous(range = c(0.5, 4))
+ggsave("../10_figures/01_plots/supp/36_gwas/dotplot.GWASenhanced.pdf", dpi=700, width = 4, height = 2.5,  units = "in")
+
+
+
+# Step 1: Split the `geneID` column into individual genes
+gene_counts <- dt[, .(gene = unlist(strsplit(geneID, "/"))), by = .(ID)]
+
+# Step 2: Count occurrences of each gene
+gene_summary <- gene_counts[, .N, by = gene]
+setnames(gene_summary, "N", "count")  # Rename the column for clarity
+
+# Step 3: Sort by count (optional: filter for top genes)
+gene_summary <- gene_summary[order(-count)]
+
+# Step 4: Create the bar plot
+ggplot(gene_summary, aes(x = reorder(gene, -count), y = count)) +
+  geom_bar(stat = "identity") +
+  labs(x = "Gene",
+       y = "# Lipoprotein-related GWAS Traits\nincluding a Gene") +
+  mytheme+  
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 10))
+ggsave("../10_figures/01_plots/supp/36_gwas/barplot.GWAStrait_redundancy.pdf", dpi=700, width = 4, height = 2.5,  units = "in")
+
 
 
 ##########################----------------------------------------------------------
-# # Per sample validation
-# ggplot(unique(astsmer[, .(validated_genes,ooa, annot, total_genes, population, sample)]), aes(x=total_genes, 
-#                                                                                               y=validated_genes))+
-#   stat_poly_line(color="darkgrey")+
-#   stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")),
-#                formula = y ~ x, parse = TRUE, label.x.npc = "left", label.y.npc = 0.9, size = 5)+
-#   geom_point(aes(col=population), size=2)+
-#   mytheme+
-#   labs(x="# ASTS genes", y="# sGene-validated ASTS genes")+
-#   scale_color_manual(values=popcols)+
-#   facet_wrap(~annot)
-# 
-# ggplot(unique(asemer[, .(validated_genes,ooa, annot, total_genes, population, sample)]), aes(x=total_genes, 
-#                                                                                               y=validated_genes))+
-#   stat_poly_line(color="darkgrey")+
-#   stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")),
-#                formula = y ~ x, parse = TRUE, label.x.npc = "left", label.y.npc = 0.9, size = 5)+
-#   geom_point(aes(col=population), size=2)+
-#   mytheme+
-#   labs(x="# ASE genes", y="# eGene-validated ASE genes")+
-#   scale_color_manual(values=popcols)+
-#   facet_wrap(~annot)
-# 
-# ggplot(unique(asemer[, .(validation_rate,ooa, annot, population, sample)]), aes(x=ooa, y=validation_rate, fill=ooa))+
-#   geom_violin(alpha=0.75)+
-#   geom_boxplot(outliers=F, width=0.1)+
-#   ggbeeswarm::geom_quasirandom(alpha = 0.5, width = 0.2)+
-#   mytheme+
-#   facet_wrap(~annot)+
-#   scale_fill_manual(values=c("#F7D257", "#496F5D"))+
-#   guides(fill="none")+
-#   labs(x="", y="% ASE genes validated by eGenes", title="ASE gene validation")+
-#   ggpubr::stat_compare_means( comparisons=list(c("AFR", "OOA")),method = "wilcox.test", method.args = list(alternative="two.sided"))+
-#   stat_summary(fun.data = n_fun, geom = "text", fun.args = list(y=23), vjust=0.5)
-# ggplot(unique(astsmer[, .(validation_rate,ooa, annot, population, sample)]), aes(x=ooa, y=validation_rate, fill=ooa))+
-#   geom_violin(alpha=0.75)+
-#   geom_boxplot(outliers=F, width=0.1)+
-#   ggbeeswarm::geom_quasirandom(alpha = 0.5, width = 0.2)+
-#   mytheme+
-#   facet_wrap(~annot)+
-#   scale_fill_manual(values=c("#F7D257", "#496F5D"))+
-#   guides(fill="none")+
-#   labs(x="", y="% ASTS genes validated by sGenes", title="ASTS gene validation")+
-#   ggpubr::stat_compare_means( comparisons=list(c("AFR", "OOA")),method = "wilcox.test", method.args = list(alternative="two.sided"))+
-#   stat_summary(fun.data = n_fun, geom = "text", fun.args = list(y=23), vjust=0.5)
+### Are my ASTU genes enriched in HLA genes?
+hla <-  fread("../../../../Data/gene_annotations/gencode/v47/modified/gencode.v47.primary_assembly.HLA_proteincoding_genes.tsv", header=F)
+hla[, gene:=gsub("\\..*","", V1)][, V1:=NULL]
+hla <- hla$gene
+bckg <- asqtl[annot=="GENCODEv47" & ASTS!="not Tested", geneid]
+sig <- asqtl[annot=="GENCODEv47" & ASTS=="ASTS", geneid]
 
+
+hla <- intersect(hla, bckg)
+sig <- intersect(sig, bckg)
+
+# Contingency table
+in_hla_and_sig <- length(intersect(hla, sig))
+in_hla_not_sig <- length(setdiff(hla, sig))
+not_hla_and_sig <- length(setdiff(sig, hla))
+not_hla_not_sig <- length(setdiff(bckg, union(hla, sig)))
+
+contingency_table <- matrix(
+  c(in_hla_and_sig, in_hla_not_sig, not_hla_and_sig, not_hla_not_sig),
+  nrow = 2,
+  dimnames = list(
+    "Sig" = c("In Sig", "Not in Sig"),
+    "HLA" = c("In HLA", "Not in HLA")
+  )
+)
+
+# Perform Fisher's Exact Test
+fisher_test <- fisher.test(contingency_table)
 

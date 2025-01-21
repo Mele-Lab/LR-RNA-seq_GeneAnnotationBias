@@ -122,6 +122,7 @@ resultsdt[, upDEG := sum(logFC >= 0.5 & adj.P.Val < 0.05), by = "contrast"]
 resultsdt[, downDEG := sum(logFC <= -0.5 & adj.P.Val < 0.05), by = "contrast"]
 
 fwrite(resultsdt, "07_differential_expressions/data/02_DEGres_MAGE.tsv", quote = F, sep = "\t", row.names = F)
+resultsdt <- fread("07_differential_expressions/data/MAGE_validations/02_DEGres_MAGE.tsv")
 
 resultsdt[, upDEG:=-upDEG]
 
@@ -199,20 +200,21 @@ setDT(x_annotations)
 meltednew <- y_annotations[melted_df[order(Contrast, Ref)], on="Contrast"][order(Superpopulation)][, Contrast:=factor(Contrast, levels=unique(Contrast))]
 meltednew <- x_annotations[meltednew, on="Ref"][order(Superpopulation)][, Ref:=factor(Ref, levels=unique(Ref))]
 
-
+meltednew <- fread(paste0("07_differential_expressions/data/MAGE_validations/02_DEGres_MAGE_sigGenesMatrix.tsv"))
+meltednew[Ref==Contrast, DEGs:=NA]
 # Create the heatmap
 ggplot(meltednew, aes(x = Ref, y = Contrast, fill = abs(DEGs),)) +
   geom_tile(color = "white") +
   scale_fill_gradient2(low = "#0080AF", mid = "white", high = "#A0000D", midpoint = 0, na.value = "#9AC7CB") +
   theme_minimal() +
-  labs(title="MAGE data - GENCODEv38 annotation",
+  labs(title="MAGE data - GENCODEv38",
        x = "Against Reference",
        y="Upregulated Genes in",
        fill = "# DEGs") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   geom_text(data=melted_df[!is.na(DEGs)], aes(label=abs(DEGs), size=abs(DEGs)),  na.rm =T)+
   coord_fixed()+
-  scale_size_continuous(range=c(1.5,4))+
+  scale_size_continuous(range=c(3.5,7)*0.35)+
   guides(size="none")+
   mytheme+
   ggnewscale::new_scale_fill()+
@@ -222,7 +224,11 @@ ggplot(meltednew, aes(x = Ref, y = Contrast, fill = abs(DEGs),)) +
   # Add color annotations next to the y-axis
   geom_tile(data = y_annotations, aes(x = -0.5, y = Contrast, fill = Superpopulation), inherit.aes = FALSE, width = 1) +
   
-  scale_fill_manual(values = superpopcols)
+  scale_fill_manual(values = superpopcols)+
+  theme(axis.text.x=element_text(angle=45, hjust=1, vjust=1))
+ggsave(paste0("10_figures/01_plots/supp/26_mage/heatmap_DGE_MAGE.pdf"), dpi=700, width = 7, height = 7,  units = "in")
+ggsave(paste0("10_figures/02_panels/png/supp/26_mage.png"), dpi=700, width = 7, height = 7,  units = "in")
+ggsave(paste0("10_figures/02_panels/svg/supp/26_mage.svg"), dpi=700, width = 7, height = 7,  units = "in")
 
 fwrite(meltednew, paste0("07_differential_expressions/data/02_DEGres_MAGE_sigGenesMatrix.tsv"), sep = "\t", quote = F, row.names = F)
 

@@ -23,6 +23,8 @@ catch_args(0)
 ##
 ## 0----------------------------END OF HEADER----------------------------------0
 
+
+## DATA PREPARATION
 # load data
 data <- fread("05_mastertable/data/29102024_PODER_mastertable.tsv")
 data <- data[structural_category%in%c("FSM","NIC" ,"NNC")]
@@ -33,7 +35,9 @@ metadata <- metadata[merged_run_mode==T]
 popcol <- unique(metadata$color_pop)
 names(popcol) <- unique(metadata$population)
 
-# merge
+# merge data
+sj <- data[sj, on="isoform"]
+
 sj[, junction:=paste(chrom, strand, genomic_start_coord,genomic_end_coord, sep="_")]
 sj[, sj_category := fifelse(junction_category == "known", "Known SJ",
                             fifelse(start_site_category == "known" & end_site_category == "known", "Novel SJ: Known SS",
@@ -41,194 +45,235 @@ sj[, sj_category := fifelse(junction_category == "known", "Known SJ",
                                             "Novel SJ: 1 Novel SS", 
                                             "Novel SJ: 2 Novel SS")))]
 
-sj1 <- data[,.(isoform, structural_category, AJI, CEU, MPC, YRI, LWK, HAC, ITU, PEL, population_sharing, sample_sharing)][sj, on="isoform"]
 
-# keep only sj belonging to population specific transcripts
-sjone <- sj1[population_sharing==1 & sample_sharing>=2,]
-sjonelong <- melt(sjone, measure.vars = c("AJI", "CEU", "MPC", "YRI", "LWK", "HAC", "ITU", "PEL"), value.name = "detected", variable.name = "population")[detected>=2]
+## EXPLORE POP SP SJ
+# Identify columns showing in which samples a transcript is found
+pops <-c("AJI.", "CEU.", "ITU.", "HAC.", "PEL.", "MPC.", "YRI.", "LWK.")
+pattern <- paste(pops, collapse = "|")
+samplecols <- colnames(sj)[grepl(pattern, colnames(sj))]
+sj2 <- sj[, .SD, .SDcols=c(samplecols, "sj_category", "isoform", "junction")]
+
+sjlong <- melt(sj2, measure.vars = samplecols, variable.name = "sample", value.name = "detected")
+
+## Find pop sp SJ
+# In which samples is a junction detected
+sjlong[, has_detected := any(detected > 0), by = .(junction, sample)]
+sjlong <- sjlong[has_detected==TRUE]
+sjlong[, population := gsub(".$", "", sample)]
+sjlong2 <- unique(sjlong[, .(junction, sample, population, has_detected, sj_category)])
+# in how many pops is a junction detected
+sjlong2[, nb.pops:=uniqueN(population), by=.(junction)]
+sjlong3 <- sjlong2[nb.pops==1]
+# In how many samples is a junction detected
+sjlong3[, samples_per_pop:=uniqueN(sample), by=.(junction, population)]
+sjlongpopsp <- unique(sjlong3[samples_per_pop>1][, .(junction, sj_category, population)])
 
 
 
+#Calculate the proportion of "Known SJ" per population
+known_proportion <- sjlongpopsp[, .(known_percentage = sum(sj_category == "Known SJ")/.N*100), by = population]
+sjlongpopsp[, juncperpop := uniqueN(junction), by = population]
+sjlongpopsp[, juncperpoppercat := uniqueN(junction), by = .(population, sj_category)]
+sjlongpopsp[, proportion := round(juncperpoppercat/juncperpop, digits=3)*100]
 
-
-
-
-#### PARENTHESIS TO TRY TO IDENTIFY POP SPECIFIC JUNCTIONS------------------
-
-# SJ from pop specific trx
-sjonelong[, sj_total_ocurrences:=.N, by="junction"]
-sjonelong[, sj_pop_ocurrences:=.N, by=c("junction", "population")]
-sjonelong[, sj_pop_specific:=ifelse(sj_total_ocurrences==sj_pop_ocurrences, "Pop Specific", "Pop Shared")]
-sjonelong <- unique(metadata[, .(population, map_reads_assemblymap)][, .(popdepth=sum(map_reads_assemblymap)), by="population"])[sjonelong, on="population"]
-sjonelong[, sjcount:=uniqueN(junction), by=c("sj_category", "population")]
-sjonelong[,  eurpop:= ifelse(population%in%c("CEU", "AJI"), "European", "Non-European")]
-sjonelong[, sjcategory:=factor(sj_category, levels = c("Known SJ", "Novel SJ: Known SS", "Novel SJ: 1 Novel SS", "Novel SJ: 2 Novel SS"))]
-ggplot(unique(sjonelong[, .(popdepth, sjcount,sj_category, eurpop, population)]), aes(x=popdepth/10^6, y=sjcount, col=sj_category))+
-  geom_line(linewidth=1.5)+
-  mytheme+
-  scale_color_manual(values=c("#8DA04E","#F3D9B1", "#C29979", "#A22522"))+
-  labs(x="Total population mapped reads", y="# Population Specific Splice Junctions", col="")+
-  ggnewscale::new_scale_color()+
-  geom_point(aes(color=eurpop, size=eurpop, alpha=eurpop))+
-  scale_color_manual(values=c("#466995", "#A53860"), name="")+
-  scale_size_manual(values=c(5,3), name="")+
-  scale_alpha_manual(values=c(0.6, 0.9), name="")+
-  labs(x="Total Mapped Reads per Population (M)", y="# Population Specific PODER Transcripts' Splice Junctions")+
-  geom_segment(data=unique(sjonelong[sj_category=="Known SJ", .(popdepth, sjcount,sj_category, eurpop, population)]),
-               aes(xend = popdepth/10^6, # Adjust for arrow length
-                   yend = ifelse(eurpop == "European", sjcount + 125, sjcount - 125)),
-               arrow = arrow(length = unit(0.2, "cm")), # Arrow size
-               color = "darkgrey") +
-  ggnewscale::new_scale_color()+
-  geom_text(data=unique(sjonelong[sj_category=="Known SJ", .(popdepth, sjcount,sj_category, eurpop, population)]),
-            aes(x = popdepth/10^6,  # Position text away from point
-                y = ifelse(eurpop == "European", sjcount + 175, sjcount - 175),
-                label = population,
-                color=population),
-            fontface="bold",
-            family="Helvetica",
-            size = 4.5,
-            alpha=0.6)+
-  scale_color_manual(values=popcol)+
-  guides(color="none")+
-  theme(legend.position = c(0.85, 0.45))
-ggsave("../../10_figures/suppfig/line_PODER_popSpecific_trxSJ.2samplesSharing.pdf", dpi=700, width = 18, height = 17,  units = "cm")
-
-# Calculate the proportion of "Known SJ" per population
-known_proportion <- sjonelong[, .(known_percentage = mean(sj_category == "Known SJ")), by = population]
 # Reorder population by known_percentage
-sjonelong[, population := factor(population, levels = known_proportion[order(-known_percentage)]$population)]
-sjonelong[, sj_category:=factor(sj_category, levels = c("Known SJ", "Novel SJ: Known SS", "Novel SJ: 1 Novel SS", "Novel SJ: 2 Novel SS"))]
-toplot <- unique(sjonelong[, .(junction,sj_category, population)])
-toplot[, sjcategory:=factor(sjcategory, levels = c("Known SJ", "Novel SJ: Known SS", "Novel SJ: 1 Novel SS", "Novel SJ: 2 Novel SS"))]
+sjlongpopsp[, population := factor(population, levels = known_proportion[order(-known_percentage)]$population)]
+sjlongpopsp[, sj_category:=factor(sj_category, levels = c("Known SJ", "Novel SJ: Known SS", "Novel SJ: 1 Novel SS", "Novel SJ: 2 Novel SS"))]
+sjlongpopsp[, eur:=fifelse(population%in%c("CEU", "AJI"), "European", "Non-European")]
 
-ggplot(unique(sjonelong[, .(junction,sj_category, population)]), aes(x=population, fill=sj_category))+
-  geom_bar(position="fill")+
+p1<-ggplot(unique(sjlongpopsp[, .(junction,sj_category, population, eur,proportion)]), aes(x=population, fill=eur))+
+  geom_bar(position="fill", aes(alpha=sj_category))+
   labs(x="", y="Proportion of Population-Specific\nSplice Junctions", fill="")+
-  scale_fill_manual(values=c("#8DA04E","#F3D9B1", "#C29979", "#A22522"),
+  scale_fill_manual(values=c("#466995", "#A53860"), name="")+
+  scale_alpha_manual(values=rev(c(1,0.65, 0.4, 0.25)),name="",
                     labels = c("Known SJ"="Known SJ", "Novel SJ: Known SS"="Novel SJ:\nKnown SS", "Novel SJ: 1 Novel SS"="Novel SJ:\n1 Novel SS", "Novel SJ: 2 Novel SS"="Novel SJ:\n2 Novel SS"))+
-  geom_text(
-    aes(label = paste0(round(after_stat(count) / tapply(after_stat(count), after_stat(x), sum)[after_stat(x)], digits = 3)*100, "%"),
-        alpha=sj_category),
+  geom_text(data=sjlongpopsp[!sj_category%in%c( "Novel SJ: Known SS","Novel SJ: 1 Novel SS","Novel SJ: 2 Novel SS")],
+    aes(label = paste0(proportion, "%"), color=sj_category),
     stat = "count",
     position = position_fill(vjust = 0.5),
-    size=6*0.35
-  )+
-  scale_alpha_manual(values=c(1, 0, 1, 0))+
-  guides(alpha="none")+
+    size=6*0.35 )+
+  scale_color_manual(values=rep("black", 4))+
+  guides(color="none")+
+  coord_flip()+
   mytheme+
   theme(legend.position = "top",
         legend.key.size = unit(0.5, "lines"),
-        legend.spacing.x = unit(1, "cm"),           # Reduce horizontal spacing between keys
+        legend.spacing.x = unit(0.1, "cm"),
         legend.text = element_text(margin = margin(r = -1, unit = "pt")),
-        legend.box.margin=margin(-10,-10,-10,-10)
-  )
-ggsave("../../10_figures/fig_03/barplot_PODER_popSpecificTrx_SJ.bycategory.pdf", dpi=700, width = 3, height = 2.25,  units = "in")
-
-popspsj <-sjonelong[sj_pop_specific=="Pop Specific"]
-popspsj <- unique(metadata[, .(population, map_reads_assemblymap)][, .(popdepth=sum(map_reads_assemblymap)), by="population"])[popspsj, on="population"]
-popspsj[, popspsj_x_pop_x_cat:=.N, by=c("population", "sj_category")]
-popspsj[,  eurpop:= ifelse(population%in%c("CEU", "AJI"), "European", "Non-European")]
-
-ggplot(unique(popspsj[, .(popdepth, popspsj_x_pop_x_cat,sj_category, eurpop, population)]), aes(x=popdepth/10^6, y=popspsj_x_pop_x_cat, col=sj_category))+
-  geom_line(linewidth=1.5)+
-  mytheme+
-  scale_color_manual(values=c("#8DA04E","#F3D9B1", "#C29979", "#A22522"))+
-  labs(x="Total population mapped reads", y="# Population Specific Splice Junctions", col="")+
-  ggnewscale::new_scale_color()+
-  geom_point(aes(color=eurpop, size=eurpop, alpha=eurpop))+
-  scale_color_manual(values=c("#466995", "#A53860"), name="")+
-  scale_size_manual(values=c(5,3), name="")+
-  scale_alpha_manual(values=c(0.6, 0.9), name="")+
-  labs(x="Total Mapped Reads per Population (M)", y="# Population Specific PODER Splice Junctions")+
-  geom_segment(data=unique(popspsj[sj_category=="Known SJ", .(popdepth, popspsj_x_pop_x_cat,sj_category, eurpop, population)]),
-    aes(xend = popdepth/10^6, # Adjust for arrow length
-        yend = ifelse(eurpop == "European", popspsj_x_pop_x_cat + 125, popspsj_x_pop_x_cat - 125)),
-    arrow = arrow(length = unit(0.2, "cm")), # Arrow size
-    color = "darkgrey") +
-  ggnewscale::new_scale_color()+
-  geom_text(data=unique(popspsj[sj_category=="Known SJ", .(popdepth, popspsj_x_pop_x_cat,sj_category, eurpop, population)]),
-    aes(x = popdepth/10^6,  # Position text away from point
-        y = ifelse(eurpop == "European", popspsj_x_pop_x_cat + 175, popspsj_x_pop_x_cat - 175),
-        label = population,
-        color=population),
-    fontface="bold",
-    family="Helvetica",
-    size = 4.5,
-    alpha=0.6)+
-  scale_color_manual(values=popcol)+
-  guides(color="none")+
-  theme(legend.position = c(0.85, 0.45))
-ggsave("../../10_figures/suppfig/line_PODER_popSpecific_SJ.2samplesSharing.pdf", dpi=700, width = 18, height = 17,  units = "cm")
-# Calculate the proportion of "Known SJ" per population
-known_proportion <- popspsj[, .(known_percentage = mean(sj_category == "Known SJ")), by = population]
-# Reorder population by known_percentage
-popspsj[, population := factor(population, levels = known_proportion[order(-known_percentage)]$population)]
-popspsj[, sj_category:=factor(sj_category, levels=c("Known SJ", "Novel SJ: Known SS", "Novel SJ: 1 Novel SS", "Novel SJ: 2 Novel SS"))]
-ggplot(unique(popspsj[, .(junction,sj_category, population)]), aes(x=population, fill=sj_category))+
-  geom_bar(position="fill")+
-  mytheme+
-  labs(x="", y="Proportion of Population-Specific\nSplice Junctions by Category", fill="")+
-  scale_fill_manual(values=c("darkgreen","deepskyblue3", "darkgoldenrod3", "darkred"))+
-  geom_text(
-    aes(label = round(after_stat(count) / tapply(after_stat(count), after_stat(x), sum)[after_stat(x)], digits = 3),
-        alpha=sj_category),
-    stat = "count",
-    position = position_fill(vjust = 0.5)
+        legend.box.margin=margin(-10,-10,-10,-45),
+        legend.box = "horizontal",               # Ensure horizontal alignment
+        legend.box.just = "center",              # Center the legend box
+        legend.box.spacing = unit(0.5, "cm"),    # Adjust spacing between rows
+        legend.direction = "horizontal",         # Horizontal direction for multiple rows
+        legend.justification = "left",
+        legend.spacing.y = unit(0, "cm"),
+        plot.margin = margin(0, 3, 5, -5),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank()
+  ) +
+  guides(
+    alpha = guide_legend(order = 1),   # Put alpha first
+    fill = guide_legend(order = 2,nrow = 2)
   )+
-  scale_alpha_manual(values=c(1, 0, 0, 0))+
-  guides(alpha="none")
-ggsave("../../10_figures/suppfig/barplot_PODER_popSpecific_SJ.bycategory.pdf", dpi=700, width = 18, height = 10,  units = "cm")
+  scale_y_continuous(expand =  c(0, 0, 0, 0))
 
-# PERMUTATION TEST -------I'll test proportions, are CEU having a largest proportion of knownSJ within their population specific SJ ??
-pops <-c("AJI.", "CEU.", "ITU.", "HAC.", "PEL.", "MPC.", "YRI.", "LWK.")
-pattern <- paste(pops, collapse = "|")
-samplecols <- colnames(data)[grepl(pattern, colnames(data))]
+p2<-ggplot(unique(sjlongpopsp[, .(junction,sj_category, population, eur,proportion)]), aes(x=population, fill=eur))+
+  geom_bar()+
+  mytheme+
+  coord_flip()+
+  xlab("")+
+  guides(fill="none")+
+  scale_fill_manual(values=c("#466995", "#A53860"), name="")+
+  ylab("# SJ")+
+  theme(axis.text.y=element_blank(), axis.ticks.y=element_blank(),  plot.margin = margin(0, 0, 5, -10),
+        axis.text.x=element_text(angle=90, vjust=0.5, hjust=1))+
+  scale_y_continuous(expand =  c(0, 0, 0.1, 0), n.breaks=3)
 
-# keep only transcripts that are shared at least across 2 samples because (if not, they won't pass the popsp filter)
-sj2 <- data[, .SD, .SDcols=c(samplecols, "isoform", "sample_sharing", "population_sharing")][sj, on="isoform"]
-sj2 <- sj2[sample_sharing>=2,]
 
-# sj2 <- sj[sample_sharing>1][, .SD, .SDcols=c(samplecols, "sj_category", "isoform", "junction")]
-sjlong <- melt(sj2, measure.vars = samplecols, variable.name = "sample", value.name = "detected")[detected!=0]
+### COMPUTE ODDS RATIO
+sjlongpopspsub <- sjlongpopsp[, .(junction, population)][, popsp:="popsp"]
+sjlong
+sjlongextra <- sjlongpopspsub[unique(sjlong[, .(sj_category, junction, population)]), on=c("junction", "population")]
+sjlongextra[is.na(popsp), popsp:="nonPopsp"]
+sjlongextra[, new_sj_category:=fifelse(sj_category=="Known SJ", "Known SJ", "Novel SJ")]
+counts <- sjlongextra[, .N, by=.(new_sj_category, population,popsp)]
+
+# Run Fisher's exact test by population
+results <- lapply(unique(counts$population), function(pop) {
+  # Filter data for the population
+  pop_data <- counts[population == pop]
+  
+  # Create contingency table
+  contingency_table <- matrix(
+    c(pop_data[popsp == "nonPopsp" & new_sj_category == "Known SJ", N],
+      pop_data[popsp == "nonPopsp" & new_sj_category == "Novel SJ", N],
+      pop_data[popsp == "popsp" & new_sj_category == "Known SJ", N],
+      pop_data[popsp == "popsp" & new_sj_category == "Novel SJ", N]),
+    nrow = 2, byrow = F,
+    dimnames = list(
+      c("Known SJ", "Novel SJ"),
+      rev(c("popsp", "nonPopsp"))
+    )
+  )
+  
+  # Perform Fisher's exact test
+  test_result <- fisher.test(contingency_table, conf.int = T)
+  
+  list(population = pop, p.value = test_result$p.value, odds.ratio = test_result$estimate, ci=list(test_result$conf.int))
+})
+
+resultss <- rbindlist(results)
+# Extract lower and upper CI values into new columns
+resultss[, `:=`(ci_lower = sapply(ci, `[`, 1),  # Extract first value of CI
+            ci_upper = sapply(ci, `[`, 2))] 
+
+resultss[, eur:=fifelse(population%in%c("AJI", "CEU"), "EUR", "nonEUR")]
+resultss[, fdr:=p.adjust(p.value, method = "BH")]
+resultss[, FDR:=factor(fifelse(fdr<0.05, "FDR<0.05", "FDR>=0.05"))]
+resultss[, population:=factor(population, levels=levels(sjlongpopsp$population))]
+p3 <-ggplot(resultss, aes(x=odds.ratio, y=population, color=eur))+
+  geom_point(size=1.5, aes(alpha=FDR))+
+  geom_errorbar(aes(xmin=ci_lower, xmax=ci_upper, alpha=FDR), width = 0.25, linewidth=0.5)+
+  geom_vline(xintercept=1, linetype="dashed")+
+  annotate(geom="rect", 
+           xmin=min(resultss[eur=="nonEUR", ci_lower]),
+           xmax=max(resultss[eur=="nonEUR", ci_upper]),
+           ymin=0.5,
+           ymax=8.5,
+           fill="#A53860",
+           alpha=0.2)+
+  annotate(geom="rect", 
+           xmin=min(resultss[eur=="EUR", ci_lower]),
+           xmax=max(resultss[eur=="EUR", ci_upper]),
+           ymin=0.5,
+           ymax=8.5,
+           fill="#466995",
+           alpha=0.2)+
+  scale_color_manual(values=c("#466995", "#A53860"), name="")+
+  scale_alpha_manual(values=rev(c(0.45, 1)), name="")+
+  mytheme+
+  labs(x="Odds Ratio", y="")+
+  theme(legend.position = "top",  plot.margin = margin(0, 0, 5, 0))+
+  guides(color="none")
+
+#### PLOT
+library(patchwork)
+# Ensure both p1 and p2 have the same theme
+p1 <- p1 + theme(legend.position = "top")
+
+# Combine the plots using patchwork
+p3+p1+p2 +
+  plot_layout(guides="collect",  widths=c(3,5.5, 0.75))&
+  theme(legend.position='top')
+ggsave("../../10_figures/01_plots/main/fig_03/barplot_PODER_popSpecificTrx_SJ.bycategory.pdf", dpi=700, width = 3, height = 2.25,  units = "in")
+
+
+
+################ PERMUTATION TEST --------------------------------------------------------------------------------------------------------------------------
+# pops <-c("AJI.", "CEU.", "ITU.", "HAC.", "PEL.", "MPC.", "YRI.", "LWK.")
+# pattern <- paste(pops, collapse = "|")
+# samplecols <- colnames(data)[grepl(pattern, colnames(data))]
 
 samplingvec <- gsub(".$", "", unique(sjlong$sample))
 
-resvecpos <- c()
-resvecprop <- c()
-for(iteration in 1:1000){
-  print(paste0("Iteration ", iteration))
-  randompop <-sample(samplingvec, 43)
-  sjlong3 <- copy(sjlong)
-  names(randompop) <- unique(sjlong3$sample)
-  
-  sjlong3[, `:=`(population=randompop[sample])]
-  sjlong3 <- unique(metadata[, .(sample, map_reads_assemblymap)])[sjlong3, on="sample"]
-  sjlong3[, popreads := sum(unique(map_reads_assemblymap)), by="population"]
-  
-  # detect pseupop sp transcripts
-  # count ocurrences of isoform by population (how many samples in a pop detect the transcript)
-  pseudopopsp <- unique(unique(sjlong3[, .(isoform, population, sample)])[, samples_x_pseudopop:=.N, by=c("isoform", "population")][samples_x_pseudopop>1][, .(isoform, population, samples_x_pseudopop)])
-  # keep pop specific transcripts
-  pseudopopsp <- pseudopopsp[, popsharing := .N, by="isoform"][popsharing==1]
-  pseudopopsp <- sjlong3[pseudopopsp, on=c("isoform","population" )]
-  # keep population specific junctions
-  pseudopopsp[, sj_total_ocurrences:=.N, by="junction"]
-  pseudopopsp[, sj_pop_ocurrences:=.N, by=c("junction", "population")]
-  pseudopopsp[, sj_pop_specific:=ifelse(sj_total_ocurrences==sj_pop_ocurrences, "Pop Specific", "Pop Shared")]
-  pseudopopsp[sj_pop_specific=="Pop Specific"]
-  
-  # keep population specific junctions
-  sjlong3 <- sjlong3[population_sharing==1]
-  pseudodt <-as.data.table(as.data.frame(table(unique(sjlong3[, .(population, popreads, sj_category, junction)])[, .(population, sj_category)])))
-  finaldt <-pseudodt[, propsj:=Freq/sum(Freq), by="population"][sj_category=="Known SJ", .(population, propsj)]
-  setorder(finaldt, -propsj)
-  resvecprop <- c(resvecprop, which(finaldt$population=="AJI"))
-  resvecpos <- c(resvecpos, finaldt[population=="AJI", .(propsj)])
-  rm(sjlong3, pseudodt,pseudopopsp)
-  gc()}
 
-fwrite(as.data.frame(unlist(resvecpos)), "05_mastertable/data/PODER_sj_permutation.propKnownSJ_in_popSpSJ.AJI.tsv")
+iterations <- 600
+start_time <- Sys.time()
+mylist <- list()  # Pre-allocate vector for efficiency
+samplingvec_len <- length(samplingvec)
+
+for(iteration in 1:iterations){
+  print(iteration)
+  # Efficient sampling and mapping population names using vectorized operations
+  randompop <- setNames(sample(samplingvec, 43, replace = FALSE), unique(sjlong$sample))
+  
+  # Modify population directly
+  sjlong[, population := randompop[sample]]
+  
+  ## Find pop sp SJ
+  # In which samples is a junction detected
+  sjlong[, has_detected := any(detected > 0), by = .(junction, sample)]
+  sjlong <- sjlong[has_detected==TRUE]
+  sjlong2 <- unique(sjlong[, .(junction, sample, population, has_detected, sj_category)])
+  # in how many pops is a junction detected
+  sjlong2[, nb.pops:=uniqueN(population), by=.(junction)]
+  sjlong3 <- sjlong2[nb.pops==1]
+  # In how many samples is a junction detected
+  sjlong3[, samples_per_pop:=uniqueN(sample), by=.(junction, population)]
+  sjlongpopsp <- unique(sjlong3[samples_per_pop>1][, .(junction, sj_category, population)])
+  known_proportion <- sjlongpopsp[, .(known_percentage = sum(sj_category == "Known SJ")/.N*100), by = population]
+  
+  
+  # Direct assignment
+  mylist <- append(mylist, list(known_proportion))
+}
+end_time <- Sys.time()
+time_taken <- end_time - start_time
+print(time_taken)
+
+fwrite(rbindlist(mylist), "05_mastertable/data/PODER_sj_permutation.propKnownSJ_in_popSpSJ.all_populations.tsv")
+
+### Check results
+names(mylist) <- paste0("iter", 1:600)
+bootstrap <- rbindlist(mylist, idcol="iteration")
+colnames(known_proportion) <- c("population", "real")
+colnames(bootstrap) <- c("iteration","population", "bootstrap")
+bootstrap <- known_proportion[bootstrap, on="population"]
+bootstrap[, EUR:=fifelse(population%in%c("AJI", "CEU"), "EUR", "nonEUR")]
+
+bootstrap[, boot_eur_mean:=mean(bootstrap), by=.(EUR, iteration)]
+bootstrap[, real_eur_mean:=mean(real), by=EUR]
+bootstrap[, eur_mean_higher:=real_eur_mean>boot_eur_mean]
+
+prop.table(table(bootstrap$population, bootstrap$eur_mean_higher), margin=1)
+
+
+
+
+
+
+
+
 
 fwrite(as.data.frame(unlist(resvecpos)), "05_mastertable/data/PODER_sj_permutation.propKnownSJ_in_popSpSJ.tsv")
 emppval <- sum(as.numeric(unlist(resvecpos))>0.949)/1000
@@ -251,86 +296,351 @@ ggsave("../../10_figures/suppfig/barplot.permutation_knownSJpopspecific.pdf", dp
 
 
 
-##############################################################--------------
+# POPULATION SPECIFIC TRANSCRIPTS
+popsp <-data[sample_sharing>=2 & population_sharing==1, ]
+cols_to_keep <- colnames(popsp)[grepl("^[a-zA-Z]{3}[0-9]$", colnames(popsp))]
+subpopsp <- popsp[, c(cols_to_keep, "sample_sharing", "structural_category", "isoform"), with = FALSE]
+subpopsplong <- melt(subpopsp, measure.vars= colnames(subpopsp)[grepl("^[a-zA-Z]{3}[0-9]$", colnames(subpopsp))], variable.name = "sample", value.name = "detected")
+subpopsplong <- subpopsplong[!is.na(detected)]
+subpopsplong <- subpopsplong[detected==1]
+
+subpopsplongmeta <- metadata[, .(sample, map_reads_assemblymap,population )][, total_throughput:=sum(map_reads_assemblymap), by="population"][subpopsplong, on="sample"]
+subpopsplongmeta[, trx_per_cat_per_pop := uniqueN(isoform), by=c("population", "structural_category")]
+subpopsplongmeta[, trx_per_cat_per_pop_norm :=trx_per_cat_per_pop/total_throughput*10^6]
+subpopsplongmeta[, eur := ifelse(population%in%c("CEU", "AJI"), "European", "Non-European")]
+fwrite(subpopsplongmeta, "data/241128_PODER_pop_specific_transcripts.tsv", sep="\t", quote = F, row.names = F)
+# biotypes of pop specific
+subpopsplongmeta_biotypes <- data[, .(isoform, associated_gene_biotype_sub)][subpopsplongmeta, on="isoform"]
 
 
-
-pops <-c("AJI.", "CEU.", "ITU.", "HAC.", "PEL.", "MPC.", "YRI.", "LWK.")
-pattern <- paste(pops, collapse = "|")
-samplecols <- colnames(sjone)[grepl(pattern, colnames(sjone))][]
-sjonlong <- melt(sjone, measure.vars = samplecols, variable.name = "sample", value.name = "detected")[detected!=0]
-
-sjonlong <- unique(metadata[,.(sample, map_reads_assemblymap)])[sjonlong, on="sample"]
-sjonlong[, population:=gsub(".$", "", sample)]
-sjonlong[, population:=factor(population, levels=names(popcol))]
-popdata <-unique(unique(sjonlong[,.(population, map_reads_assemblymap)])[, popreads :=sum(map_reads_assemblymap), by="population"][, individuals_per_pop:=.N, by="population"][, map_reads_assemblymap:=NULL])
-sjonlong <- popdata[sjonlong, on="population"]
-sjonlong[, SJ_count:= .N, by=c("population", "sj_category")]
-sjonlong[, norm_SJ_count:= .N/popreads/individuals_per_pop, by=c("population", "sj_category")]
-
-sjonlong[, sj_category:=factor(sj_category, level=c("knownSJ", "novelSJ_knownSS_2", "novelSJ_knownSS_1", "novelSJ_knownSS_0"))]
-
-
-pseudodt1 <-as.data.table(as.data.frame(table(unique(sjonlong[, .(population, popreads, sj_category, junction)])[, .(population, sj_category)])))
-finaldt1 <-pseudodt1[, propsj:=Freq/sum(Freq), by="population"][sj_category=="knownSJ", .(population, propsj)]
-
-
-ggplot(unique(sjonlong[, .(population, SJ_count, sj_category, popreads)]), aes(x=reorder(population, popreads), y=SJ_count, fill=sj_category))+
-  geom_col(position="dodge")+
-  scale_fill_manual(values=c("darkgreen","deepskyblue3", "darkgoldenrod3", "darkred"))+
+ggplot(unique(subpopsplongmeta_biotypes[, .(isoform, associated_gene_biotype_sub, structural_category, population)]),
+       aes(x=structural_category, fill=associated_gene_biotype_sub))+
+  geom_bar()+
+  scale_fill_manual(values=c("#4F4F4F","#ee9b00","darkgrey", "#4C8C36"),
+                    labels=c("protein_coding"="Protein Coding", "novel/ambiguous gene"="Novel/Ambiguous Gene"))+
+  labs(x="", y="# PODER Population-Specific Transcripts", fill="Gene Biotype")+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))+
   mytheme+
-  geom_text(aes(label = SJ_count), stat="identity", position=position_dodge(width=0.9),vjust=-0.5)+
-  labs(x="", y="SJ count")
-ggplot(unique(sjonlong[, .(population, SJ_count, sj_category, popreads)]), aes(x=reorder(population, popreads), y=SJ_count, fill=sj_category))+
-  geom_col(position="fill")+
-  scale_fill_manual(values=c("darkgreen","deepskyblue3", "darkgoldenrod3", "darkred"))+
+  geom_text(aes(label=after_stat(count)), stat="count",position = position_stack(vjust = 0.5), size=6*0.35)+
+  theme(legend.key.size = unit(0.2, "cm"),
+        legend.margin = margin(0, 0, 0, 0),
+        legend.box.margin = margin(-10, 3, -10, -7),
+        legend.position = c(0.75, 0.75))
+ggsave("../../../10_figures/01_plots/supp/16_popsp_val_gencode/barplot_PODER_PerSqantiCategory_popSpecificTrx_biotypes.pdf", dpi=700, width = 3, height = 2.25,  units = "in")
+
+premergepopsp <- unique(subpopsplongmeta_biotypes[, .(isoform, associated_gene_biotype_sub)])[, popsp:=TRUE]
+
+datapopsp <- premergepopsp[data, on="isoform"]
+datapopsp[is.na(popsp), popsp:=FALSE]
+table(datapopsp[, .(isoform, popsp, associated_gene_biotype)]$popsp, datapopsp[, .(isoform, popsp, associated_gene_biotype)]$associated_gene_biotype)
+chires <- chisq.test(table(datapopsp[, .(isoform, popsp, associated_gene_biotype)]$popsp, datapopsp[, .(isoform, popsp, associated_gene_biotype)]$associated_gene_biotype))
+
+
+
+# LINE PLOT FOR 2 SAMPLES SHARING FACETED
+ggplot(unique(subpopsplongmeta[structural_category%in%c("FSM", "ISM", "NIC", "NNC"), 
+                               .(population, eur, structural_category, total_throughput,trx_per_cat_per_pop)]), 
+       aes(x=total_throughput/10^6, y=trx_per_cat_per_pop))+
+  geom_line(data=unique(subpopsplongmeta[structural_category%in%c("FSM", "ISM", "NIC", "NNC")&eur=="Non-European", 
+                                         .(population, eur, structural_category, total_throughput,trx_per_cat_per_pop)]), 
+            linewidth=1, lty="11", color="darkgrey")+
+  geom_line(aes(col=structural_category),linewidth=1)+
   mytheme+
-  labs(x="", y="SJ count")
-ggplot(unique(sjonlong[, .(population, norm_SJ_count, sj_category, popreads)]), aes(x=reorder(population, popreads), y=norm_SJ_count, fill=sj_category))+
-  geom_col(position="dodge")+
-  scale_fill_manual(values=c("darkgreen","deepskyblue3", "darkgoldenrod3", "darkred"))+
+  scale_color_manual(values=colsqanti)+
+  labs(x="Total Mapped Reads per Population (M)", y="# Population Specific PODER Transcripts")+
+  guides(color="none")+
+  facet_wrap(~structural_category)+
+  labs(col="", alpha="", size="")+
+  geom_segment(data=unique(subpopsplongmeta[structural_category%in%c("FSM"),
+                                            .(population, eur, structural_category, total_throughput,trx_per_cat_per_pop)]),
+               aes(xend = total_throughput/10^6, # Adjust for arrow length
+                   yend = ifelse(eur == "European", trx_per_cat_per_pop + 25, trx_per_cat_per_pop - 25)),
+               color = "darkgrey") +
+  geom_segment(data=unique(subpopsplongmeta[structural_category%in%c("NIC", "NNC"),
+                                            .(population, eur, structural_category, total_throughput,trx_per_cat_per_pop)]),
+               aes(xend = total_throughput/10^6, # Adjust for arrow length
+                   yend = ifelse(eur == "European", trx_per_cat_per_pop - 25, trx_per_cat_per_pop + 25)),
+               color = "darkgrey") +
+  ggnewscale::new_scale_color()+
+  geom_text(data=unique(subpopsplongmeta[structural_category%in%c("FSM"), 
+                                         .(population, eur, structural_category, total_throughput,trx_per_cat_per_pop)]),
+            aes(x = total_throughput/10^6,  # Position text away from point
+                y = ifelse(eur == "European", trx_per_cat_per_pop + 35, trx_per_cat_per_pop - 35),
+                label = population),
+            fontface="bold",
+            family="Helvetica",
+            size = 8*0.35,
+            alpha=0.6)+
+  geom_text(data=unique(subpopsplongmeta[structural_category%in%c("NIC", "NNC"), 
+                                         .(population, eur, structural_category, total_throughput,trx_per_cat_per_pop)]),
+            aes(x = total_throughput/10^6,  # Position text away from point
+                y = ifelse(eur == "European", trx_per_cat_per_pop - 35, trx_per_cat_per_pop + 35),
+                label = population),
+            fontface="bold",
+            family="Helvetica",
+            size = 8*0.35,
+            alpha=0.6)+
+  scale_color_manual(values=popcol)+
+  guides(color="none")+
+  theme(legend.position = c(0.9, 0.90))+
+  xlim(c(52, 105))+
+  ggnewscale::new_scale_color()+
+  geom_point(aes(color=eur, size=eur, alpha=eur))+
+  scale_color_manual(values=c("#466995", "#A53860"))+
+  scale_size_manual(values=c(4,1.5))+
+  scale_alpha_manual(values=c(0.75, 0.9))+
+  labs(alpha="", size="", color="")
+ggsave("../../../10_figures/01_plots/main/fig_03/line_PODER_popSpecific_transcripts.2samplesSharing.faceted.pdf", dpi=700, width = 4.5, height = 3,  units = "in")
+
+
+# LINE PLOT FOR 2 SAMPLES SHARING FACETED with ----- REFSEQ ----------
+refseq <- fread("../02_sqanti/data/poder_evaluatedBy_RefSeq/poder_evaluatedBy_RefSeq_classification.txt")
+refseq <- refseq[, .(isoform, structural_category)]
+categories <-c("Antisense","Intergenic", "NNC", "FSM", "NIC", "ISM", "Genic", "Fusion" )
+names(categories) <- unique(refseq$structural_category)
+refseq[, structural_category_refseq:=categories[structural_category]]
+subpopsplongmeta_refseq <- refseq[, .(isoform, structural_category_refseq)][subpopsplongmeta, on="isoform"]
+subpopsplongmeta_refseq[, trx_per_cat_per_pop:=uniqueN(isoform), by=c("structural_category_refseq", "population")]
+ggplot(unique(subpopsplongmeta_refseq[structural_category_refseq%in%c("FSM", "ISM", "NIC", "NNC"),][,.(population, eur, structural_category_refseq, total_throughput,trx_per_cat_per_pop)]), 
+       aes(x=total_throughput/10^6, y=trx_per_cat_per_pop))+
+  geom_line(data=unique(subpopsplongmeta_refseq[structural_category_refseq%in%c("FSM", "ISM", "NIC", "NNC")&eur=="Non-European", 
+                                                .(population, eur, structural_category_refseq, total_throughput,trx_per_cat_per_pop)]), 
+            linewidth=1, lty="11", color="darkgrey")+
+  geom_line(aes(col=structural_category_refseq),linewidth=1)+
   mytheme+
-  labs(x="", y="SJ count")
+  scale_color_manual(values=c(colsqanti, "ISM"="#8EDE95"))+
+  labs(x="Total Mapped Reads per Population (M)", y="# Population Specific PODER Transcripts")+
+  guides(color="none")+
+  facet_wrap(~structural_category_refseq)+
+  labs(col="", alpha="", size="")+
+  geom_segment(data=unique(subpopsplongmeta_refseq[structural_category_refseq%in%c("FSM", "ISM"),
+                                                   .(population, eur, structural_category_refseq, total_throughput,trx_per_cat_per_pop)]),
+               aes(xend = total_throughput/10^6, # Adjust for arrow length
+                   yend = ifelse(eur == "European", trx_per_cat_per_pop + 25, trx_per_cat_per_pop - 25)),
+               color = "darkgrey") +
+  geom_segment(data=unique(subpopsplongmeta_refseq[structural_category_refseq%in%c("NIC", "NNC"),
+                                                   .(population, eur, structural_category_refseq, total_throughput,trx_per_cat_per_pop)]),
+               aes(xend = total_throughput/10^6, # Adjust for arrow length
+                   yend = ifelse(eur == "European", trx_per_cat_per_pop - 25, trx_per_cat_per_pop + 25)),
+               color = "darkgrey") +
+  ggnewscale::new_scale_color()+
+  geom_text(data=unique(subpopsplongmeta_refseq[structural_category_refseq%in%c("FSM", "ISM"), 
+                                                .(population, eur, structural_category_refseq, total_throughput,trx_per_cat_per_pop)]),
+            aes(x = total_throughput/10^6,  # Position text away from point
+                y = ifelse(eur == "European", trx_per_cat_per_pop + 35, trx_per_cat_per_pop - 35),
+                label = population,
+                color=population),
+            fontface="bold",
+            family="Helvetica",
+            size = 8*0.35,
+            alpha=0.6)+
+  geom_text(data=unique(subpopsplongmeta_refseq[structural_category_refseq%in%c("NIC", "NNC"), 
+                                                .(population, eur, structural_category_refseq, total_throughput,trx_per_cat_per_pop)]),
+            aes(x = total_throughput/10^6,  # Position text away from point
+                y = ifelse(eur == "European", trx_per_cat_per_pop - 35, trx_per_cat_per_pop + 35),
+                label = population,
+                color=population),
+            fontface="bold",
+            family="Helvetica",
+            size = 8*0.35,
+            alpha=0.6)+
+  scale_color_manual(values=popcol)+
+  guides(color="none")+
+  theme(legend.position = c(0.9, 0.90))+
+  xlim(c(52, 105))+
+  ggnewscale::new_scale_color()+
+  geom_point(aes(color=eur, size=eur, alpha=eur))+
+  scale_color_manual(values=c("#466995", "#A53860"))+
+  scale_size_manual(values=c(4,1.5))+
+  scale_alpha_manual(values=c(0.75, 0.9))+
+  labs(alpha="", size="", color="")
+ggsave("../../../10_figures/01_plots/supp/18_popsp_val_refseq/line_PODER_popSpecific_transcripts.2samplesSharing.faceted_refseq_PODER.pdf", dpi=700, width = 7, height = 4,  units = "in")
 
 
-# # PERMUTATION TEST -------I'll test proportions, are CEU having a largest proportion of knownSJ in population specific transcripts??
-# pops <-c("AJI.", "CEU.", "ITU.", "HAC.", "PEL.", "MPC.", "YRI.", "LWK.")
-# pattern <- paste(pops, collapse = "|")
-# samplecols <- colnames(sj)[grepl(pattern, colnames(sj))]
-# 
-# sj2 <- sj[sample_sharing>1][, .SD, .SDcols=c(samplecols, "sj_category", "isoform", "junction")]
-# 
-# sjlong <- melt(sj2, measure.vars = samplecols, variable.name = "sample", value.name = "detected")[detected!=0]
-# samplingvec <- gsub(".$", "", unique(sjlong$sample))
-# 
-# resvecpos <- c()
-# resvecprop <- c()
-# for(iteration in 1:1000){
-#   randompop <-sample(samplingvec, 43)
-#   sjlong3 <- copy(sjlong)
-#   names(randompop) <- unique(sjlong3$sample)
-#   
-#   sjlong3[, `:=`(population=randompop[sample])]
-#   sjlong3 <- unique(metadata[, .(sample, map_reads_assemblymap)])[sjlong3, on="sample"]
-#   sjlong3[, popreads := sum(unique(map_reads_assemblymap)), by="population"]
-#   
-#   # detect pseupop sp transcripts
-#   pseudopopsp <- unique(unique(sjlong3[, .(isoform, population, sample)])[, samples_x_pseudopop:=.N, by=c("isoform", "population")][samples_x_pseudopop>1][, .(isoform, population, samples_x_pseudopop)])
-#   pseudopopsp <- pseudopopsp[, popsharing := .N, by="isoform"][popsharing==1]
-#   # keep population specific junctions
-#   sjlong3 <- pseudopopsp[sjlong3, on=c("isoform","population" )]
-#   sjlong3 <- sjlong3[popsharing==1]
-#   pseudodt <-as.data.table(as.data.frame(table(unique(sjlong3[, .(population, popreads, sj_category, junction)])[, .(population, sj_category)])))
-#   finaldt <-pseudodt[, propsj:=Freq/sum(Freq), by="population"][sj_category=="knownSJ", .(population, propsj)]
-#   setorder(finaldt, -propsj)
-#   resvecprop <- c(resvecprop, which(finaldt$population=="CEU"))
-#   resvecpos <- c(resvecpos, finaldt[population=="CEU", .(propsj)])
-#   rm(sjlong3, pseudodt,pseudopopsp)
-#   gc()}
-# 
-# fwrite(as.data.frame(unlist(resvecpos)), "05_mastertable/data/240909merge_reslongmeta_annot_sqanti_sj_permutationSJinpopspTranscripts.tsv")
-# 
-# 
-# 
 
 
+
+
+# LINE PLOT FOR 2 SAMPLES SHARING
+ggplot(unique(subpopsplongmeta[structural_category%in%c("FSM", "ISM", "NIC", "NNC"), 
+                               .(population, eur, structural_category, total_throughput,trx_per_cat_per_pop)]), 
+       aes(x=total_throughput/10^6, y=trx_per_cat_per_pop))+
+  geom_line(aes(col=structural_category),linewidth=1.5)+
+  mytheme+
+  scale_color_manual(values=colsqanti)+
+  labs(x="Total Mapped Reads per Population (M)", y="# Population Specific PODER Transcripts")+
+  guides(color="none")+
+  ggnewscale::new_scale_color()+
+  geom_point(aes(color=eur, size=eur, alpha=eur))+
+  scale_color_manual(values=c("#466995", "#A53860"))+
+  scale_size_manual(values=c(6.5,3))+
+  scale_alpha_manual(values=c(0.75, 0.9))+
+  labs(col="", alpha="", size="")+
+  geom_segment(data = unique(subpopsplongmeta[structural_category == "FSM" ,.(population, eur, structural_category, total_throughput,trx_per_cat_per_pop)]),  # Only FSM data
+               aes(xend = total_throughput/10^6, # Adjust for arrow length
+                   yend = ifelse(eur == "European" & structural_category=="FSM", trx_per_cat_per_pop + 25, trx_per_cat_per_pop - 25)),
+               arrow = arrow(length = unit(0.2, "cm")), # Arrow size
+               color = "darkgrey") +
+  ggnewscale::new_scale_color()+
+  geom_text(data = unique(subpopsplongmeta[structural_category == "FSM", .(population, eur, structural_category, total_throughput,trx_per_cat_per_pop)]),  # Only FSM data
+            aes(x = total_throughput/10^6,  # Position text away from point
+                y = ifelse(eur == "European" & structural_category=="FSM", trx_per_cat_per_pop + 30, trx_per_cat_per_pop - 30),
+                label = population,
+                color=population),
+            fontface="bold",
+            family="Helvetica",
+            size = 4.5,
+            alpha=0.6)+
+  scale_color_manual(values=popcol)+
+  guides(color="none")+
+  theme(legend.position = "top")
+ggsave("../../../10_figures/suppfig/line_PODER_popSpecific_transcripts.2samplesSharing.pdf", dpi=700, width = 16, height = 14,  units = "cm")
+
+
+
+# LINE PLOT FOR 3 SAMPLES SHARING 
+ggplot(unique(subpopsplongmeta[structural_category%in%c("FSM", "ISM", "NIC", "NNC"), 
+                               .(population, eur, structural_category, total_throughput,trx_per_cat_per_pop)]), 
+       aes(x=total_throughput/10^6, y=trx_per_cat_per_pop))+
+  geom_line(aes(col=structural_category),linewidth=1.5)+
+  mytheme+
+  scale_color_manual(values=colsqanti)+
+  labs(x="Total Mapped Reads per Population (M)", y="# Population Specific PODER Transcripts")+
+  guides(color="none")+
+  ggnewscale::new_scale_color()+
+  geom_point(aes(color=eur, size=eur, alpha=eur))+
+  scale_color_manual(values=c("#466995", "#A53860"))+
+  scale_size_manual(values=c(6.5,3))+
+  scale_alpha_manual(values=c(0.75, 0.9))+
+  labs(col="", alpha="", size="")+
+  geom_segment(data = unique(subpopsplongmeta[structural_category == "FSM" ,.(population, eur, structural_category, total_throughput,trx_per_cat_per_pop)]),  # Only FSM data
+               aes(xend = total_throughput/10^6, # Adjust for arrow length
+                   yend = ifelse(eur == "European" & structural_category=="FSM", trx_per_cat_per_pop + 1, trx_per_cat_per_pop - 1)),
+               arrow = arrow(length = unit(0.2, "cm")), # Arrow size
+               color = "darkgrey") +
+  ggnewscale::new_scale_color()+
+  geom_text(data = unique(subpopsplongmeta[structural_category == "FSM", .(population, eur, structural_category, total_throughput,trx_per_cat_per_pop)]),  # Only FSM data
+            aes(x = total_throughput/10^6,  # Position text away from point
+                y = ifelse(eur == "European" & structural_category=="FSM", trx_per_cat_per_pop + 1.2, trx_per_cat_per_pop - 1.2),
+                label = population,
+                color=population),
+            fontface="bold",
+            family="Helvetica",
+            size = 4.5,
+            alpha=0.6)+
+  scale_color_manual(values=popcol)+
+  guides(color="none")+
+  theme(legend.position = "top")
+ggsave("../../../10_figures/suppfig/line_PODER_popSpecific_transcripts.3samplesSharing.pdf", dpi=700, width = 16, height = 14,  units = "cm")
+
+
+#########################33-----------------------------------------------------------
+
+
+myunique_popsp_trx <- unique(subpopsplongmeta[structural_category%in%c("FSM", "NNC", "NIC"), .(isoform, population, structural_category)])
+myunique_popsp_trx <- unique(counts[, `:=`(mean_expression=mean(TPM, na.rm=TRUE),
+                                           max_expression=max(TPM, na.rm=TRUE)), by=.(transcript_id, population)][, .(transcript_id, mean_expression, max_expression, population)])[myunique_popsp_trx, on=c(transcript_id="isoform", population="population")]
+
+
+ggplot(myunique_popsp_trx, aes(x=population, y=mean_expression, fill=population))+
+  geom_boxplot(outliers=F)+
+  facet_wrap(~structural_category)+
+  mytheme+
+  scale_fill_manual(values=popcol)+
+  labs(x="", y="Mean Expression of Population Specific Transcrip\nacross Pop samples")+
+  guides(fill="none")
+ggplot(myunique_popsp_trx, aes(x=population, y=max_expression, fill=population))+
+  geom_boxplot(outliers=F)+
+  facet_wrap(~structural_category)+
+  mytheme+
+  scale_fill_manual(values=popcol)+
+  labs(x="", y="Max Expression of Population Specific Transcrip\nacross Pop samples")+
+  guides(fill="none")
+
+
+
+
+
+
+############## FIND EUROPEAN SPECIFIC TRANSCIRPTS
+
+# POPULATION SPECIFIC TRANSCRIPTS
+
+prepopsp <-data[sample_sharing>=4, ]
+prepopsp[, number_eur_discovered := rowSums(.SD), .SDcols = c("AJI", "CEU")][, number_noneur_discovered := rowSums(.SD), .SDcols = c("ITU", "HAC", "PEL", "MPC", "YRI", "LWK")]
+popsp <- prepopsp[, eurspecificity :=fifelse(number_eur_discovered>=4 & number_noneur_discovered==0, "European-Specific",
+                                             fifelse(number_eur_discovered==0 & number_noneur_discovered>=11, "non-European Specific", "Shared"))]
+popsp <- popsp[eurspecificity!="Shared"]
+popsp[, noveltrx:=ifelse(structural_category=="FSM", "known", "novel")]
+table(popsp$noveltrx, popsp$eurspecificity)
+fisher.test(table(popsp$noveltrx, popsp$eurspecificity))
+
+
+cols_to_keep <- colnames(popsp)[grepl("^[a-zA-Z]{3}[0-9]$", colnames(popsp))]
+subpopsp <- popsp[, c(cols_to_keep, "sample_sharing", "structural_category", "isoform"), with = FALSE]
+subpopsplong <- melt(subpopsp, measure.vars= colnames(subpopsp)[grepl("^[a-zA-Z]{3}[0-9]$", colnames(subpopsp))], variable.name = "sample", value.name = "detected")
+subpopsplong <- subpopsplong[!is.na(detected)]
+subpopsplong <- subpopsplong[detected==1]
+
+subpopsplongmeta <- metadata[, .(sample, map_reads_assemblymap,population )][, total_throughput:=sum(map_reads_assemblymap), by="population"][subpopsplong, on="sample"]
+subpopsplongmeta[, trx_per_cat_per_pop := uniqueN(isoform), by=c("eur", "structural_category")]
+subpopsplongmeta[, trx_per_cat_per_pop_norm :=trx_per_cat_per_pop/total_throughput*10^6]
+subpopsplongmeta[, eur := ifelse(population%in%c("CEU", "AJI"), "European", "Non-European")]
+
+# LINE PLOT FOR 2 SAMPLES SHARING FACETED
+ggplot(unique(subpopsplongmeta[structural_category%in%c("FSM", "ISM", "NIC", "NNC"), 
+                               .( eur, structural_category, total_throughput,trx_per_cat_per_pop)]), 
+       aes(x=total_throughput/10^6, y=trx_per_cat_per_pop))+
+  geom_line(data=unique(subpopsplongmeta[structural_category%in%c("FSM", "ISM", "NIC", "NNC")&eur=="Non-European", 
+                                         .(population, eur, structural_category, total_throughput,trx_per_cat_per_pop)]), 
+            linewidth=1, lty="11", color="darkgrey")+
+  geom_line(aes(col=structural_category),linewidth=1)+
+  mytheme+
+  scale_color_manual(values=c(colsqanti))+
+  labs(x="Total Mapped Reads per Population (M)", y="# Population Specific PODER Transcripts")+
+  guides(color="none")+
+  facet_wrap(~structural_category)+
+  labs(col="", alpha="", size="")+
+  geom_segment(data=unique(subpopsplongmeta[structural_category%in%c("FSM"), 
+                                            .(population, eur, structural_category, total_throughput,trx_per_cat_per_pop)]),
+               aes(xend = total_throughput/10^6, # Adjust for arrow length
+                   yend = ifelse(eur == "European", trx_per_cat_per_pop + 25, trx_per_cat_per_pop - 25)),
+               arrow = arrow(length = unit(0.2, "cm")), # Arrow size
+               color = "darkgrey") +
+  geom_segment(data=unique(subpopsplongmeta[structural_category%in%c("NIC", "NNC"), 
+                                            .(population, eur, structural_category, total_throughput,trx_per_cat_per_pop)]),
+               aes(xend = total_throughput/10^6, # Adjust for arrow length
+                   yend = ifelse(eur == "European", trx_per_cat_per_pop - 25, trx_per_cat_per_pop + 25)),
+               arrow = arrow(length = unit(0.2, "cm")), # Arrow size
+               color = "darkgrey") +
+  ggnewscale::new_scale_color()+
+  geom_text(data=unique(subpopsplongmeta[structural_category%in%c("FSM"), 
+                                         .(population, eur, structural_category, total_throughput,trx_per_cat_per_pop)]),
+            aes(x = total_throughput/10^6,  # Position text away from point
+                y = ifelse(eur == "European", trx_per_cat_per_pop + 35, trx_per_cat_per_pop - 35),
+                label = population,
+                color=population),
+            fontface="bold",
+            family="Helvetica",
+            size = 8*0.35,
+            alpha=0.6)+
+  geom_text(data=unique(subpopsplongmeta[structural_category%in%c("NIC", "NNC"), 
+                                         .(population, eur, structural_category, total_throughput,trx_per_cat_per_pop)]),
+            aes(x = total_throughput/10^6,  # Position text away from point
+                y = ifelse(eur == "European", trx_per_cat_per_pop - 35, trx_per_cat_per_pop + 35),
+                label = population,
+                color=population),
+            fontface="bold",
+            family="Helvetica",
+            size = 8*0.35,
+            alpha=0.6)+
+  scale_color_manual(values=popcol)+
+  guides(color="none")+
+  theme(legend.position = c(0.9, 0.90))+
+  xlim(c(52, 105))+
+  ggnewscale::new_scale_color()+
+  geom_point(aes(color=eur, size=eur, alpha=eur))+
+  scale_color_manual(values=c("#466995", "#A53860"))+
+  scale_size_manual(values=c(4,1.5))+
+  scale_alpha_manual(values=c(0.75, 0.9))+
+  labs(alpha="", size="", color="")

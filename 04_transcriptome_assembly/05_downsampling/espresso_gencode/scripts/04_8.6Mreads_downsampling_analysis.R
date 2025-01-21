@@ -35,56 +35,56 @@ names(popcols) <- unique(metadata$population)
 colsqanti <- c("#61814B", "#8EDE95", "#356CA1", "#C8773C")
 names(colsqanti) <- c("FSM", "ISM", "NIC", "NNC")
 
-data <- data.frame()
-for(SAMPLE in list.files("data/espresso_q")[!grepl("samples",list.files("data/espresso_q"))]){
-  sub <-fread(paste0("data/espresso_q/",SAMPLE,"/espresso_q_summary.txt"), sep=":", skip = 1)[25:28,]
-  sub <-sub[, structural_category:=c("FSM", "ISM", "NIC", "NNC")][, transcripts:=V2][, `:=`(V1=NULL, V2=NULL)][, sample:=SAMPLE]
-  data <- rbind.data.frame(data, sub)
-}
-
-data[, cell_line_id:=tstrsplit(sample, "_")[3]]
-data[, lab_number:=tstrsplit(sample, "_")[1]]
-data[, sample:=NULL]
-data <- metadata[, .(sample, cell_line_id, population)][data, on="cell_line_id"]
-data[, eur:=factor(ifelse(population%in%c("CEU", "AJI"), "EUR", "nonEUR"))]
-data$eur <- factor(data$eur, levels = c("EUR", "nonEUR"))
-data[, total_transcripts:=sum(transcripts), by="sample"]
-
-ggplot(unique(data[, .(sample, eur, total_transcripts, population)]), aes(x = eur, y = total_transcripts, fill = eur)) +
-  geom_violin(position = position_dodge(0.9), alpha = 0.8) + 
-  geom_boxplot(outliers = FALSE, width = 0.15, position = position_dodge(0.9)) +
-  ggbeeswarm::geom_quasirandom(alpha = 0.95, width = 0.2, dodge.width = 0.9, aes(col=population)) +
-  mytheme +
-  ggpubr::stat_compare_means(comparisons=list(c("EUR", "nonEUR")),
-                             method = "t.test", 
-                             method.args = list(alternative = "two.sided")) +
-  scale_fill_manual(values = c("#466995", "#A53860")) +
-  stat_summary(fun.data = n_fun, geom = "text", fun.args = list(y = 30000), 
-               position = position_dodge(0.9)) +
-  labs(x = "", y = "# Transcripts")+
-  guides(fill="none")+
-  scale_color_manual(values=popcols)
-ggsave("../../../10_figures/test/test1.pdf", dpi=700,width = 3.8, height = 2.6,  units = "in")
-
-
-ggplot(data, aes(x = eur, y = transcripts, fill = eur)) +
-  geom_violin(position = position_dodge(0.9), alpha = 0.8) + 
-  geom_boxplot(outliers = FALSE, width = 0.15, position = position_dodge(0.9)) +
-  ggbeeswarm::geom_quasirandom(alpha = 0.75, width = 0.2, dodge.width = 0.9, aes(col=population)) +
-  mytheme +
-  ggpubr::stat_compare_means(comparisons=list(c("EUR", "nonEUR")),
-                             method = "t.test", 
-                             method.args = list(alternative = "two.sided")) +
-  scale_fill_manual(values = c("#466995", "#A53860")) +
-  stat_summary(fun.data = n_fun, geom = "text", fun.args = list(y = -1000), 
-               position = position_dodge(0.9)) +
-  labs(x = "", y = "# Transcripts")+
-  facet_wrap(~structural_category, nrow=1)+
-  guides(fill="none")+
-  scale_color_manual(values=popcols)
+# data <- data.frame()
+# for(SAMPLE in list.files("data/espresso_q")[!grepl("samples",list.files("data/espresso_q"))]){
+#   sub <-fread(paste0("data/espresso_q/",SAMPLE,"/espresso_q_summary.txt"), sep=":", skip = 1)[25:28,]
+#   sub <-sub[, structural_category:=c("FSM", "ISM", "NIC", "NNC")][, transcripts:=V2][, `:=`(V1=NULL, V2=NULL)][, sample:=SAMPLE]
+#   data <- rbind.data.frame(data, sub)
+# }
+# 
+# data[, cell_line_id:=tstrsplit(sample, "_")[3]]
+# data[, lab_number:=tstrsplit(sample, "_")[1]]
+# data[, sample:=NULL]
+# data <- metadata[, .(sample, cell_line_id, population)][data, on="cell_line_id"]
+# data[, eur:=factor(ifelse(population%in%c("CEU", "AJI"), "EUR", "nonEUR"))]
+# data$eur <- factor(data$eur, levels = c("EUR", "nonEUR"))
+# data[, total_transcripts:=sum(transcripts), by="sample"]
+# 
+# ggplot(unique(data[, .(sample, eur, total_transcripts, population)]), aes(x = eur, y = total_transcripts, fill = eur)) +
+#   geom_violin(position = position_dodge(0.9), alpha = 0.8) + 
+#   geom_boxplot(outliers = FALSE, width = 0.15, position = position_dodge(0.9)) +
+#   ggbeeswarm::geom_quasirandom(alpha = 0.95, width = 0.2, dodge.width = 0.9, aes(col=population)) +
+#   mytheme +
+#   ggpubr::stat_compare_means(comparisons=list(c("EUR", "nonEUR")),
+#                              method = "t.test", 
+#                              method.args = list(alternative = "two.sided")) +
+#   scale_fill_manual(values = c("#466995", "#A53860")) +
+#   stat_summary(fun.data = n_fun, geom = "text", fun.args = list(y = 30000), 
+#                position = position_dodge(0.9)) +
+#   labs(x = "", y = "# Transcripts")+
+#   guides(fill="none")+
+#   scale_color_manual(values=popcols)
+# ggsave("../../../10_figures/test/test1.pdf", dpi=700,width = 3.8, height = 2.6,  units = "in")
+# 
+# 
+# ggplot(data, aes(x = eur, y = transcripts, fill = eur)) +
+#   geom_violin(position = position_dodge(0.9), alpha = 0.8) + 
+#   geom_boxplot(outliers = FALSE, width = 0.15, position = position_dodge(0.9)) +
+#   ggbeeswarm::geom_quasirandom(alpha = 0.75, width = 0.2, dodge.width = 0.9, aes(col=population)) +
+#   mytheme +
+#   ggpubr::stat_compare_means(comparisons=list(c("EUR", "nonEUR")),
+#                              method = "t.test", 
+#                              method.args = list(alternative = "two.sided")) +
+#   scale_fill_manual(values = c("#466995", "#A53860")) +
+#   stat_summary(fun.data = n_fun, geom = "text", fun.args = list(y = -1000), 
+#                position = position_dodge(0.9)) +
+#   labs(x = "", y = "# Transcripts")+
+#   facet_wrap(~structural_category, nrow=1)+
+#   guides(fill="none")+
+#   scale_color_manual(values=popcols)
 
 # load sqanti results
-sqanti <- fread("../../04_evaluation/02_sqanti/data/downsampling_espresso/downsampling_espresso_classification.txt")
+sqanti <- fread("../../04_evaluation/02_sqanti/data/downsampling_espresso_gencode/downsampling_espresso_classification.txt")
 
 #### LOAD DATA
 metadata <- fread("../../../00_metadata/data/pantranscriptome_samples_metadata.tsv") # metadata
@@ -146,15 +146,7 @@ newannotmeta <- metadata[, .(cell_line_id, population, map_reads_assemblymap, sa
 newannotmeta[, trx_per_sample:=uniqueN(isoform), by="sample"]
 newannotmeta[, eur := ifelse(population%in%c("CEU", "AJI"), "European", "Non-European")]
 library(ggpubr)
-ggplot(unique(newannotmeta[, .(map_reads_assemblymap, trx_per_sample, population)]), 
-       aes(x=map_reads_assemblymap/10^6, y=trx_per_sample))+
-  geom_smooth(method = "lm", color="darkgrey")+
-  geom_point(aes( color=population),size=3)+
-  mytheme+
-  labs(x="Mapped reads (M)", y="# Transcripts (x1000)", color="Population")+
-  scale_color_manual(values=popcols)+
-  stat_cor(label.x = 20) +
-  stat_regline_equation(label.x = 20)
+
 
 
 ggplot(unique(newannotmeta[, .(trx_per_sample, population, eur)]), aes(x = eur, y = trx_per_sample, fill = eur)) +
@@ -255,3 +247,6 @@ ggplot(popsp,
   labs(x="", y="Proportion of Population Specific Transcripts", fill="Intron Chain")+
   theme(legend.position="top")
 ggsave("../../../10_figures/downsampling/barplotStack.annotatedVSnovelIntronChain_POPspecificTrx.pdf", dpi=700, width = 17, height = 14,  units = "cm")
+
+
+

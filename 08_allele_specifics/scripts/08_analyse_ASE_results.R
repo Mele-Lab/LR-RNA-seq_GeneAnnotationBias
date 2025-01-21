@@ -22,13 +22,17 @@ setup_script(relative_path, 3, 48)
 catch_args(0)
 ##
 ## 0----------------------------END OF HEADER----------------------------------0
+TYPE <- "enhanced_gencode"
 library(ggpmisc)
 if(TYPE=="gencode"){
-  nametype <- "GENCODEv47 annotation"
+  nametype <- "GENCODE"
   annot <- fread("../../../../Data/gene_annotations/gencode/v47/modified/gencode.v47.primary_assembly.annotation.transcript_parsed.tsv")
 }else if(TYPE=="pantrx"){
-  nametype <- "PODER annotation"
+  nametype <- "PODER"
   annot <- fread("../../novelannotations/merged/240926_filtered_with_genes.transcript2gene_with_biotypes.tsv")
+}else if(TYPE=="enhanced_gencode"){
+  nametype <- "Enhanced GENCODE"
+  annot <- fread("../../../../Data/gene_annotations/gencode/v47/modified/gencode.v47.primary_assembly.annotation.transcript_parsed.tsv")
 }
 
 namevec <- c()
@@ -48,8 +52,27 @@ data <- metadata[, .(cell_line_id, sample, population, map_reads_assemblymap)][d
 
 # compute fdr per sample
 data[, filter:=ifelse(GENOTYPE_WARNING==0 & BLACKLIST==0 & MULTI_MAPPING==0 & OTHER_ALLELE_WARNING==0 & HIGH_INDEL_WARNING==0 & rawDepth>=20, "pass", "fail")]
-data[filter=="pass", fdr:=p.adjust(BINOM_P, method="BH"), by="sample"]
+data[filter=="pass", FDR:=p.adjust(BINOM_P, method="BH"), by="sample"]
 data[, significant:=ifelse(fdr<0.05, "FDR<0.05", "ns")]
+datasave <- data[filter=="pass"]
+datasave[, `:=`(variant=variantID, p.value=BINOM_P)]
+datasave[, tested_genes:=uniqueN(geneid.v), by="sample"]
+datasave[, significant_genes:=uniqueN(geneid.v[FDR<0.05]), by="sample"]
+
+datasave <- datasave[, .(contig,position,variant,refAllele,altAllele,refCount,altCount,totalCount,GENOTYPE,geneid.v,p.value,FDR,tested_genes,significant_genes,cell_line_id,sample,population,map_reads_assemblymap)]
+fwrite(datasave, paste0("data/ASE_results_", TYPE, ".tsv"), quote = F, row.names = F, sep="\t")
+
+
+
+
+
+
+
+
+
+
+
+
 hist(data[sample=="LWK4" & filter=="pass"]$BINOM_P  )
 
 # sigificant-tested plot

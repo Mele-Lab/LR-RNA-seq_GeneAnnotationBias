@@ -26,19 +26,21 @@ library("variancePartition")
 library("edgeR")
 library("BiocParallel")
 
+TYPE <- "gencode"
+
 # Choose covariates
 covariates <- c("sex", "population", "pc1", "pc2")
 
 # LOAD DATA
 metadataraw <- fread("../00_metadata/data/pantranscriptome_samples_metadata.tsv")
-mypca <- fread(paste0("data/01_PCA_", TYPE,".tsv"))
+mypca <- fread(paste0("data/01_PCA_", TYPE,"_genelvl.tsv"))
 if(TYPE=="gencode"){
   nametype <- "GENCODEv47 annotation"
-  counts <- fread("../../novelannotations/v47_kallisto_quant/matrix.abundance.tsv")
+  counts <- fread("../../novelannotations/quantifications/v47_kallisto_quant/matrix.abundance.tsv")
   annot <- fread("../../../../Data/gene_annotations/gencode/v47/modified/gencode.v47.primary_assembly.annotation.transcript_parsed.tsv")
 }else if(TYPE=="pantrx"){
   nametype <- "PODER annotation"
-  counts <- fread("../../novelannotations/kallisto_quant/matrix.abundance.tsv")
+  counts <- fread("../../novelannotations/quantifications/kallisto_quant/matrix.abundance.tsv")
   annot <- fread("../../novelannotations/merged/240926_filtered_with_genes.transcript2gene.tsv", header=F)
   colnames(annot) <- c("transcriptid.v","geneid.v")
 }
@@ -146,7 +148,18 @@ colnames(resultsdt)[grep("contrast", colnames(resultsdt))] <- "contrast_name"
 colnames(resultsdt)[grep("comparison", colnames(resultsdt))] <- "contrast"
 colnames(resultsdt)[grep("P.Value", colnames(resultsdt))] <- "pval"
 fwrite(resultsdt, paste0("data/02_DEGres_", TYPE,".tsv"), quote = F, sep = "\t", row.names = F)
+
+
+## JUST FOR PLOTTING
+TYPE <- "pantrx"
 resultsdt <- fread(paste0("data/02_DEGres_", TYPE,".tsv"))
+if(TYPE=="gencode"){
+  nametype <- "GENCODE"
+}else if(TYPE=="pantrx"){
+  nametype <- "PODER"
+}
+
+
 
 # resultsdt[, upDEG:=-upDEG]
 
@@ -194,11 +207,11 @@ resultsdt <- fread(paste0("data/02_DEGres_", TYPE,".tsv"))
 # }
 # result[, down:=-down]
 # Reorder columns to desired format
-result <- unique(resultsdt[, .(comparison, reference, upDEG, downDEG)])
+result <- unique(resultsdt[, .(contrast, reference, upDEG, downDEG)])
 # setcolorder(result, c("before_vs", "after_vs", "up", "down"))
 
 # Create a unique list of contrasts
-contrasts <- unique(c(result$comparison, result$reference))
+contrasts <- unique(c(result$contrast, result$reference))
 
 # Initialize a matrix with NA values
 matrix_size <- length(contrasts)
@@ -210,7 +223,7 @@ colnames(result_matrix) <- contrasts
 
 # Fill the matrix with up and down values
 for (i in 1:nrow(result)) {
-  before <- result$comparison[i]
+  before <- result$contrast[i]
   after <- result$reference[i]
   up_value <- result$upDEG[i]
   down_value <- result$downDEG[i]
@@ -232,21 +245,27 @@ melted_df<-rbind.data.frame(melted_df, data.frame(cbind("Contrast"=levels(melted
                                                         "DEGs"=rep(NA, 8))))
 setDT(melted_df)
 melted_df[,DEGs:=as.numeric(DEGs)]
+melted_df[, Contrast := factor(Contrast, levels = sort(levels(Contrast)))]  # Alphabetical order for Contrast
+melted_df[, Ref := factor(Ref, levels = sort(levels(Ref)))] 
+
 # Create the heatmap
 ggplot(melted_df, aes(x = Ref, y = Contrast, fill = DEGs,)) +
   geom_tile(color = "white") +
-  scale_fill_gradient2(low = "#0080AF", mid = "white", high = "#A0000D", midpoint = 0, na.value = "#9AC7CB") +
+  scale_fill_gradient2(low = "#0080AF", mid = "white", high = "#A0000D", midpoint = 0,limits=c(0,210), na.value = "#9AC7CB") +
   theme_minimal() +
   labs(title=nametype,
        x = "Against Reference",
        y="Upregulated Genes in",
        fill = "# DEGs") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  mytheme+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title=element_text(face="bold", hjust=0.5)) +
   geom_text(data=melted_df[!is.na(DEGs)], aes(label=abs(DEGs), size=abs(DEGs)),  na.rm =T)+
   coord_fixed()+
-  scale_size_continuous(range=c(3,5))+
+  scale_size_continuous(range=c(4.5,8)*0.35)+
   guides(size="none")+
-  mytheme
+  scale_y_discrete(limits = levels(melted_df$Contrast))
+ggsave(paste0("../10_figures/01_plots/supp/24_dgedtu/heatmap_DEG_",nametype,".pdf"), dpi=700, width = 3, height = 3,  units = "in")
 
-fwrite(melted_df, paste0("data/02_DEGres_", TYPE, "_sigGenesMatrix.tsv"), sep = "\t", quote = F, row.names = F)
+# fwrite(melted_df, paste0("data/02_DEGres_", TYPE, "_sigGenesMatrix.tsv"), sep = "\t", quote = F, row.names = F)
 

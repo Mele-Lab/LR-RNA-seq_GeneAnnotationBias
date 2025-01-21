@@ -31,7 +31,7 @@ n_fun <- function(x, y){
 library(ggpubr)
 
 gcounts <- fread("../novelannotations/quantifications/kallisto_quant/matrix.abundance.genelevel.tsv")
-tcounts <- fread("../novelannotations/quantifications/kallisto_quant/matrix.abundance.tsv")
+tcounts <- fread("../novelannotations/quantifications/kallisto_quant/matrix.abundance.tpm.tsv")
 
 # Load data
 data <- fread("04_transcriptome_assembly/04_evaluation/05_mastertable/data/29102024_PODER_mastertable.tsv")
@@ -102,7 +102,7 @@ tcounts_long <- melt(tcounts, id.vars="transcript_id", variable.name="cell_line_
 setDT(tcounts_long)
 tcounts_long <- unique(data[, .(associated_gene_biotype, geneid.v, isoform,structural_category)])[tcounts_long, on=c("isoform"="transcript_id")]
 tcounts_long <- metadata[, .(sample, cell_line_id, population, map_reads_generalmap,total_pop_throughput)][tcounts_long, on="cell_line_id"]
-tcounts_long[, Expressed:=fifelse(count>=1000, "Expressed", "Not Expressed")]
+tcounts_long[, Expressed:=fifelse(count>=1, "Expressed", "Not Expressed")]
 tcounts_long[, count_expressed:=uniqueN(isoform), by=c("sample", "Expressed")]
 tcounts_long[, count_expressed_cat_biotype:=uniqueN(isoform), by=c("sample", "Expressed", "associated_gene_biotype", "structural_category")]
 tcounts_long[, count_expressed_cat:=uniqueN(isoform), by=c("sample", "Expressed", "structural_category")]
@@ -156,7 +156,9 @@ ggplot(unique(tcounts_long[, .(population, total_pop_throughput,map_reads_genera
   stat_summary(data = unique(tcounts_long[Expressed=="Expressed", .(population, total_pop_throughput,map_reads_generalmap,structural_category, Expressed, count_expressed_cat)]), 
                aes(x = reorder(population, total_pop_throughput), y = count_expressed_cat, group=structural_category),
                fun = mean, geom = "crossbar", width = 0.5, color = "black", fatten = 1)
-ggsave("10_figures/suppfig_quantification2/jitter_ExpressedTrx_PerPopulationPerSQANTI.pdf", dpi=700, width = 6, height = 6,  units = "in")
+ggsave("10_figures/01_plots/supp/20_expression_ov2/jitter_ExpressedTrx_PerPopulationPerSQANTI.pdf", dpi=700, width = 6, height = 6,  units = "in")
+ggsave("10_figures/02_panels/svg/supp/20_expression_ov2.svg", dpi=700, width = 6, height = 6,  units = "in")
+ggsave("10_figures/02_panels/png/supp/20_expression_ov2.png", dpi=700, width = 6, height = 6,  units = "in")
 
 
 
@@ -208,7 +210,9 @@ p <-ggplot(unique(tcounts_long[Expressed == "Expressed", .(eur, population, stru
                              keyheight = unit(0.2, "cm")))  # Remove shape and fill from legend
 
 ggadjust_pvalue(p)
-ggsave("10_figures/suppfig_quantification3/jitter_ExpressedTrx_PerSQANTI&EURnonEUR.pdf", dpi=700, width = 6, height = 6,  units = "in")
+ggsave("10_figures/01_plots/supp/21_expression_cat_eur/jitter_ExpressedTrx_PerSQANTI&EURnonEUR.pdf", dpi=700, width = 6, height = 6,  units = "in")
+ggsave("10_figures/02_panels/svg/supp/21_expression_cat_eur.svg", dpi=700, width = 6, height = 6,  units = "in")
+ggsave("10_figures/02_panels/png/supp/21_expression_cat_eur.png", dpi=700, width = 6, height = 6,  units = "in")
 
 p <-ggplot(unique(tcounts_long[Expressed == "Expressed", .(afr, population, structural_category, total_pop_throughput, map_reads_generalmap, count_expressed_cat)]), 
            aes(x = afr, y = count_expressed_cat/map_reads_generalmap*10^6, fill = afr)) +
@@ -219,7 +223,7 @@ p <-ggplot(unique(tcounts_long[Expressed == "Expressed", .(afr, population, stru
   labs(x = "", y = "# Expressed PODER transcripts / Million Reads", color = "Population", size = "Reads (M)", fill = "") +
   facet_wrap(~structural_category, scales = "free_y") +
   scale_color_manual(values = popcol) +
-  scale_fill_manual(values = c("#466995", "#A53860"),
+  scale_fill_manual(values = c("#F7D257", "#496F5D"),
                     guide = guide_legend(override.aes = list(size = 3) )) +
   geom_pwc(ref.group = "African", method = "t_test", label.size=6*0.35) +
   stat_summary(fun.data = n_fun, geom = "text", position = position_dodge(0.9), size=6*0.35) +
@@ -233,17 +237,30 @@ p <-ggplot(unique(tcounts_long[Expressed == "Expressed", .(afr, population, stru
                              keyheight = unit(0.2, "cm")))  # Remove shape and fill from legend
 
 ggadjust_pvalue(p)
+ggsave("10_figures/01_plots/supp/21_expression_cat_afr/jitter_ExpressedTrx_PerSQANTI&AFROOA.pdf", dpi=700, width = 6, height = 6,  units = "in")
+ggsave("10_figures/02_panels/svg/supp/21_expression_cat_afr.svg", dpi=700, width = 6, height = 6,  units = "in")
+ggsave("10_figures/02_panels/png/supp/21_expression_cat_afr.png", dpi=700, width = 6, height = 6,  units = "in")
+
 
 # PLOTS ABOUT TRANSCCRIPTS X GENE
-ggplot(unique(tcounts_long[, .(population, sample, total_pop_throughput, afr, eur,geneid.v, expressed_transcripts_per_gene_persample)]),
-              aes(x=expressed_transcripts_per_gene_persample, color=afr))+
+p<-ggplot(unique(tcounts_long[, .(population, sample, map_reads_generalmap, afr, eur,geneid.v, expressed_transcripts_per_gene_persample)]),
+              aes(x=expressed_transcripts_per_gene_persample/map_reads_generalmap*1e6, color=afr))+
   stat_ecdf(geom="step")+
   scale_color_manual(values=c("#F7D257", "#496F5D"))+
   mytheme+
-  ggmagnify::geom_magnify(from = c(xmin = 0.05, xmax = 5, ymin = 0.75, ymax = 1), 
-                          to = c(xmin =10, xmax = 37, ymin = 0.1, ymax = 0.75))
-ggplot(unique(tcounts_long[, .(population, sample, total_pop_throughput, afr, eur,geneid.v, expressed_transcripts_per_gene_persample)]),
-       aes(x=afr, y=expressed_transcripts_per_gene_persample, fill=afr))+
+  ggmagnify::geom_magnify(from = c(xmin = 0.01, xmax = 0.2, ymin = 0.66, ymax = 1), 
+                          to = c(xmin =0.32, xmax = 1, ymin = 0.05, ymax = 0.85))+
+  xlim(c(0,1))+
+  labs(x="# Expressed Transcripts/Gene (and sample)\nNormalized by Million Reads", y="Cumulative Proportion", color="")+
+  theme(legend.position="top",
+        legend.key.size = unit(0.2, "cm"),
+        legend.margin = margin(0, 0, 0, 0),
+        legend.box.margin = margin(-10, 3, -10, -7))+
+  annotate(geom="text", label=paste0("p<2.22e-16"), y=0.3, x=0.75, size=6*0.35) # pvalue obtained from below plot
+ggsave(plot=p,"10_figures/01_plots/supp/22_afr_trx/ecdf_ExpressedTrx_PerGene_AFROOA.pdf", dpi=700, width = 3, height = 3,  units = "in")
+
+ggplot(unique(tcounts_long[, .(population, sample, map_reads_generalmap, afr, eur,geneid.v, expressed_transcripts_per_gene_persample)]),
+       aes(x=afr, y=expressed_transcripts_per_gene_persample/map_reads_generalmap*1e6, fill=afr))+
   geom_violin(alpha=0.7, adjust=2 )+
   geom_boxplot(width=0.1, outliers = F)+
   scale_fill_manual(values=c("#F7D257", "#496F5D"))+
@@ -255,6 +272,129 @@ ggplot(unique(tcounts_long[, .(population, sample, total_pop_throughput, afr, eu
   labs(x="", y="# Expressed Transcripts/Sample\nnormalized by M reads")+
   annotation_logticks(sides = "l")+
   guides(fill="none")
+
+
+trxperpop <- unique(tcounts_long[, counts_in_trx_perPop:=sum(count), by=c("population", "isoform")][counts_in_trx_perPop>=1][, .(afr, isoform, geneid.v,population, total_pop_throughput)])[, trxpergene_perpop_norm:=uniqueN(isoform)/total_pop_throughput*1e6, by=c("population", "geneid.v")]
+p<-ggplot(trxperpop,
+          aes(x=trxpergene_perpop_norm, color=afr))+
+  stat_ecdf(geom="step")+
+  scale_color_manual(values=c("#F7D257", "#496F5D"))+
+  mytheme+
+  ggmagnify::geom_magnify(from = c(xmin = 0, xmax = 1, ymin = 0.75, ymax = 1),
+                          to = c(xmin =1.5, xmax = 5, ymin = 0.1, ymax = 0.85))+
+  labs(x="# Expressed Transcripts/Gene (and population)\nNormalized by Million Reads", y="Cumulative Proportion", color="")+
+  theme(legend.position="top",
+        legend.key.size = unit(0.2, "cm"),
+        legend.margin = margin(0, 0, 0, 0),
+        legend.box.margin = margin(-10, 3, -10, -7))+
+  annotate(geom="text", label=paste0("p<2e-16"), y=0.3, x=4, size=6*0.35) # pvalue obtained from below plot
+ggsave(plot=p,"10_figures/01_plots/supp/22_afr_trx/ecdf_ExpressedTrx_PerGene_AFROOA_pop.pdf", dpi=700, width = 3, height = 3,  units = "in")
+
+wilcox.test(trxperpop$trxpergene_perpop_norm[trxperpop$afr=="African"], 
+            trxperpop$trxpergene_perpop_norm[trxperpop$afr=="OOA"])
+
+
+
+p <-ggplot(unique(tcounts_long[Expressed == "Expressed", .(afr, population, structural_category, total_pop_throughput, map_reads_generalmap, count_expressed_cat)]), 
+           aes(x = afr, y = count_expressed_cat, fill = afr)) +
+  geom_violin(alpha = 0.75) +
+  geom_quasirandom(width = 0.3, alpha = 0.6, aes(size = map_reads_generalmap / 10^6, color = population)) +
+  geom_boxplot(outliers = FALSE, width = 0.05, show.legend = F) +
+  mytheme +
+  labs(x = "", y = "# Expressed PODER transcripts / Million Reads", color = "Population", size = "Reads (M)", fill = "") +
+  facet_wrap(~structural_category, scales = "free_y") +
+  scale_color_manual(values = popcol) +
+  scale_fill_manual(values = c("#F7D257", "#496F5D"),
+                    guide = guide_legend(override.aes = list(size = 3) )) +
+  geom_pwc(ref.group = "African", method = "t_test", label.size=6*0.35) +
+  stat_summary(fun.data = n_fun, geom = "text", size=6*0.35) +
+  scale_y_continuous(expand = expansion(mult = c(0.1, 0.1)))+
+  scale_size_continuous( range = c(0.5, 3))+
+  theme(legend.position = c(0.65, 0.1),legend.box = "horizontal",
+        legend.key.size = unit(0.1, "cm"),  # Reduce size of legend keys
+        legend.margin = margin(0, 0, 0, 0))+
+  guides(fill = guide_legend(override.aes = list(shape = NA, color=NA),
+                             keywidth = unit(0.2, "cm"),          # Adjust width of the legend squares
+                             keyheight = unit(0.2, "cm")))  # Remove shape and fill from legend
+
+ggadjust_pvalue(p)
+
+ggplot(unique(tcounts_long[Expressed == "Expressed" & structural_category%in%c("FSM", "NIC", "NNC"), .(afr, population, structural_category, total_pop_throughput, map_reads_generalmap, count_expressed_cat)]), 
+       aes(y = count_expressed_cat, x = map_reads_generalmap*10e6, color = population)) +
+  geom_point()+
+  mytheme +
+  facet_wrap(~structural_category, scales = "free_y") +
+  scale_color_manual(values = popcol)+
+  labs(x="Sequencing Depth (M reads)",y="# Expressed Transcripts")
+ggplot(unique(tcounts_long[Expressed == "Expressed" & structural_category%in%c("FSM", "NIC", "NNC"), .(afr, population, structural_category, total_pop_throughput, map_reads_generalmap, count_expressed_cat)]), 
+       aes(y = count_expressed_cat/map_reads_generalmap*10e6, x = map_reads_generalmap*10e6, color = population)) +
+  geom_point()+
+  mytheme +
+  facet_wrap(~structural_category, scales = "free_y") +
+  scale_color_manual(values = popcol)+
+  labs(x="Sequencing Depth (M reads)",y="# Expressed Transcripts/ Sequencing Depth (M reads)")
+
+
+# # plot distribution of counts to known where to put the threshold
+ggplot(unique(tcounts_long[, .(sample,geneid.v,count, associated_gene_biotype,structural_category )]), aes(x=count, colour = structural_category))+
+  stat_ecdf(geom = "step")+
+  mytheme+
+  facet_wrap(~associated_gene_biotype)+
+  scale_color_manual(values=colsqanti)+
+  scale_x_continuous(trans="log10", limits = c(0.01, 10e7))+
+  geom_vline(xintercept=1, linetype="dashed", color="darkgrey")+
+  labs(x="# Transcript Counts", y="Cumulative Proportion", color="Structural\nCategory")+
+  theme(
+    legend.key.size = unit(0.1, "cm"),  # Reduce size of legend keys
+    legend.margin = margin(0, 0, 0, 0)  # Remove extra margin around legend
+  )+
+  facet_wrap(~associated_gene_biotype)
+ggsave("10_figures/01_plots/supp/19_expression_ov/ecdf_counts_perGeneBiotype.pdf", dpi=500, width = 6, height = 2.5,  units = "in")
+
+
+##### Plot expression by validaiton
+val <- fread("../novelannotations/analysis_tables/241121_poder_transcripts_by_external_support.tsv")
+val[, exval := rowSums(.SD == TRUE) > 0, 
+    .SDcols = c("CHESS3", "ENCODE4", "GENCODE v47", "GTEx", "RefSeq v110")]
+
+valtcounts <- val[, .(transcript_id, exval)][tcounts_long, on=c("transcript_id"="isoform")][, .(transcript_id, exval, count)]
+ggplot(unique(valtcounts),
+              aes(x=exval, y=count, fill=exval))+
+         geom_violin(alpha=0.7, adjust=2 )+
+         geom_boxplot(width=0.1, outliers = F)+
+         scale_fill_manual(values = c("#c44536", "#457b9d")) +
+         mytheme+
+         stat_summary(fun.data = n_fun, geom = "text", position = position_dodge(0.9),fun.args = list(y=-2), size=6*0.35)+
+         stat_compare_means(comparisons = list(c("TRUE", "FALSE")),method = "wilcox.test",
+                            method.args = list(alternative = "two.sided"), size=6*0.35)+
+         scale_y_continuous(trans="log10")+
+         labs(x="Externally Validated", y="# Counts per Transcript (in each sample)")+
+         annotation_logticks(sides = "l")+
+         guides(fill="none")
+ggsave("10_figures/01_plots/supp/12_external_supp/violin_counts_by_validatoin.pdf", dpi=500, width = 2.25, height = 2.5,  units = "in")
+
+
+
+
+##### ARE NOVEL TRANSCRIPTS DISCOVERED IN NON-EUR MORE EXPRESSED IN THOSE POPS THAN IN EUROPEANS???
+subdata <- data[, .(isoform, structural_category, AJI, CEU, HAC, ITU, LWK, MPC, PEL, YRI)]
+subdata[, eursp:=ifelse(AJI==0 & CEU==0 , "Only\nNon-European", "Also found\nin European")]
+
+tcounts_long_data <- subdata[, structural_category:=NULL][tcounts_long, on="isoform"]
+
+ggplot(tcounts_long_data[structural_category%in%c("NIC", "NNC")], aes(x=eur, y=count))+
+  geom_violin()+
+  facet_wrap(~eursp)+
+  scale_y_continuous(trans="log10")+
+  stat_summary(fun.data = n_fun, geom = "text", position = position_dodge(0.9),fun.args = list(y=-2), size=6*0.35)+
+  stat_compare_means(comparisons = list(c("European", "non-European")),method = "wilcox.test",
+                     method.args = list(alternative = "two.sided"), size=6*0.35)+
+  mythemen
+
+
+
+
+
 # ggplot(unique(tcounts_long[, .(population, sample, total_pop_throughput, eur,geneid.v, expressed_transcripts_per_gene_persample)]),
 #        aes(x=eur, y=expressed_transcripts_per_gene_persample, fill=eur))+
 #   geom_violin(alpha=0.7, adjust=2 )+
@@ -319,12 +459,12 @@ ggplot(unique(tcounts_long[, .(population, sample, total_pop_throughput, afr, eu
 # 
 # #### REPEAT THE SAME BUT IN THIS CASE PUT THRESHOLD ON COUNTS----------------------------------------------------------------------------
 # #### Do the same with trx
-# # Compute cpm of gene counts
+# # # Compute cpm of gene counts
 # tcounts <- column_to_rownames(tcounts, var="transcript_id")
 # colnames(tcounts) <- gsub("_1","", colnames(tcounts))
 # tcpm <- tcounts
 # 
-# # Transform to long format data.table
+# # # Transform to long format data.table
 # tcpm <- rownames_to_column(as.data.frame(tcpm), var="transcriptid.v")
 # tcpm_long <- melt(tcpm, id.vars="transcriptid.v", variable.name="cell_line_id", value.name = "count")
 # setDT(tcpm_long)
@@ -332,7 +472,7 @@ ggplot(unique(tcounts_long[, .(population, sample, total_pop_throughput, afr, eu
 # tcpm_long <- metadata[, .(sample, cell_line_id, population, map_reads_generalmap,total_pop_throughput)][tcpm_long, on="cell_line_id"]
 # 
 # 
-# # plot distribution of counts to known where to put the threshold
+# # # plot distribution of counts to known where to put the threshold
 # ggplot(tcpm_long, aes(x=count, colour = structural_category))+
 #   stat_ecdf(geom = "step")+
 #   mytheme+
@@ -345,9 +485,9 @@ ggplot(unique(tcounts_long[, .(population, sample, total_pop_throughput, afr, eu
 #     legend.key.size = unit(0.1, "cm"),  # Reduce size of legend keys
 #     legend.margin = margin(0, 0, 0, 0)  # Remove extra margin around legend
 #   )
-# ggsave("10_figures/suppfig_quantification1/ecdf_counts_perGeneBiotype.pdf", dpi=700, width = 6, height = 2.5,  units = "in")
-# 
-# 
+# ggsave("10_figures/suppfig_quantification1/ecdf_counts_perGeneBiotype.pdf", dpi=500, width = 6, height = 2.5,  units = "in")
+# # 
+# # 
 # 
 # tcpm_long[, Expressed:=fifelse(count>=1, "Expressed", "Not Expressed")]
 # tcpm_long[, count_expressed:=uniqueN(isoform), by=c("sample", "Expressed")]

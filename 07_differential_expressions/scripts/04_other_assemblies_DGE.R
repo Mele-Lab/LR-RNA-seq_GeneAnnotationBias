@@ -151,6 +151,10 @@ colnames(resultsdt)[grep("contrast", colnames(resultsdt))] <- "contrast_name"
 colnames(resultsdt)[grep("comparison", colnames(resultsdt))] <- "contrast"
 colnames(resultsdt)[grep("P.Value", colnames(resultsdt))] <- "pval"
 fwrite(resultsdt, paste0("data/other_assemblies/02_DEGres_", ASSEMBLY,"_", TYPE,".tsv"), quote = F, sep = "\t", row.names = F)
+
+
+
+
 resultsdt <- fread(paste0("data/other_assemblies/02_DEGres_", ASSEMBLY,"_",TYPE,".tsv"))
 
 # resultsdt[, upDEG:=-upDEG]
@@ -237,21 +241,41 @@ melted_df<-rbind.data.frame(melted_df, data.frame(cbind("Contrast"=levels(melted
                                                         "DEGs"=rep(NA, 8))))
 setDT(melted_df)
 melted_df[,DEGs:=as.numeric(DEGs)]
+
+
+### PLOT
+TYPES <-c("gencode", "pantrx")
+ASSEMBLIES <- c("HG002_maternal", "HG02717_maternal")
+
+TYPE <- TYPES[2]
+if(TYPE=="gencode"){
+  nametype <- "GENCODE"
+}else if(TYPE=="pantrx"){
+  nametype <- "PODER"
+}
+ASSEMBLY <- ASSEMBLIES[2]
+melted_df <- fread(paste0("data/other_assemblies/02_DEGres_", ASSEMBLY, "_",TYPE, "_sigGenesMatrix.tsv"))
+
 # Create the heatmap
 ggplot(melted_df, aes(x = Ref, y = Contrast, fill = DEGs,)) +
   geom_tile(color = "white") +
-  scale_fill_gradient2(low = "#0080AF", mid = "white", high = "#A0000D", midpoint = 0, na.value = "#9AC7CB") +
+  scale_fill_gradient2(low = "#0080AF", mid = "white", high = "#A0000D", midpoint = 0,limits=c(0,210), na.value = "#9AC7CB") +
   theme_minimal() +
-  labs(title=paste0(ASSEMBLY, " - ",nametype),
+  labs(title=paste0(ASSEMBLY, " with ",nametype),
        x = "Against Reference",
        y="Upregulated Genes in",
        fill = "# DEGs") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  mytheme+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title=element_text(face="bold", hjust=0.5)) +
   geom_text(data=melted_df[!is.na(DEGs)], aes(label=abs(DEGs), size=abs(DEGs)),  na.rm =T)+
   coord_fixed()+
-  scale_size_continuous(range=c(3,5))+
+  scale_size_continuous(range=c(4.5,8)*0.35)+
   guides(size="none")+
-  mytheme
+  scale_y_discrete(limits = levels(melted_df$Contrast))
+ggsave(paste0("../10_figures/01_plots/supp/28_deg_assemblies/heatmap_DGE_",ASSEMBLY, "_",TYPE,".pdf"), dpi=700, width = 2.75, height = 2.75,  units = "in")
+
+
 
 fwrite(melted_df, paste0("data/other_assemblies/02_DEGres_", ASSEMBLY, "_",TYPE, "_sigGenesMatrix.tsv"), sep = "\t", quote = F, row.names = F)
 

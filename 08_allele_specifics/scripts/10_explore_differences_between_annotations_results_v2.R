@@ -55,10 +55,10 @@ for(i in 1:nrow(array)){
 
 astsraw <- rbindlist(asts, use.names=TRUE)
 astsraw <- metadata[, .(samplecode, sample, population, map_reads_assemblymap)][astsraw, on="samplecode"]
-astsraw[, annot := ifelse(annot=="gencode", "GENCODEv47", 
-                          ifelse(annot=="enhanced_gencode", "Enhanced\nGENCODEv47", "PODER"))]
-astsraw[, annot:=factor(annot, levels=c("GENCODEv47", "PODER", "Enhanced\nGENCODEv47"))]
-# fwrite(astsraw, "data/ASTS_results_threeannots.tsv", quote=F, row.names = F, sep="\t")
+astsraw[, annot := ifelse(annot=="gencode", "GENCODE", 
+                          ifelse(annot=="enhanced_gencode", "EnhancedGENCODE", "PODER"))]
+astsraw[, annot:=factor(annot, levels=c("GENCODE", "PODER", "EnhancedGENCODE"))]
+fwrite(astsraw, "data/ASTS_results_threeannots.tsv", quote=F, row.names = F, sep="\t")
 astsraw <- fread("data/ASTS_results_threeannots.tsv")
 asts <- astsraw[gene_testable==TRUE]
 
@@ -72,42 +72,45 @@ ggplot(unique(asts[, .(sig_genes, tested_genes, population, map_reads_assemblyma
        aes(x=tested_genes, y=sig_genes))+
   stat_poly_line(color="darkgrey")+
   stat_poly_eq(aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")),
-               formula = y ~ x, parse = TRUE, label.x.npc = "left", label.y.npc = 0.9, size = 5) +  # Equation and R-squared
+               formula = y ~ x, parse = TRUE, label.x.npc = "left", label.y.npc = 0.9, size = 6*0.35) +  # Equation and R-squared
   geom_point(aes(col=population,size=map_reads_assemblymap/10^6), alpha=0.7)+
   mytheme+
   labs(y="# ASTU Significant Genes", x="# ASTU Tested Genes", size="Reads (M)", col="Population")+
   scale_color_manual(values=popcols)+
-  facet_wrap(~annot)
-# number of tested genes per annot?
+  facet_wrap(~annot)+
+  scale_size_continuous(range = c(0.5, 4))
+  ggsave("../10_figures/01_plots/supp/29_as_test_disc/scatter.ASTUdisc_test.pdf", dpi=700, width = 6.5, height = 3,  units = "in")
 
-ggplot(unique(asts[, .(sample, annot, sig_genes, afr, population, map_reads_assemblymap)]), 
-       aes(x=annot, y=sig_genes, fill=annot))+
-  geom_violin(alpha=0.7)+
-  geom_boxplot(outliers = F, width=0.1)+
-  ggbeeswarm::geom_quasirandom(aes(color=population, size=map_reads_assemblymap/10^6),alpha=0.8)+
-  scale_color_manual(values=c(popcols))+
-  mytheme+
-  labs(x="", y="# Significant ASTU Genes", size="Mapped Reads (M)", col="Population", fill="")+
-  stat_compare_means(comparisons = list(c("PODER", "GENCODEv47"), 
-                                        c("Enhanced\nGENCODEv47", "PODER"),
-                                        c("Enhanced\nGENCODEv47", "GENCODEv47")),method = "t.test",
-                     method.args = list(alternative = "two.sided", paired=TRUE))+
-  scale_fill_manual(values=c( "#7F675B", "#A2AD59", "#62531C"))+
-  guides(fill="none")
-ggplot(unique(asts[, .(sample, annot, tested_genes, afr, population, map_reads_assemblymap)]), 
-       aes(x=annot, y=tested_genes, fill=annot))+
-  geom_violin(alpha=0.7)+
-  geom_boxplot(outliers = F, width=0.1)+
-  ggbeeswarm::geom_quasirandom(aes(color=population, size=map_reads_assemblymap/10^6),alpha=0.8)+
-  scale_color_manual(values=c(popcols))+
-  mytheme+
-  labs(x="", y="# Tested Genes", size="Mapped Reads (M)", col="Population", fill="")+
-  stat_compare_means(comparisons = list(c("PODER", "GENCODEv47"), 
-                                        c("Enhanced\nGENCODEv47", "PODER"),
-                                        c("Enhanced\nGENCODEv47", "GENCODEv47")),method = "t.test",
-                     method.args = list(alternative = "two.sided", paired=TRUE))+
-  scale_fill_manual(values=c( "#7F675B", "#A2AD59", "#62531C"))+
-  guides(fill="none")
+# # number of tested genes per annot?
+# 
+# ggplot(unique(asts[, .(sample, annot, sig_genes, afr, population, map_reads_assemblymap)]), 
+#        aes(x=annot, y=sig_genes, fill=annot))+
+#   geom_violin(alpha=0.7)+
+#   geom_boxplot(outliers = F, width=0.1)+
+#   ggbeeswarm::geom_quasirandom(aes(color=population, size=map_reads_assemblymap/10^6),alpha=0.8)+
+#   scale_color_manual(values=c(popcols))+
+#   mytheme+
+#   labs(x="", y="# Significant ASTU Genes", size="Mapped Reads (M)", col="Population", fill="")+
+#   stat_compare_means(comparisons = list(c("PODER", "GENCODEv47"), 
+#                                         c("Enhanced\nGENCODEv47", "PODER"),
+#                                         c("Enhanced\nGENCODEv47", "GENCODEv47")),method = "t.test",
+#                      method.args = list(alternative = "two.sided", paired=TRUE))+
+#   scale_fill_manual(values=c( "#7F675B", "#A2AD59", "#62531C"))+
+#   guides(fill="none")
+# ggplot(unique(asts[, .(sample, annot, tested_genes, afr, population, map_reads_assemblymap)]), 
+#        aes(x=annot, y=tested_genes, fill=annot))+
+#   geom_violin(alpha=0.7)+
+#   geom_boxplot(outliers = F, width=0.1)+
+#   ggbeeswarm::geom_quasirandom(aes(color=population, size=map_reads_assemblymap/10^6),alpha=0.8)+
+#   scale_color_manual(values=c(popcols))+
+#   mytheme+
+#   labs(x="", y="# Tested Genes", size="Mapped Reads (M)", col="Population", fill="")+
+#   stat_compare_means(comparisons = list(c("PODER", "GENCODEv47"), 
+#                                         c("Enhanced\nGENCODEv47", "PODER"),
+#                                         c("Enhanced\nGENCODEv47", "GENCODEv47")),method = "t.test",
+#                      method.args = list(alternative = "two.sided", paired=TRUE))+
+#   scale_fill_manual(values=c( "#7F675B", "#A2AD59", "#62531C"))+
+#   guides(fill="none")
 
 
 
@@ -301,6 +304,8 @@ ggplot(unique(astsraw[!is.na(gene_heterozygous), .(annot, gene_heterozygous, gen
   geom_text(aes(label=scales::percent(after_stat(count) / tapply(after_stat(count) , ..x.., sum)[..x..], accuracy = 1)),
             stat="count", position=position_stack(vjust=0.5))
 #### IS PODER TESTING MORE GENES; TRANSCRIPTS; AND TRANSCRIPTS PER GENE??
+astsraw <- astsraw[annot%in%c("GENCODE", "PODER")]
+
 ggplot(unique(unique(astsraw[gene_testable==TRUE, 
                              .(annot, gene_testable, geneid.v, sample)]
                      [, unique_tested_genes_per_sample:=uniqueN(geneid.v), by=c("sample", "annot")]
@@ -367,14 +372,15 @@ ggplot(unique(unique(astsraw[,
                      [, .(unique_tested_transcripts_per_sample, annot, sample)])), aes(x=annot, y=unique_tested_transcripts_per_sample, fill=annot))+
   geom_violin(alpha=0.7)+
   geom_boxplot(outliers=F, width=0.1)+
-  geom_jitter()+
+  ggbeeswarm::geom_quasirandom(size=0.5, alpha=0.5)+
   mytheme+
   labs(x="", y="# Unique Detected Transcripts/Sample")+
   scale_fill_manual(values=c( "#7F675B", "#A2AD59"))+
   guides(fill="none")+
-  stat_compare_means(comparisons = list(c("GENCODEv47", "PODER")),method = "t.test",
-                     method.args=list(paired=T))+
-  stat_summary(fun.data = n_fun, geom = "text", fun.args = list(y=9000), vjust=0.5)
+  stat_compare_means(comparisons = list(c("GENCODE", "PODER")),method = "t.test",
+                     method.args=list(paired=T), size=6*0.35)+
+  stat_summary(fun.data = n_fun, geom = "text", fun.args = list(y=9000), vjust=0.5, size=6*0.35)
+ggsave("../10_figures/01_plots/supp/34_astu_explained/violin_transcripts_per_sample.pdf", dpi=700, width = 2.25, height = 2.5,  units = "in")
 
 ggplot(unique(unique(astsraw[, 
                              .(annot, gene_testable, transcriptid.v, geneid.v, sample)]
@@ -386,9 +392,10 @@ ggplot(unique(unique(astsraw[,
   labs(x="", y="# Unique Detected Transcripts/Gene per Sample")+
   scale_fill_manual(values=c( "#7F675B", "#A2AD59"))+
   guides(fill="none")+
-  stat_compare_means(comparisons = list(c("GENCODEv47", "PODER")),method = "t.test",
-                     method.args = list(alternative = "less"))+
-  stat_summary(fun.data = n_fun, geom = "text", fun.args = list(y=80), vjust=0.5)
+  stat_compare_means(comparisons = list(c("GENCODE", "PODER")),method = "t.test",
+                     method.args = list(alternative = "less"), size=6*0.35)+
+  stat_summary(fun.data = n_fun, geom = "text", fun.args = list(y=80), vjust=0.5,size=6*0.35)
+ggsave("../10_figures/01_plots/supp/34_astu_explained/violin_transcripts_pergenes_per_sample_testing.pdf", dpi=700, width = 2.25, height = 2.5,  units = "in")
 
 
 #### CHECK FILTERS
@@ -439,20 +446,23 @@ toplot1 <-unique(unique(astsraw[,.(annot, gene_numtrx, gene_twentycount, geneid.
 
 toplot1$gene_enoughcounts_and_trx[is.na(toplot1$gene_enoughcounts_and_trx)] <- "NA"   
 toplot1[, gene_enoughcounts_and_trx:=factor(gene_enoughcounts_and_trx, levels=c("NA", "TRUE"))]
-ggplot(unique(toplot1[, .(annot, gene_enoughcounts_and_trx_count, sample, gene_enoughcounts_and_trx)]), aes(x=annot, y=gene_enoughcounts_and_trx_count, fill=annot))+
+ggplot(unique(toplot1[, .(annot, gene_enoughcounts_and_trx_count, sample, gene_enoughcounts_and_trx)]), 
+       aes(x=annot, y=gene_enoughcounts_and_trx_count, fill=annot))+
   geom_violin(alpha=0.7)+
+  ggbeeswarm::geom_quasirandom(size=0.5, alpha=0.2)+
   geom_boxplot(outliers=F, width=0.1)+
-  geom_jitter()+
   mytheme+
   labs(x="", y="# Unique Genes per Sample")+
   scale_fill_manual(values=c( "#7F675B", "#A2AD59"))+
   guides(fill="none")+
-  stat_compare_means(comparisons = list(c("GENCODEv47", "PODER")),method = "t.test",
-                     method.args = list(paired=T))+
-  stat_summary(fun.data = n_fun, geom = "text", fun.args = list(y=0), vjust=0.5)+
+  stat_compare_means(comparisons = list(c("GENCODE", "PODER")),method = "t.test",
+                     method.args = list(paired=T),size=6*0.35)+
+  stat_summary(fun.data = n_fun, geom = "text", fun.args = list(y=0), vjust=0.5, size=6*0.35)+
   facet_wrap(~gene_enoughcounts_and_trx, 
-             labeller = labeller(gene_enoughcounts_and_trx = as_labeller(c("TRUE" = ">=20 gene counts\n&>1 transcripts >=10 counts",
-                                                                     "NA" = "Not enough transcripts or counts"))))
+             labeller = labeller(gene_enoughcounts_and_trx = as_labeller(c("TRUE" = ">=20 gene counts\n&>1 transcripts\nwith >=10 counts",
+                                                                     "NA" = "Not enough\ntranscripts\nor counts"))))+
+  ylim(c(0, 2500))
+ggsave("../10_figures/01_plots/supp/34_astu_explained/violin_genes_per_sample_testing.pdf", dpi=700, width = 3, height = 2.5,  units = "in")
 
 
 
@@ -613,11 +623,10 @@ ggplot(unique(astsmod[annot=="PODER" & gene_testable==TRUE, .(sample, transcript
   labs(x="", y="Proportion of tested Transcripts", fill="Structural\nCategory")+
   geom_text(aes(label=after_stat(count)), stat="count", position=position_fill(vjust=0.5))
 
-astsmod[gene_testable==TRUE, gene_with_noveltrx := 
-     any(structural_category %in% c("NIC", "NNC")), 
-   by = .("sample", "annot", "geneid.v")]
+# astsmod[gene_testable==TRUE, gene_with_noveltrx :=  any(structural_category %in% c("NIC", "NNC")), 
+#    by = .("sample", "annot", "geneid.v")]
 astsmod[, morethan2trx :=ifelse(gene_numtrx>2, ">2", "=2")]
-astsmod[!is.na(gene_with_noveltrx) & annot=="PODER", numgenes_per2trx_per_noveltrx_sample :=uniqueN(geneid.v), by=c("morethan2trx", "annot", "sample", "gene_with_noveltrx")]
+# astsmod[!is.na(gene_with_noveltrx) & annot=="PODER", numgenes_per2trx_per_noveltrx_sample :=uniqueN(geneid.v), by=c("morethan2trx", "annot", "sample", "gene_with_noveltrx")]
 
 # start from a subset dt
 asts <- unique(astsmod[annot=="PODER" & gene_testable==TRUE, .(sample, population, structural_category, geneid.v, transcriptid.v)])
@@ -673,11 +682,21 @@ ggplot(unique(astsmod[structural_category %in% c("FSM", "NIC", "NNC"),
   geom_bar()+
   facet_wrap(~trx_tencounts_tested, labeller=labeller(trx_tencounts_tested=c("FALSE_NA"="Transcripts\n<10 counts",
                                                                              "TRUE_NA"="Transcripts\n>=10 counts\nNot Tested Genes",
-                                                                             "TRUE_TRUE"="Tested Transcripts")))+
+                                                                             "TRUE_TRUE"="Tested\nTranscripts")))+
   mytheme +
   scale_fill_manual(values = colsqanti)+
   labs(x="", y="# Unique Transcripts across samples", fill="Structural\nCategory")+
-  geom_text(aes(label=after_stat(count)), stat="count", position=position_stack(vjust=0.5))
+  geom_text(aes(label=after_stat(count)), stat="count", position=position_stack(vjust=0.5), size=6*0.35)+
+  theme(legend.position=c(0.9, 0.85),
+        axis.text.x=element_text(angle=45, vjust=1, hjust=1))
+ggsave("../10_figures/01_plots/supp/34_astu_explained/barplot_transcripts_per_sample.pdf", dpi=700, width = 3, height = 3,  units = "in")
+
+# overlap
+
+
+
+
+
 asts_tested_noveltrx <-unique(astsmod[gene_testable==TRUE & structural_category%in%c("NIC", "NNC") , transcriptid.v])
 
 

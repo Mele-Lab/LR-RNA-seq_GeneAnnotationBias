@@ -31,11 +31,11 @@ covariates <- c("sex", "population", "pc1", "pc2")
 metadataraw <- fread("../00_metadata/data/pantranscriptome_samples_metadata.tsv")
 mypca <- fread(paste0("data/01_PCA_", TYPE,"_genelvl.tsv"))
 if(TYPE=="gencode"){
-  nametype <- "GENCODEv47 annotation"
+  nametype <- "GENCODE"
   countsprefilt <- fread("../../novelannotations/quantifications/v47_kallisto_quant/matrix.abundance.tsv")
   annot <- fread("../../../../Data/gene_annotations/gencode/v47/modified/gencode.v47.primary_assembly.annotation.transcript_parsed.tsv")
 }else if(TYPE=="pantrx"){
-  nametype <- "PODER annotation"
+  nametype <- "PODER "
   countsprefilt <- fread("../../novelannotations/quantifications/kallisto_quant/matrix.abundance.tsv")
   annot <- fread("../../novelannotations/merged/240926_filtered_with_genes.transcript2gene.tsv", header=F)
   colnames(annot) <- c("transcriptid.v","geneid.v")
@@ -99,6 +99,18 @@ for(population in unique(metadataraw$population)){
 
 data <- rbindlist(resultslist)
 
+# Classify genes as upregulated or downregulated based on log2FoldChange
+data$regulation <- ifelse(data$log2FoldChange > 0, "Upregulated", "Downregulated")
+
+# Count upregulated and downregulated genes for each contrast
+result <- aggregate(regulation ~ contrast, data, function(x) {
+  table(factor(x, levels = c("Upregulated", "Downregulated")))
+})
+res <- as.data.table(result)
+
+res[, `:=`(Contrast=gsub("vs...", "", contrast), Reference=gsub("...vs", "", contrast))]
+
+
 # count number of degs per contrast
 data[, sigenes := .N, by="contrast"]
 data[, contrast:=gsub("_","",gsub("population_", "", contrast))]
@@ -112,3 +124,20 @@ ggplot(subdata, aes(x=reference, y=comparison, fill=sigenes))+
   scale_fill_gradient2(low = "#0080AF", mid = "white", high = "#A0000D", midpoint = 0, na.value = "#9AC7CB")+
   geom_text(data=subdata, aes(label=sigenes, size=sigenes),  na.rm =T)+
   guides(size="none")
+ggplot(res, aes(x = Reference, y = Contrast, fill = regulation.Upregulated,)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient2(low = "#0080AF", mid = "white", high = "#A0000D", midpoint = 0,limits=c(0,300), na.value = "#9AC7CB") +
+  theme_minimal() +
+  labs(title=paste0(nametype, " using DESeq2"),
+       x = "Against Reference",
+       y="Upregulated Genes in",
+       fill = "# DEGs") +
+  mytheme+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title=element_text(face="bold", hjust=0.5)) +
+  geom_text(data=res[!is.na(regulation.Upregulated)], aes(label=abs(regulation.Upregulated), size=abs(regulation.Upregulated)),  na.rm =T)+
+  coord_fixed()+
+  scale_size_continuous(range=c(4.5,8)*0.35)+
+  guides(size="none")+
+  scale_y_discrete(limits = levels(res$Contrast))
+ggsave(paste0("../10_figures/01_plots/supp/25_deseqdropout/heatmap_DEG_",nametype,"_DESeq2.pdf"), dpi=700, width = 3, height = 3,  units = "in")

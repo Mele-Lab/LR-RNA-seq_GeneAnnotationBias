@@ -22,7 +22,9 @@ setup_script(relative_path, 3, 48)
 catch_args(0)
 ##
 ## 0----------------------------END OF HEADER----------------------------------0
-
+median_fun <- function(x,y) {
+  return(data.frame(y = y, label =  round(median(x), 2)))
+}
 # load library
 library("variancePartition")
 library("limma")
@@ -32,8 +34,8 @@ library("edgeR")
 counts <- fread("01_isoquantify/data/gencodev47/gene_counts_matrix.tsv")
 colnames(counts) <- gsub(".*_", "",colnames(counts))
 
-metadata <- fread("../00_metadata/pantranscriptome_samples_metadata.tsv")
-
+metadata <- fread("../00_metadata/data/pantranscriptome_samples_metadata.tsv")
+metadata <- metadata[merged_run_mode==TRUE & mixed_samples==FALSE]
 counts <- column_to_rownames(counts, var="geneid.v")
 metadata <- metadata[cell_line_id %in% colnames(counts),]
 
@@ -93,4 +95,9 @@ ggplot(vplong, aes(y=variance_explained, x=variable, fill=variable))+
   geom_boxplot(width=0.15, outliers=F)+
   mytheme+
   guides(fill="none")+
-  xlab("")
+  labs(x="", y="% Gene Expression Variance Explained")+
+  scale_fill_manual(values=c("darkgrey", "darkgrey", "#81559B", "darkgrey", "#81559B", "white"))+
+  stat_summary(fun.data = median_fun, geom = "text", fun.args = list(y = 1), size=6*0.35) +
+  scale_x_discrete(labels=c("CapTrap\nBatch", "Library\nPreparation\nBatch", "Population", "Throughput", "Sex", "Residuals"))
+ggsave("../10_figures/01_plots/supp/23_variance_part/violin_Gene_VarPart.pdf", dpi=700, width = 3.6, height = 2.25,  units = "in")
+

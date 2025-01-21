@@ -164,11 +164,22 @@ melted_df<-rbind.data.frame(melted_df, data.frame(cbind("Contrast"=levels(melted
                                                         "DVGs"=rep(NA, 8))))
 setDT(melted_df)
 melted_df[,DVGs:=as.numeric(DVGs)]
+
+TYPE <- "gencode"
+resultsdt <- fread(paste0("data/02_DEGres_", TYPE,".tsv"))
+if(TYPE=="gencode"){
+  nametype <- "GENCODE"
+}else if(TYPE=="pantrx"){
+  nametype <- "PODER"
+}
+melted_df <- fread(paste0("data/03_DVGres_", TYPE, "_sigGenesMatrix.tsv"))
+melted_df[Contrast==Ref, DVGs:=NA]
 # Create the heatmap
 ggplot(melted_df, aes(x = Ref, y = Contrast, fill = DVGs+1,)) +
   geom_tile(color = "white") +
-  scale_fill_gradient2(low = "#0080AF", mid = "white", high = "#576A34",trans="log", midpoint = 0, na.value = "#9AC7CB") +
-  theme_minimal() +
+  scale_fill_gradient2(low = "#0080AF", mid = "white", high = "#576A34",
+                       trans="log",limits = c(1, 1000), na.value = "#9AC7CB",labels = scales::label_number(accuracy = 1)) +
+  mytheme+
   labs(title=nametype,
        x = "Against Reference",
        y="Hypervariable Genes in",
@@ -176,7 +187,9 @@ ggplot(melted_df, aes(x = Ref, y = Contrast, fill = DVGs+1,)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   geom_text(data=melted_df[Contrast!=Ref], aes(label=DVGs, size=DVGs))+
   coord_fixed()+
-  scale_size_continuous(range=c(3,5))+
-  guides(size="none")+
-  mytheme
-fwrite(melted_df[!is.na(DVGs)], paste0("data/03_DVGres_", TYPE, "_sigGenesMatrix.tsv"), sep = "\t", quote = F, row.names = F)
+  scale_size_continuous(range=c(4.5,8)*0.35)+
+  guides(size="none")
+ggsave(paste0("../10_figures/01_plots/supp/24_dgedtu/heatmap_DVG_",nametype,".pdf"), dpi=700, width = 3, height = 3,  units = "in")
+
+
+# fwrite(melted_df[!is.na(DVGs)], paste0("data/03_DVGres_", TYPE, "_sigGenesMatrix.tsv"), sep = "\t", quote = F, row.names = F)
