@@ -5,6 +5,7 @@ rule split_ONT_plus_full_linker:
         runtime = 300
     shell:
         """
+        module unload miniconda
         module load anaconda
         conda init
         source activate base
@@ -25,6 +26,7 @@ rule split_full_linker:
         runtime = 300
     shell:
         """
+        module unload miniconda
         module load anaconda
         conda init
         source activate base

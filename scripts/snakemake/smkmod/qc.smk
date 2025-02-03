@@ -111,6 +111,7 @@ rule pseudonanoplot:
         threads = 4
     shell:
         """
+        module unload miniconda
         module load anaconda
         conda init
         source activate base

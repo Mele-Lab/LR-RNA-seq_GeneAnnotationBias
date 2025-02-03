@@ -16,7 +16,7 @@ include: 'smkmod/variant_calling.smk'
 
 configfile: 'snakemake/config.yml'
 #config_tsv = 'snakemake/test_data_2.tsv'
-config_tsv = '/gpfs/projects/bsc83/Projects/pantranscriptome/pclavell/01_basecalling/data/array_4preprocess'
+config_tsv = '/gpfs/projects/bsc83/Projects/pantranscriptome/pclavell/02_ONT_preprocessing/data/array_reruns'
 
 
 

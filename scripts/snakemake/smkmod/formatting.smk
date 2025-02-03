@@ -21,6 +21,7 @@ rule extract_umi:
         mem_gb = 16
     shell:
         """
+        module unload miniconda
         module load hdf5 python/3.12.1
         python snakemake/extract_UMI.py {input.align} {params.opref} {params.sep}
         """
@@ -169,6 +170,7 @@ rule porechop:
         threads = 112
     shell:
         """
+        module unload miniconda
         module load anaconda
         source activate base
         conda init

@@ -22,7 +22,7 @@ ref:
 
   gtf_link: https:/ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_44/gencode.v44.chr_patch_hapl_scaff.annotation.gtf.gz
   gtf: /gpfs/projects/bsc83/Data/gene_annotations/gencode/v44/gencode.v44.chr_patch_hapl_scaff.annotation.gtf
-  junc_bed: /gpfs/projects/bsc83/MN4/bsc83/Data/gene_annotation/gencode/release_44/modified/gencode.v44.chr_patch_hapl_scaff.annotation_transcriptlevel.bed
+  junc_bed: /gpfs/projects/bsc83/Data/gene_annotations/gencode/v44/modified/gencode.v44.chr_patch_hapl_scaff.annotation_transcriptlevel.bed
   gt_map: data/ref/gt_map.tsv
 
   linker_5_fa: snakemake/ref/linker_5.fa

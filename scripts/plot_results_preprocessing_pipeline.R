@@ -7,7 +7,7 @@
 ## SETTINGS:  
 ##    write path relative to 
 ##    /gpfs/projects/bsc83/ or /home/pclavell/mounts/mn5/
-relative_path <- "Projects/pantranscriptome/pclavell/ONT_preprocessing"
+relative_path <- "Projects/pantranscriptome/pclavell/02_ONT_preprocessing"
 ##
 ##    load setup sources
 mn5source <- "/gpfs/projects/bsc83/Projects/pantranscriptome/pclavell/Z_resources/myutils.R"
@@ -24,16 +24,14 @@ catch_args(0)
 library(ggpmisc)
 
 # get samples names that have started the preprocessing
-sample_vector <- list.files("scripts/data/","2024*")
-
+sample_vector <- list.files("data/qc_data_multiplerun_samples","2024*", full.names = T)
+sample_vector <- c(sample_vector, list.files("data/qc_data_singlerun_samples/","2024*", full.names = T))
 # 1- if a samples has finished retrieve its % of original reads that remain after the filter
 names_percent_original <-c()
 percent_original <- list()
-for(i in sample_vector){
-  thispath <- paste0(getwd(),"/scripts/data/", i,"/qc/",i,"_reads_assessed_filtered.tsv")
-  if(file.exists(thispath)){
+for(i in sample_vector[grepl("reads_percentage_bystep", sample_vector)]){
     names_percent_original <- c(names_percent_original, i)
-    percent_original <- append(percent_original, list(fread(paste0("scripts/data/", i,"/qc/",i,"_reads_assessed_filtered.tsv"))))}
+    percent_original <- append(percent_original, list(fread(i)))}
 }
 
 names(percent_original) <- names_percent_original
