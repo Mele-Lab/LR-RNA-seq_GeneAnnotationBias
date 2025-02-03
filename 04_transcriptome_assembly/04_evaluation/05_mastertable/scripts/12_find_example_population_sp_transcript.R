@@ -22,7 +22,7 @@ setup_script(relative_path, 3, 48)
 catch_args(0)
 ##
 ## 0----------------------------END OF HEADER----------------------------------0
-metadata <- fread("../../../00_metadata/data/pantranscriptome_samples_metadata.tsv")
+metadata <- fread("00_metadata/data/pantranscriptome_samples_metadata.tsv")
 metadata <- metadata[mixed_samples==F]
 metadata <- metadata[merged_run_mode==T]
 popcol <- metadata$color_pop
@@ -55,7 +55,6 @@ library(ggtranscript)
 MYTRX <- "transcript_148736"
 MYGEN<- "ENSG00000113387.13"
 
-POTSER JA HI ES EL CDS AQUI I SOC JO Q LHE LIADA
 # original gtf in CRGcluster /users/rg/fdegalez/data/annotation/241018_v47_poder_merge.placeholder_gene_name.withCDS.trBiotype.gtf
 gtf <- fread("../novelannotations/ENSG00000113387.13.gtf")
 # gtf <- fread("../novelannotations/241018_v47_poder_merge.placeholder_gene_name.withCDS.trBiotype.gtf")
@@ -130,7 +129,7 @@ ggplot(subgtf_rescaled[type=="exon" & newtype!="CDS"],
               arrow.min.intron.length = 300,
               arrow = grid::arrow(ends = "last", length = grid::unit(0.05, "inches")))+
   mytheme+
-  labs(y="", title="Novel 3' Splice Site", x="Distance from most upstream TSS")+
+  labs(y="", title="Novel\nSplice\nSite", x="")+
   scale_color_manual(values= c("#7F675B","#A2AD59"), name="Source")+
   scale_fill_manual(values= c("#7F675B","#A2AD59"), name="Source")+
   theme(legend.position=c(0.88, 0.8),
@@ -143,9 +142,9 @@ ggplot(subgtf_rescaled[type=="exon" & newtype!="CDS"],
   )+
   theme(plot.title = element_text(face = "bold"))+
   annotate(geom="text", label="PEL specific", y=14, vjust=0.5, hjust=0, x=7700, size=6*0.35, color="darkred", fontface="bold")+
-  coord_cartesian(xlim = c(2200, 2350), ylim = c(11, 14.25))+
+  coord_cartesian(xlim = c(2220, 2240), ylim = c(11, 14.25))+
   theme(legend.position = "none", axis.text.y=element_blank(), axis.ticks.y=element_blank())+
   geom_vline(xintercept=2230, linetype="dashed")
-ggsave("10_figures/01_plots/main/fig_03/trxplot.popSpecific_transcript_example_zoom.pdf", dpi=700, width = 2, height = 2,  units = "in")
+ggsave("10_figures/01_plots/main/fig_03/trxplot.popSpecific_transcript_example_zoom.pdf", dpi=700, width = 0.5, height = 2,  units = "in")
 
              

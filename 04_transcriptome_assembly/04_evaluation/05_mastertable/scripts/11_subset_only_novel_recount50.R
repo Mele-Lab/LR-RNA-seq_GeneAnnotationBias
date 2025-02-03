@@ -32,7 +32,7 @@ data[, filter:=ifelse((structural_category=="NIC" & sample_sharing>1 & flair_max
                         associated_gene_biotype%in%unique(data$associated_gene_biotype)[grepl("lncRNA|^$|protein_coding", unique(data$associated_gene_biotype))] &
                         contig!="chrM", "pass", "fail")]
 # keep only filtered isoforms
-filtereddata <- data[filter=="pass"]
+filtereddata <- data[filter=="pass" & structural_category!="FSM"]
 fwrite(filtereddata, "04_transcriptome_assembly/04_evaluation/05_mastertable/data/subset_PODER/241203_PODER_noveltrx_recountsupp50_trx_mastertable.tsv", quote = F, row.names = F, col.names = T, sep="\t")
 
 # Step 1: Extract transcripts

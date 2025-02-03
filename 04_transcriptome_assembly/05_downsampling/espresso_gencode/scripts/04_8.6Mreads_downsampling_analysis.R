@@ -35,54 +35,6 @@ names(popcols) <- unique(metadata$population)
 colsqanti <- c("#61814B", "#8EDE95", "#356CA1", "#C8773C")
 names(colsqanti) <- c("FSM", "ISM", "NIC", "NNC")
 
-# data <- data.frame()
-# for(SAMPLE in list.files("data/espresso_q")[!grepl("samples",list.files("data/espresso_q"))]){
-#   sub <-fread(paste0("data/espresso_q/",SAMPLE,"/espresso_q_summary.txt"), sep=":", skip = 1)[25:28,]
-#   sub <-sub[, structural_category:=c("FSM", "ISM", "NIC", "NNC")][, transcripts:=V2][, `:=`(V1=NULL, V2=NULL)][, sample:=SAMPLE]
-#   data <- rbind.data.frame(data, sub)
-# }
-# 
-# data[, cell_line_id:=tstrsplit(sample, "_")[3]]
-# data[, lab_number:=tstrsplit(sample, "_")[1]]
-# data[, sample:=NULL]
-# data <- metadata[, .(sample, cell_line_id, population)][data, on="cell_line_id"]
-# data[, eur:=factor(ifelse(population%in%c("CEU", "AJI"), "EUR", "nonEUR"))]
-# data$eur <- factor(data$eur, levels = c("EUR", "nonEUR"))
-# data[, total_transcripts:=sum(transcripts), by="sample"]
-# 
-# ggplot(unique(data[, .(sample, eur, total_transcripts, population)]), aes(x = eur, y = total_transcripts, fill = eur)) +
-#   geom_violin(position = position_dodge(0.9), alpha = 0.8) + 
-#   geom_boxplot(outliers = FALSE, width = 0.15, position = position_dodge(0.9)) +
-#   ggbeeswarm::geom_quasirandom(alpha = 0.95, width = 0.2, dodge.width = 0.9, aes(col=population)) +
-#   mytheme +
-#   ggpubr::stat_compare_means(comparisons=list(c("EUR", "nonEUR")),
-#                              method = "t.test", 
-#                              method.args = list(alternative = "two.sided")) +
-#   scale_fill_manual(values = c("#466995", "#A53860")) +
-#   stat_summary(fun.data = n_fun, geom = "text", fun.args = list(y = 30000), 
-#                position = position_dodge(0.9)) +
-#   labs(x = "", y = "# Transcripts")+
-#   guides(fill="none")+
-#   scale_color_manual(values=popcols)
-# ggsave("../../../10_figures/test/test1.pdf", dpi=700,width = 3.8, height = 2.6,  units = "in")
-# 
-# 
-# ggplot(data, aes(x = eur, y = transcripts, fill = eur)) +
-#   geom_violin(position = position_dodge(0.9), alpha = 0.8) + 
-#   geom_boxplot(outliers = FALSE, width = 0.15, position = position_dodge(0.9)) +
-#   ggbeeswarm::geom_quasirandom(alpha = 0.75, width = 0.2, dodge.width = 0.9, aes(col=population)) +
-#   mytheme +
-#   ggpubr::stat_compare_means(comparisons=list(c("EUR", "nonEUR")),
-#                              method = "t.test", 
-#                              method.args = list(alternative = "two.sided")) +
-#   scale_fill_manual(values = c("#466995", "#A53860")) +
-#   stat_summary(fun.data = n_fun, geom = "text", fun.args = list(y = -1000), 
-#                position = position_dodge(0.9)) +
-#   labs(x = "", y = "# Transcripts")+
-#   facet_wrap(~structural_category, nrow=1)+
-#   guides(fill="none")+
-#   scale_color_manual(values=popcols)
-
 # load sqanti results
 sqanti <- fread("../../04_evaluation/02_sqanti/data/downsampling_espresso_gencode/downsampling_espresso_classification.txt")
 
@@ -107,37 +59,7 @@ gc()
 # Create a data.table with the transcripts and their corresponding tool_sample_pairs
 annot_expanded <- annot[, .(transcript = transcript, sample = unlist(samples_split)), by = 1:nrow(annot)]
 gc()
-# # Create the result matrix directly using sparse matrix construction
-# rows<-nrow(annot)
-# cols <-length(samples_split)
-# mylist<-list(annot$transcript, samples_split)
-# gc()
-# result_matrix <- Matrix::sparseMatrix(
-#   i = match(annot_expanded$transcript, annot$transcript),
-#   j = match(annot_expanded$samples_split, samples_split),
-#   x = 1,
-#   dims = c(rows, cols),
-#   dimnames = mylist
-# )
-# 
-# # Convert the sparse matrix to a data frame
-# result_matrix <- as.data.frame(as.matrix(result_matrix))
-# 
-# # melt
-# reslong <- melt(rownames_to_column(result_matrix), variable.name="sample_tool_pair", value.name="detected")
-# rm(result_matrix, mylist, rows, cols, all_tool_sample_pairs, annot_expanded)
-# gc()
-# setDT(reslong)
-# reslong[, transcript:=rowname]
-# reslong[, cell_line_id:=gsub(".*_","",gsub("_1", "", sample_tool_pair))]
-# gc()
-# # add metadata
-# reslongmeta <- metadata[, .(sample, cell_line_id, population)][reslong, on="cell_line_id"]
-# rm(reslong)
-# gc()
-# reslongmeta <- reslongmeta[detected>0,][, `:=`(rowname=NULL, detected=NULL, cell_line_id=NULL)]
-# gc()
-# reslongmeta$tool <- ifelse(reslongmeta$tool=="iq", "isoquant", reslongmeta$tool)
+
 
 # add sqanti to annot_expanded
 newannot <- sqanti[, .(isoform, structural_category)][annot_expanded, on=c("isoform"="transcript")]
@@ -146,27 +68,6 @@ newannotmeta <- metadata[, .(cell_line_id, population, map_reads_assemblymap, sa
 newannotmeta[, trx_per_sample:=uniqueN(isoform), by="sample"]
 newannotmeta[, eur := ifelse(population%in%c("CEU", "AJI"), "European", "Non-European")]
 library(ggpubr)
-
-
-
-ggplot(unique(newannotmeta[, .(trx_per_sample, population, eur)]), aes(x = eur, y = trx_per_sample, fill = eur)) +
-  geom_violin(position = position_dodge(0.9), alpha = 0.6) + 
-  geom_boxplot(outliers = FALSE, width = 0.15, position = position_dodge(0.9)) +
-  ggbeeswarm::geom_quasirandom(alpha = 0.95, width = 0.1, dodge.width = 0.8, aes(col=population), size=1) +
-  mytheme +
-  ggpubr::stat_compare_means(comparisons=list(c("European", "Non-European")),
-                             method = "t.test", 
-                             method.args = list(alternative = "two.sided"),size=7*0.35) +
-  scale_fill_manual(values = c("#466995", "#A53860")) +
-  stat_summary(fun.data = n_fun, geom = "text", fun.args = list(y = 32500), 
-               position = position_dodge(0.9),size=7*0.35) +
-  labs(x = "", y = "# Discovered Transcripts", col="Population")+
-  guides(fill="none")+
-  scale_color_manual(values=popcols)+
-  theme(legend.key.size = unit(0.2, "cm"))+
-  ylim(c(32500, 45200))
-ggsave("../../../10_figures/fig_01/violin_EURvsNonEUR_DiscoveredTranscripts.pdf", dpi=700, width = 3, height = 2.25,  units = "in")
-
 
 
 categories <- c("FSM", "Intergenic", "NNC", "NIC",  "Fusion", "ISM", "Genic", "Antisense")
@@ -179,10 +80,6 @@ p <- ggplot(unique(newannotmeta[structural_category%in%c("FSM", "ISM", "NIC", "N
   geom_boxplot(outliers = FALSE, width = 0.15, position = position_dodge(0.9)) +
   ggbeeswarm::geom_quasirandom(alpha = 0.6, width = 0.2, dodge.width = 0.8, aes(col=population)) +
   mytheme +
-  # ggpubr::stat_compare_means(aes(label=..p.adj..), comparisons=list(c("European", "non-European")),
-  #                            method = "t.test", 
-  #                            method.args = list(alternative = "two.sided"),
-  #                            p.adjust.method ="fdr") +
   scale_fill_manual(values = c("#466995", "#A53860")) +
   stat_summary(fun.data = n_fun, geom = "text", fun.args = list(y = 0), 
                position = position_dodge(0.9), size=7*0.35) +
@@ -202,7 +99,7 @@ ggadjust_pvalue(
   output = c("plot"))
 
 
-ggsave("../../../10_figures/fig_01/violin_EURvsNonEUR_DiscoveredTranscripts_PerSqantiCategoryFSMtoNNC.pdf", dpi=700, width = 5.91, height = 2.7,  units = "in")
+ggsave("../../../10_figures/01_plots/main/fig_04/violin_EURvsNonEUR_DiscoveredTranscripts_PerSqantiCategoryFSMtoNNC.pdf", dpi=700, width = 5.91, height = 2.7,  units = "in")
 
 
 

@@ -351,3 +351,150 @@ contingency_table <- matrix(
 # Perform Fisher's Exact Test
 fisher_test <- fisher.test(contingency_table)
 
+#### Are my ASE or ASTU enriched in any BP?
+library(clusterProfiler)
+library(org.Hs.eg.db)
+raw_gen_ase <- enrichGO(keyType = "ENSEMBL",
+                        gene=asqtl_sample[ASE=="ASE" & annot=="GENCODEv47", geneid],
+                        universe = asqtl_sample[!is.na(ASE) & annot=="GENCODEv47", geneid],
+                        ont="BP",
+                        OrgDb = "org.Hs.eg.db",
+                        qvalueCutoff = 0.05)
+raw_gen_astu <- enrichGO(keyType = "ENSEMBL",
+                        gene=asqtl_sample[ASTS=="ASTS" & annot=="GENCODEv47", geneid],
+                        universe = asqtl_sample[!is.na(ASTS) & annot=="GENCODEv47", geneid],
+                        ont="BP",
+                        OrgDb = "org.Hs.eg.db",
+                        qvalueCutoff = 0.05)
+raw_pod_ase <- enrichGO(keyType = "ENSEMBL",
+                        gene=asqtl_sample[ASE=="ASE" & annot=="PODER", geneid],
+                        universe = asqtl_sample[!is.na(ASE) & annot=="PODER", geneid],
+                        ont="BP",
+                        OrgDb = "org.Hs.eg.db",
+                        qvalueCutoff = 0.05)
+raw_pod_astu <- enrichGO(keyType = "ENSEMBL",
+                         gene=asqtl_sample[ASTS=="ASTS" & annot=="PODER", geneid],
+                         universe = asqtl_sample[!is.na(ASTS) & annot=="PODER", geneid],
+                         ont="BP",
+                         OrgDb = "org.Hs.eg.db",
+                         qvalueCutoff = 0.05)
+
+# ggplot(as.data.frame(raw_gen_astu), aes(x=FoldEnrichment, size = Count, y=reorder(Description, Count), color = p.adjust)) +
+#   geom_point(stat = "identity", alpha=0.85) +
+#   scale_color_gradient2(low = "#101108", mid="#A09384", high = "#F0E4CC", name = "FDR",    limits = c(0, 0.05), midpoint=0.01) +
+#   labs(x = "Odds Ratio",
+#        y = "",
+#        size="Gene Count",
+#        title="GENCODE ASTU") +
+#   mythemen+
+#   geom_vline(xintercept = 1, linetype="dashed", color="darkgrey")+
+#   theme(legend.key.size = unit(0.2, "cm"),
+#         legend.margin = margin(0, 0, 0, 0),
+#         legend.box.margin = margin(-10, 3, -10, -7),
+#         plot.title = element_text(family="Helvetica", face="bold"))+
+#   scale_size_continuous(range = c(0.5, 4))
+
+##### REMOVE REDUNDANCY
+library(GOSemSim)
+library(AnnotationHub)
+library(rrvgo)
+# GENCODE ASE
+simMatrix <- calculateSimMatrix(raw_gen_ase$ID,
+                                orgdb="org.Hs.eg.db",
+                                ont="BP",
+                                method="Rel")
+reducedTerms <- reduceSimMatrix(simMatrix,
+                                threshold=0.7,
+                                orgdb="org.Hs.eg.db")
+
+res_gen_ase <- as.data.table(reducedTerms)[as.data.table(raw_gen_ase), on=c("term"="Description")]
+ggplot(res_gen_ase, aes(x=FoldEnrichment, size = Count, y=reorder(parentTerm, Count), color = p.adjust)) +
+  geom_point(stat = "identity", alpha=0.85) +
+  scale_color_gradient2(low = "#101108", mid="#A09384", high = "#F0E4CC", name = "FDR",    limits = c(0, 0.05), midpoint=0.01) +
+  labs(x = "Odds Ratio",
+       y = "",
+       size="Gene Count",
+       title="GENCODE ASE") +
+  mythemen+
+  geom_vline(xintercept = 1, linetype="dashed", color="darkgrey")+
+  theme(legend.key.size = unit(0.2, "cm"),
+        legend.margin = margin(0, 0, 0, 0),
+        legend.box.margin = margin(-10, 3, -10, -7),
+        plot.title = element_text(family="Helvetica", face="bold"))+
+  scale_size_continuous(range = c(0.5, 4))
+
+# PODER ASE
+simMatrix <- calculateSimMatrix(raw_pod_ase$ID,
+                                orgdb="org.Hs.eg.db",
+                                ont="BP",
+                                method="Rel")
+reducedTerms <- reduceSimMatrix(simMatrix,
+                                threshold=0.7,
+                                orgdb="org.Hs.eg.db")
+
+res_pod_ase <- as.data.table(reducedTerms)[as.data.table(raw_pod_ase), on=c("term"="Description")]
+ggplot(res_pod_ase, aes(x=FoldEnrichment, size = Count, y=reorder(parentTerm, Count), color = p.adjust)) +
+  geom_point(stat = "identity", alpha=0.85) +
+  scale_color_gradient2(low = "#101108", mid="#929c4d", high = "#cfd5aa", name = "FDR",    limits = c(0, 0.05), midpoint=0.01) +
+  labs(x = "Odds Ratio",
+       y = "",
+       size="Gene Count",
+       title="PODER ASE") +
+  mythemen+
+  geom_vline(xintercept = 1, linetype="dashed", color="darkgrey")+
+  theme(legend.key.size = unit(0.2, "cm"),
+        legend.margin = margin(0, 0, 0, 0),
+        legend.box.margin = margin(-10, 3, -10, -7),
+        plot.title = element_text(family="Helvetica", face="bold"))+
+  scale_size_continuous(range = c(0.5, 4))
+
+# GENCODE ASTU
+simMatrix <- calculateSimMatrix(raw_gen_astu$ID,
+                                orgdb="org.Hs.eg.db",
+                                ont="BP",
+                                method="Rel")
+reducedTerms <- reduceSimMatrix(simMatrix,
+                                threshold=0.7,
+                                orgdb="org.Hs.eg.db")
+
+res_gen_astu <- as.data.table(reducedTerms)[as.data.table(raw_gen_astu), on=c("term"="Description")]
+ggplot(res_gen_astu, aes(x=FoldEnrichment, size = Count, y=reorder(parentTerm, Count), color = p.adjust)) +
+  geom_point(stat = "identity", alpha=0.85) +
+  scale_color_gradient2(low = "#101108", mid="#A09384", high = "#F0E4CC", name = "FDR",    limits = c(0, 0.05), midpoint=0.01) +
+  labs(x = "Odds Ratio",
+       y = "",
+       size="Gene Count",
+       title="GENCODE ASTU") +
+  mythemen+
+  geom_vline(xintercept = 1, linetype="dashed", color="darkgrey")+
+  theme(legend.key.size = unit(0.2, "cm"),
+        legend.margin = margin(0, 0, 0, 0),
+        legend.box.margin = margin(-10, 3, -10, -7),
+        plot.title = element_text(family="Helvetica", face="bold"))+
+  scale_size_continuous(range = c(0.5, 4))
+
+# PODER ASTU
+simMatrix <- calculateSimMatrix(raw_pod_astu$ID,
+                                orgdb="org.Hs.eg.db",
+                                ont="BP",
+                                method="Rel")
+reducedTerms <- reduceSimMatrix(simMatrix,
+                                threshold=0.7,
+                                orgdb="org.Hs.eg.db")
+
+res_pod_astu <- as.data.table(reducedTerms)[as.data.table(raw_pod_astu), on=c("term"="Description")]
+ggplot(res_pod_astu, aes(x=FoldEnrichment, size = Count, y=reorder(parentTerm, Count), color = p.adjust)) +
+  geom_point(stat = "identity", alpha=0.85) +
+  scale_color_gradient2(low = "#101108", mid="#929c4d", high = "#cfd5aa", name = "FDR",    limits = c(0, 0.05), midpoint=0.01) +
+  labs(x = "Odds Ratio",
+       y = "",
+       size="Gene Count",
+       title="PODER ASTU") +
+  mythemen+
+  geom_vline(xintercept = 1, linetype="dashed", color="darkgrey")+
+  theme(legend.key.size = unit(0.2, "cm"),
+        legend.margin = margin(0, 0, 0, 0),
+        legend.box.margin = margin(-10, 3, -10, -7),
+        plot.title = element_text(family="Helvetica", face="bold"))+
+  scale_size_continuous(range = c(0.5, 4))
+

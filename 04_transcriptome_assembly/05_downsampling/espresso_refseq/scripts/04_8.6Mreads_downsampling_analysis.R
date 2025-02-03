@@ -158,13 +158,14 @@ p <- ggplot(unique(newannotmeta[annot=="RefSeq" & structural_category%in%c("FSM"
   stat_summary(fun.data = n_fun, geom = "text", fun.args = list(y = -1000), 
                position = position_dodge(0.9), size=7*0.35) +
   labs(x = "", y = "# Discovered Transcripts", col="Population")+
-  facet_wrap(~structural_category, nrow=2)+
+  facet_wrap(~structural_category, nrow=1)+
   guides(fill="none")+
   scale_color_manual(values=popcols)+
-  theme(legend.key.size = unit(0.2, "cm"))+
+  theme(legend.key.size = unit(0.2, "cm"),
+        legend.position = c(0.1, 0.4))+
   geom_pwc(ref.group="European",
            method="t_test", label.size=7*0.35
-  )+ylim(c(-1500,22500))+
+  )+ylim(c(-1500,20000))+
   scale_x_discrete(labels = c("European", "Non\nEuropean"))
 ggadjust_pvalue(
   p=p,
@@ -172,9 +173,8 @@ ggadjust_pvalue(
   label = "p.adj.format",
   hide.ns = NULL,
   output = c("plot"))
-ggsave("../../10_figures/01_plots/supp/04_refseq_down_cat/violin_EURvsNonEUR_DiscoveredTranscripts_PerSqantiCategoryFSMtoNNC.pdf", dpi=700, width = 6, height = 6,  units = "in")
-ggsave("../../10_figures/02_panels/png/supp/04_refseq_down_cat.png", dpi=700, width = 6, height = 6,  units = "in")
-ggsave("../../10_figures/02_panels/svg/supp/04_refseq_down_cat.svg", dpi=700, width = 6, height = 6,  units = "in")
+ggsave("../../10_figures/01_plots/main/fig_03/violin_EURvsNonEUR_DiscoveredTranscripts_PerSqantiCategoryFSMtoNNC_REFSEQ.pdf", dpi=700, width = 5, height = 2.5,  units = "in")
+
 
 
 
@@ -266,85 +266,20 @@ ggsave("../../10_figures/01_plots/supp/18_popsp_val_refseq/barplotStack.downsamp
 
 
 
+##### Check if any population has more transcripts than others
+# select 4 random samples per pop
+selected_samples <- unique(newannotmeta[, .(population, sample)])[, .SD[sample(.N, min(.N, 4))], by = population]$sample
 
+foursample <- newannotmeta[annot=="GENCODE" & sample%in%selected_samples]
+foursample <- unique(foursample[, .(population, isoform, structural_category, eur, afr)])[, nb_trx_pop:=uniqueN(isoform), by="population"]
+foursamplep <- unique(foursample[, .(eur, afr, population, nb_trx_pop)])
 
-# data <- data.frame()
-# for(SAMPLE in list.files("data/espresso_q")[!grepl("samples",list.files("data/espresso_q"))]){
-#   sub <-fread(paste0("data/espresso_q/",SAMPLE,"/espresso_q_summary.txt"), sep=":", skip = 1)[25:28,]
-#   sub <-sub[, structural_category:=c("FSM", "ISM", "NIC", "NNC")][, transcripts:=V2][, `:=`(V1=NULL, V2=NULL)][, sample:=SAMPLE]
-#   data <- rbind.data.frame(data, sub)
-# }
-# 
-# data[, cell_line_id:=tstrsplit(sample, "_")[3]]
-# data[, lab_number:=tstrsplit(sample, "_")[1]]
-# data[, sample:=NULL]
-# data <- metadata[, .(sample, cell_line_id, population)][data, on="cell_line_id"]
-# data[, eur:=factor(ifelse(population%in%c("CEU", "AJI"), "EUR", "nonEUR"))]
-# data$eur <- factor(data$eur, levels = c("EUR", "nonEUR"))
-# data[, total_transcripts:=sum(transcripts), by="sample"]
-# data[, afr:=factor(ifelse(population%in%c("MPC", "YRI", "LWK"), "AFR", "OOA"))]
-# data$afr <- factor(data$afr, levels = c("AFR", "OOA"))
-
-# ggplot(unique(data[, .(sample, eur, total_transcripts, population)]), aes(x = eur, y = total_transcripts, fill = eur)) +
-#   geom_violin(position = position_dodge(0.9), alpha = 0.8) + 
-#   geom_boxplot(outliers = FALSE, width = 0.15, position = position_dodge(0.9)) +
-#   ggbeeswarm::geom_quasirandom(alpha = 0.95, width = 0.2, dodge.width = 0.9, aes(col=population)) +
-#   mytheme +
-#   ggpubr::stat_compare_means(comparisons=list(c("EUR", "nonEUR")),
-#                              method = "t.test", 
-#                              method.args = list(alternative = "two.sided")) +
-#   scale_fill_manual(values = c("#466995", "#A53860")) +
-#   stat_summary(fun.data = n_fun, geom = "text", fun.args = list(y = 30000), 
-#                position = position_dodge(0.9)) +
-#   labs(x = "", y = "# Transcripts")+
-#   guides(fill="none")+
-#   scale_color_manual(values=popcols)
-# ggsave("../../../10_figures/test/test1.pdf", dpi=700,width = 3.8, height = 2.6,  units = "in")
-# 
-# 
-# ggplot(data, aes(x = eur, y = transcripts, fill = eur)) +
-#   geom_violin(position = position_dodge(0.9), alpha = 0.8) + 
-#   geom_boxplot(outliers = FALSE, width = 0.15, position = position_dodge(0.9)) +
-#   ggbeeswarm::geom_quasirandom(alpha = 0.75, width = 0.2, dodge.width = 0.9, aes(col=population)) +
-#   mytheme +
-#   ggpubr::stat_compare_means(comparisons=list(c("EUR", "nonEUR")),
-#                              method = "t.test", 
-#                              method.args = list(alternative = "two.sided")) +
-#   scale_fill_manual(values = c("#466995", "#A53860")) +
-#   stat_summary(fun.data = n_fun, geom = "text", fun.args = list(y = -1000), 
-#                position = position_dodge(0.9)) +
-#   labs(x = "", y = "# Transcripts")+
-#   facet_wrap(~structural_category, nrow=1)+
-#   guides(fill="none")+
-#   scale_color_manual(values=popcols)
-
-# # REPLICATE WITH AFRICA VS OOA
-# ggplot(unique(data[, .(sample, afr, total_transcripts, population)]), aes(x = afr, y = total_transcripts, fill = afr)) +
-#   geom_violin(position = position_dodge(0.9), alpha = 0.8) +
-#   geom_boxplot(outliers = FALSE, width = 0.15, position = position_dodge(0.9)) +
-#   ggbeeswarm::geom_quasirandom(alpha = 0.95, width = 0.2, dodge.width = 0.9, aes(col=population)) +
-#   mytheme +
-#   ggpubr::stat_compare_means(comparisons=list(c("AFR", "OOA")),
-#                              method = "t.test",
-#                              method.args = list(alternative = "two.sided")) +
-#   scale_fill_manual(values = c("#F7D257", "#496F5D")) +
-#   stat_summary(fun.data = n_fun, geom = "text", fun.args = list(y = 30000),
-#                position = position_dodge(0.9)) +
-#   labs(x = "", y = "# Transcripts")+
-#   guides(fill="none")+
-#   scale_color_manual(values=popcols)
-# ggplot(unique(data[, .(sample, afr, transcripts, population, structural_category)]), aes(x = afr, y = transcripts, fill = afr)) +
-#   geom_violin(position = position_dodge(0.9), alpha = 0.8) + 
-#   geom_boxplot(outliers = FALSE, width = 0.15, position = position_dodge(0.9)) +
-#   ggbeeswarm::geom_quasirandom(alpha = 0.75, width = 0.2, dodge.width = 0.9, aes(col=population)) +
-#   mytheme +
-#   ggpubr::stat_compare_means(comparisons=list(c("AFR", "OOA")),
-#                              method = "t.test", 
-#                              method.args = list(alternative = "two.sided")) +
-#   scale_fill_manual(values = c("#F7D257", "#496F5D")) +
-#   stat_summary(fun.data = n_fun, geom = "text", fun.args = list(y = -1000), 
-#                position = position_dodge(0.9)) +
-#   labs(x = "", y = "# Transcripts")+
-#   facet_wrap(~structural_category, nrow=1)+
-#   guides(fill="none")+
-#   scale_color_manual(values=popcols)
+ggplot(foursamplep, aes(x=population, y=nb_trx_pop))+
+  geom_col()+
+  mytheme
+ggplot(foursamplep, aes(x=afr, y=nb_trx_pop))+
+  ggbeeswarm::geom_quasirandom(aes(color=population))+
+  mythemen+
+  scale_color_manual(values=popcols)+
+  ggpubr::stat_compare_means(comparisons = list(c("African", "OOA")), method="wilcox", method.args = list(alternative="two.sided"), label.y=73000)+
+  labs(x="", y="# Unique Transcripts Detected in Population")

@@ -25,7 +25,9 @@ Z_testsdir
 06_quantification/02_flairquantify/output
 06_quantification/02_flairquantify/std.out
 06_quantification/02_flairquantify/test
-10_figures
+10_figures/01_plots
+10_figures/02_panels
+10_figures/data
 09_prepare_vep_inputs/1000G_variants_in_exons.vcf
 09_prepare_vep_inputs/1000G_variants_in_genes.vcf.gz
 09_other_analyses/02_prepare_vep_inputs/1000G_variants_in_exons.vcf
@@ -35,3 +37,4 @@ Z_testsdir
 04_transcriptome_assembly/05_downsampling/espresso_gencode/figures/violin_EURvsNonEUR_DiscoveredTranscripts.pdf
 04_transcriptome_assembly/05_downsampling/espresso_gencode/figures/.pdf
 04_transcriptome_assembly/04_evaluation/02_sqanti/std.out
+09_other_analyses/02_prepare_vep_inputs/1000G_variants_in_exons_headed.vcf

@@ -61,24 +61,24 @@ datalongmeta[, eur:=fifelse(eur=="EUR", "European", "Non-European")]
 
 ### UMA
 p<-ggplot(unique(datalongmeta[structural_category %in% c("FSM", "ISM","NIC", "NNC"), 
-                              .(structural_category, trx_per_cat_norm, eur, sample,population, filter)]), 
+                              .(structural_category, trx_per_cat_norm, eur, sample,population)]), 
           aes(x = eur, y = trx_per_cat_norm, fill = eur)) +
   geom_violin(position = position_dodge(0.9), alpha = 0.8) + # Adjust dodge width if necessary
   geom_boxplot(outliers=F, width=0.05,position = position_dodge(0.9))+
   ggbeeswarm::geom_quasirandom(alpha = 0.5, width = 0.1,  dodge.width = 0.6,aes(color=population))+
   mytheme+
-  facet_wrap(~structural_category)+
+  facet_wrap(~structural_category, nrow=2)+
   labs(x="", y="# Discovered Transcripts in UMA\nper Million Reads per Sample", color="Population")+
-  geom_pwc(ref.group = "European", method = "t_test") +
+  geom_pwc(ref.group = "European", method = "t_test", label.size = 7*0.35) +
   scale_fill_manual(values=c("#466995", "#A53860"))+
   scale_color_manual(values=popcols)+
-  stat_summary(fun.data = n_fun, geom = "text", fun.args = list(y=0), vjust=0.5)+
-  guides(fill="none")+
-  ylim(c(0, 4250))
+  stat_summary(fun.data = n_fun, geom = "text", fun.args = list(y=0), vjust=0.5, size=6*0.35)+
+  guides(fill="none", color="none")+
+  ylim(c(0, 4250))+
+  theme(axis.text.x = element_text(angle=45, vjust=1, hjust=1))
 ggadjust_pvalue(p)
-ggsave("../../10_figures/01_plots/supp/13_uma_biasval_cat/violin_UMA_discovered_transcripts.EURnonEUR_PerSqantiCategory.pdf", dpi=700, width = 6, height = 6,  units = "in")
-ggsave("../../10_figures/02_panels/svg/supp/13_uma_biasval_cat.svg", dpi=700, width = 6, height = 6,  units = "in")
-ggsave("../../10_figures/02_panels/png/supp/13_uma_biasval_cat.png", dpi=700, width = 6, height = 6,  units = "in")
+ggsave("../../10_figures/01_plots/main/fig_03/violin_UMA_discovered_transcripts.EURnonEUR_PerSqantiCategory.pdf", dpi=700, width = 2.5, height = 5,  units = "in")
+
 
 
 ## PODER
@@ -99,7 +99,27 @@ p<-ggplot(unique(datalongmeta[structural_category %in% c("FSM","NIC", "NNC") & f
   ylim(c(0, 4000))+
   theme(axis.text.x = element_text(angle=30, hjust=1, vjust=1.1))
 ggadjust_pvalue(p)
-ggsave("../../10_figures/01_plots/main/fig_03//violin_PODER_discovered_transcripts.EURnonEUR_PerSqantiCategory.pdf", dpi=700, width = 4.25, height = 2.5,  units = "in")
+ggsave("../../10_figures/01_plots/main/fig_03/violin_PODER_discovered_transcripts.EURnonEUR_PerSqantiCategory.pdf", dpi=700, width = 4.25, height = 2.5,  units = "in")
+
+datalongmeta[, afr:=fifelse(population%in%c("YRI", "LWK", "MPC"), "African", "Out of African")]
+p<-ggplot(unique(datalongmeta[structural_category %in% c("FSM","NIC", "NNC") & filter=="pass", 
+                              .(structural_category, trx_per_cat_norm_poder, afr, sample,population, filter)]), 
+          aes(x = afr, y = trx_per_cat_norm_poder, fill = afr)) +
+  geom_violin(position = position_dodge(0.9), alpha = 0.6) + # Adjust dodge width if necessary
+  ggbeeswarm::geom_quasirandom(alpha = 0.5, width = 0.1,  dodge.width = 0.6,aes(color=population), size=1)+
+  geom_boxplot(outliers=F, width=0.3,position = position_dodge(0.9),lwd=0.2)+
+  mytheme+
+  facet_wrap(~structural_category)+
+  labs(x="", y="# Discovered Transcripts in PODER\nper Million Reads per Sample", color="Population")+
+  geom_pwc(ref.group = "African", method = "t_test", label.size=6*0.35) +
+  scale_fill_manual(values=c("#F7D257", "#496F5D"))+
+  scale_color_manual(values=popcols)+
+  stat_summary(fun.data = n_fun, geom = "text", fun.args = list(y=0), vjust=0.5, size=6*0.35)+
+  guides(fill="none")+
+  ylim(c(0, 4000))+
+  theme(axis.text.x = element_text(angle=30, hjust=1, vjust=1.1))
+ggadjust_pvalue(p)
+ggsave("../../10_figures/01_plots/main/fig_03/violin_PODER_discovered_transcripts.AFRooA_PerSqantiCategory.pdf", dpi=700, width = 4.25, height = 2.5,  units = "in")
 
 
 
