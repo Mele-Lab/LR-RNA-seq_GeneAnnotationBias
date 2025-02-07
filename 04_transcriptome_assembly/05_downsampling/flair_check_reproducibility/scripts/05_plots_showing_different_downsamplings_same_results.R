@@ -24,7 +24,7 @@ catch_args(0)
 ## 0----------------------------END OF HEADER----------------------------------0
 
 # load data
-metadata <- fread(paste0("/home/pclavell/mounts/mn5/Projects/pantranscriptome/pclavell/00_metadata/pantranscriptome_samples_metadata.tsv"))
+metadata <- fread(paste0("/home/pclavell/mounts/mn5/Projects/pantranscriptome/pclavell/00_metadata/data/pantranscriptome_samples_metadata.tsv"))
 myfilelist <- list()
 for(file in list.files("data", pattern="*count*")){
   thisfile <- fread(paste0("data/",file), header=F)

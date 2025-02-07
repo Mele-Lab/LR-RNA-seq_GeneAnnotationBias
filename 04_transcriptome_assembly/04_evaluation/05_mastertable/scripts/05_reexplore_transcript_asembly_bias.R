@@ -153,87 +153,147 @@ ggplot(unique(datalongmeta[structural_category %in% c("NIC", "NNC"),
 
 
 
-popsp <-data[sample_sharing>=2 & population_sharing==1, ]
-cols_to_keep <- colnames(popsp)[grepl("^[a-zA-Z]{3}[0-9]$", colnames(popsp))]
-subpopsp <- popsp[, c(cols_to_keep, "filter", "sample_sharing", "structural_category", "isoform", "trx_per_asstrx_count_incomplete-splice_match"), with = FALSE]
-subpopsplong <- melt(subpopsp, measure.vars= colnames(subpopsp)[grepl("^[a-zA-Z]{3}[0-9]$", colnames(subpopsp))], variable.name = "sample", value.name = "detected")
-subpopsplong <- subpopsplong[!is.na(detected)]
-subpopsplong <- subpopsplong[detected==1]
+popsp <-data[, popsp :=fifelse(population_sharing==1 & sample_sharing>=2, "popsp", "nonPopsp") ]
+cols_to_keep <- colnames(popsp)[grepl("^[A-Z]{3}$", colnames(popsp))]
+subpopsp <- popsp[, c(cols_to_keep,  "structural_category", "isoform", "popsp"), with = FALSE]
+subpopsplong <- melt(subpopsp, measure.vars= colnames(subpopsp)[grepl("^[a-zA-Z]{3}$", colnames(subpopsp))], variable.name = "population", value.name = "detected")
+subpopsplong <- subpopsplong[detected!=0]
 
-subpopsplongmeta <- metadata[, .(sample, map_reads_assemblymap,population )][, total_throughput:=sum(map_reads_assemblymap), by="population"][subpopsplong, on="sample"]
-subpopsplongmeta[, trx_per_cat_per_pop := uniqueN(isoform), by=c("population", "structural_category")]
-subpopsplongmeta[, trx_per_cat_per_pop_filter := uniqueN(isoform), by=c("population", "structural_category", "filter")]
-subpopsplongmeta[, trx_per_cat_per_pop_norm :=trx_per_cat_per_pop/total_throughput*10^6]
-subpopsplongmeta[, eur := ifelse(population%in%c("CEU", "AJI"), "European", "Non-European")]
 
-# LINE PLOT FOR 2 SAMPLES SHARING
-ggplot(unique(subpopsplongmeta[structural_category%in%c("FSM", "ISM", "NIC", "NNC"), 
-                               .(population, eur, structural_category, total_throughput,trx_per_cat_per_pop)]), 
-       aes(x=total_throughput/10^6, y=trx_per_cat_per_pop))+
-  geom_line(aes(col=structural_category),linewidth=1.5)+
-  mytheme+
-  scale_color_manual(values=colsqanti)+
-  labs(x="Total Mapped Reads per Population (M)", y="# Population Specific UMA Transcripts")+
-  guides(color="none")+
-  ggnewscale::new_scale_color()+
-  geom_point(aes(color=eur, size=eur, alpha=eur))+
+subpopsplong[, trx_category:=factor(fifelse(structural_category%in%c("FSM", "ISM"), "known", "novel"), levels=c("known", "novel"))]
+
+
+
+poptrxlong <-subpopsplong
+
+
+### COMPUTE ODDS RATIO
+counts <- poptrxlong[, .N, by=.(trx_category, population,popsp)]
+
+# Run Fisher's exact test by population
+results <- lapply(unlist(unique(counts[,population])), function(pop) {
+  # Filter data for the population
+  pop_data <- counts[population == pop]
+  
+  # Create contingency table
+  contingency_table <- matrix(
+    c(pop_data[popsp == "nonPopsp" & trx_category == "known", N],
+      pop_data[popsp == "nonPopsp" & trx_category == "novel", N],
+      pop_data[popsp == "popsp" & trx_category == "known", N],
+      pop_data[popsp == "popsp" & trx_category == "novel", N]),
+    nrow = 2, byrow = F,
+    dimnames = list(
+      c("known", "novel"),
+      rev(c("popsp", "nonPopsp"))
+    )
+  )
+  
+  # Perform Fisher's exact test
+  test_result <- fisher.test(contingency_table, conf.int = T)
+  
+  list(population = pop, p.value = test_result$p.value, odds.ratio = test_result$estimate, ci=list(test_result$conf.int))
+})
+
+resultss <- rbindlist(results)
+# Extract lower and upper CI values into new columns
+resultss[, `:=`(ci_lower = sapply(ci, `[`, 1),  # Extract first value of CI
+                ci_upper = sapply(ci, `[`, 2))] 
+
+resultss[, eur:=fifelse(population%in%c("AJI", "CEU"), "EUR", "nonEUR")]
+resultss[, fdr:=p.adjust(p.value, method = "BH")]
+resultss[, FDR:=factor(fifelse(fdr<0.05, "FDR<0.05", "FDR>=0.05"))]
+resultss[, population:=factor(population, levels=levels(poptrxlong$population))]
+
+order_samples <-counts[popsp=="popsp", total:=sum(N), by=.(population)][, known_per:=N/total][trx_category=="known" & popsp=="popsp"][order(known_per), population]
+
+p3 <- ggplot(resultss, aes(x=odds.ratio, y=population, color=eur))+
+  geom_point(size=1.5, aes(alpha=FDR))+
+  geom_errorbar(aes(xmin=ci_lower, xmax=ci_upper, alpha=FDR), width = 0.25, linewidth=0.5, show.legend=F)+
+  geom_vline(xintercept=1, linetype="dashed")+
+  annotate(geom="rect", 
+           xmin=min(resultss[eur=="nonEUR", ci_lower]),
+           xmax=max(resultss[eur=="nonEUR", ci_upper]),
+           ymin=0.5,
+           ymax=8.5,
+           fill="#A53860",
+           alpha=0.2)+
+  annotate(geom="rect", 
+           xmin=min(resultss[eur=="EUR", ci_lower]),
+           xmax=max(resultss[eur=="EUR", ci_upper]),
+           ymin=0.5,
+           ymax=8.5,
+           fill="#466995",
+           alpha=0.2)+
   scale_color_manual(values=c("#466995", "#A53860"))+
-  scale_size_manual(values=c(6.5,3))+
-  scale_alpha_manual(values=c(0.75, 0.9))+
-  facet_wrap(~structural_category)+
-  labs(col="", alpha="", size="")+
-  geom_segment(
-    aes(xend = total_throughput/10^6, # Adjust for arrow length
-        yend = ifelse(eur == "European", trx_per_cat_per_pop + 50, trx_per_cat_per_pop - 50)),
-    arrow = arrow(length = unit(0.2, "cm")), # Arrow size
-    color = "darkgrey") +
-  ggnewscale::new_scale_color()+
-  geom_text(
-    aes(x = total_throughput/10^6,  # Position text away from point
-        y = ifelse(eur == "European", trx_per_cat_per_pop + 75, trx_per_cat_per_pop - 75),
-        label = population,
-      color=population),
-    fontface="bold",
-    family="Helvetica",
-    size = 4.5,
-    alpha=0.6)+
-  scale_color_manual(values=popcols)+
-  guides(color="none")+
-  theme(legend.position = "top")
-ggsave("../../10_figures/suppfig/line_UMA_popSpecific_transcripts.2samplesSharing.faceted.pdf", dpi=700, width = 24, height = 20,  units = "cm")
-
-# LINE PLOT FOR 3! SAMPLES SHARING
-ggplot(unique(subpopsplongmeta[structural_category%in%c("FSM", "ISM", "NIC", "NNC"), 
-                               .(population, eur, structural_category, total_throughput,trx_per_cat_per_pop)]), 
-       aes(x=total_throughput/10^6, y=trx_per_cat_per_pop))+
-  geom_line(aes(col=structural_category),linewidth=1.5)+
+  scale_alpha_manual(values=rev(c(0.45, 1)))+
   mytheme+
-  scale_color_manual(values=colsqanti)+
-  labs(x="Total Mapped Reads per Population (M)", y="# Population Specific UMA Transcripts")+
+  labs(x="Odds Ratio\n(log10)", y="", color="", alpha="")+
+  theme(legend.position = "top")+
+  scale_x_continuous(trans="log10", breaks=c(0.5, 1, 2, 3))+
+  scale_y_discrete(limits=order_samples)+
+  guides(color = guide_legend(override.aes = list(size = 3)),
+         alpha=guide_legend(override.aes = list(size = 3), nrow=2))+
+  annotation_logticks(sides="b")+
+  guides(color="none")
+
+dt1 <- unique(counts[popsp=="popsp", total:=sum(N), by=.(population)][, known_per:=N/total][, eur:=ifelse(population%in%c("CEU", "AJI"), "European", "non-European")][popsp=="popsp"])
+
+p1 <- ggplot(dt1, 
+             aes(x=population, fill=eur, y=known_per))+
+  geom_col(position="fill", aes(alpha=trx_category))+
+  geom_text(data=dt1,
+            aes(label = paste0(round(known_per*100, 1), "%"), group=trx_category),
+            position = position_fill(vjust = 0.5),
+            size=6*0.35 )+
+  scale_x_discrete(limits=order_samples)+
+  labs(x="", y="Proportion of\nPopulation-Specific\nTranscripts", fill="")+
+  scale_fill_manual(values=c("#466995", "#A53860"), name="")+
+  scale_alpha_manual(values=c( 0.25,0.75),name="",labels = c("known"="Known", "novel"="Novel"))+
+  scale_color_manual(values=rep("black", 2))+
   guides(color="none")+
-  ggnewscale::new_scale_color()+
-  geom_point(aes(color=eur, size=eur, alpha=eur))+
-  scale_color_manual(values=c("#466995", "#A53860"))+
-  scale_size_manual(values=c(6.5,3))+
-  scale_alpha_manual(values=c(0.75, 0.9))+
-  facet_wrap(~structural_category)+
-  labs(col="", alpha="", size="")+
-  geom_segment(
-    aes(xend = total_throughput/10^6, # Adjust for arrow length
-        yend = ifelse(eur == "European", trx_per_cat_per_pop + 5, trx_per_cat_per_pop - 5)),
-    arrow = arrow(length = unit(0.2, "cm")), # Arrow size
-    color = "darkgrey") +
-  ggnewscale::new_scale_color()+
-  geom_text(
-    aes(x = total_throughput/10^6,  # Position text away from point
-        y = ifelse(eur == "European", trx_per_cat_per_pop + 7.5, trx_per_cat_per_pop - 7.5),
-        label = population,
-        color=population),
-    fontface="bold",
-    family="Helvetica",
-    size = 4.5,
-    alpha=0.6)+
-  scale_color_manual(values=popcols)+
-  guides(color="none")+
-  theme(legend.position = "top")
-ggsave("../../10_figures/suppfig/line_UMA_popSpecific_transcripts.3samplesSharing.faceted.pdf", dpi=700, width = 24, height = 20,  units = "cm")
+  coord_flip()+
+  mytheme+
+  theme(legend.position = "top",
+        legend.key.size = unit(0.5, "lines"),
+        legend.spacing.x = unit(0.1, "cm"),
+        legend.text = element_text(margin = margin(r = -1, unit = "pt")),
+        legend.box.margin=margin(-10,-10,-10,-45),
+        legend.box = "horizontal",               # Ensure horizontal alignment
+        legend.box.just = "center",              # Center the legend box
+        legend.box.spacing = unit(0.5, "cm"),    # Adjust spacing between rows
+        legend.direction = "horizontal",         # Horizontal direction for multiple rows
+        legend.justification = "left",
+        legend.spacing.y = unit(0, "cm"),
+        plot.margin = margin(0, 3, 5, -5),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank()
+  ) +
+  guides(
+    fill = guide_legend(override.aes = list(size = 3),order = 2,nrow = 2),
+    alpha=guide_legend(order = 1, nrow = 2, override.aes = list(size = 3))
+  )+
+  scale_y_continuous(expand =  c(0, 0, 0, 0))
+
+p2 <- ggplot(unique(poptrxlong[popsp=="popsp", .(isoform,trx_category, population)])[, eur:=fifelse(population%in%c("AJI", "CEU"), "European", "Non-European")], aes(x=population, fill=eur))+
+  geom_bar()+
+  mytheme+
+  coord_flip()+
+  xlab("")+
+  guides(fill="none")+
+  scale_fill_manual(values=c("#466995", "#A53860"), name="")+
+  ylab("# Transcripts")+
+  theme(axis.text.y=element_blank(), axis.ticks.y=element_blank(),  plot.margin = margin(0, 0, 5, -10),
+        axis.text.x=element_text(angle=90, vjust=0.5, hjust=1))+
+  scale_y_continuous(expand =  c(0, 0, 0.1, 0), n.breaks=3)+
+  scale_x_discrete(limits=order_samples)
+
+library(patchwork)
+# Ensure both p1 and p2 have the same theme
+p1 <- p1 + theme(legend.position = "top")
+
+# Combine the plots using patchwork
+p3+p1+p2 +
+  plot_layout(guides="collect",  widths=c(3,5.5, 0.75))&
+  theme(legend.position='top')
+ggsave("../../10_figures/01_plots/supp/16_popsp_validations/barplot_PODER_popSpecificTrx_trx.bycategory_UMA.pdf", dpi=700, width = 3.25, height = 2.75,  units = "in")
+

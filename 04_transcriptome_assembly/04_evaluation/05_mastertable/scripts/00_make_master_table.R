@@ -82,8 +82,8 @@ reslongmeta <- reslongmeta[detected>0,][, `:=`(rowname=NULL, detected=NULL, cell
 gc()
 reslongmeta$tool <- ifelse(reslongmeta$tool=="iq", "isoquant", reslongmeta$tool)
 #save checkpoint
-fwrite(reslongmeta, "04_evaluation/02_sqanti/data/240909merge_withoutchrEBV_mastertable/240909merge_withoutchrEBV_reslongmeta.tsv")
-reslongmeta <- fread("04_evaluation/02_sqanti/data/240909merge_withoutchrEBV_mastertable/240909merge_reslongmeta.tsv")
+# fwrite(reslongmeta, "04_evaluation/02_sqanti/data/240909merge_withoutchrEBV_mastertable/240909merge_withoutchrEBV_reslongmeta.tsv")
+# reslongmeta <- fread("04_evaluation/05_mastertable/data/240909merge_withoutchrEBV_mastertable/240909merge_reslongmeta.tsv")
 # compute sharings
 reslongmeta[, detected:=1]
 tool_sharing_temp <- unique(reslongmeta[, .(transcript, tool,detected)])
@@ -113,9 +113,9 @@ fwrite(annot, "04_evaluation/02_sqanti/data/240909merge_withoutchrEBV_mastertabl
 
 ##### SQANTI -------------------------------------------------------------------------------------------------
 # LOAD MORE DATA
-sqanti <- fread("04_evaluation/02_sqanti/data/240909merge/240909merge_classification.txt") # sqanti table
+sqanti <- fread("04_evaluation/02_sqanti/data/240909merge_withoutchrEBV_sqanti_output/240909merge_classification.txt") # sqanti table
 sqanti <- sqanti[, .(isoform, length, exons, structural_category, associated_gene, associated_transcript, ref_length, ref_exons,  subcategory, all_canonical)]
-annot <- fread("04_evaluation/02_sqanti/data/240909merge_withoutchrEBV_mastertable/240909merge_reslongmeta_annot.tsv")
+annot <- fread("04_evaluation/05_mastertable/data/240909merge_reslongmeta_annot.tsv")
 annot <- sqanti[annot, on=c("isoform"="transcript")]
 annot <- annot[contig!="chrEBV"]
 #save checkpoint

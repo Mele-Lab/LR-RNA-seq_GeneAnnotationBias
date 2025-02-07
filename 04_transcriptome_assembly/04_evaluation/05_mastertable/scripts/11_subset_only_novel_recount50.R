@@ -44,7 +44,17 @@ filtered_gtf<- gtf[V3!="gene" & id%in%transcripts]
 
 
 
-filtereddata <-fread("../04_transcriptome_assembly/04_evaluation/05_mastertable/data/subset_PODER/241203_PODER_noveltrx_recountsupp50_trx_mastertable.tsv")
+filtereddata <-fread("04_transcriptome_assembly/04_evaluation/05_mastertable/data/subset_PODER/241203_PODER_noveltrx_recountsupp50_trx_mastertable.tsv")
+
+# remove some columns that are not interesting
+
+filtereddata<- filtereddata[, .SD, .SDcols=!grepl("trx_per_asstrx_count", colnames(filtereddata))]
+filtereddata<- filtereddata[, .SD, .SDcols=!grepl("trx_pergene_count", colnames(filtereddata))]
+filtereddata<- filtereddata[, .SD, .SDcols=!grepl("old", colnames(filtereddata))]
+filtereddata <- filtereddata[, filter:=NULL]
+filtereddata<- filtereddata[, .SD, .SDcols=!grepl("existsFSMin", colnames(filtereddata))]
+filtereddata<- filtereddata[, discovered_transcripts_per_gene:=NULL]
+filtereddata<- filtereddata[, associated_transcript_biotype:=NULL]
 
 
 # # Change the old name of some FSM genes (that had an ambiguous geneid) to the new one

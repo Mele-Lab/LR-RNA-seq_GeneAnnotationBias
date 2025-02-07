@@ -70,7 +70,7 @@ asts_test[, tested_genes:=uniqueN(geneid.v), by=c("sample", "annot")]
 
 asts[, afr:=fifelse(population%in%c("YRI", "LWK", "MPC"), "African", "OOA")]
 asts_test[, afr:=fifelse(population%in%c("YRI", "LWK", "MPC"), "African", "OOA")]
-
+asts
 # Significant genes per ancestry
 ggplot(unique(asts[, .(sample, annot, tested_genes, afr, population, map_reads_assemblymap)]), 
        aes(x=afr, y=tested_genes, fill=afr))+

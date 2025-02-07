@@ -204,7 +204,7 @@ p1 <- p1 + theme(legend.position = "top")
 p3+p1+p2 +
   plot_layout(guides="collect",  widths=c(3,5.5, 0.75))&
   theme(legend.position='top')
-ggsave("../../10_figures/01_plots/main/fig_03/barplot_PODER_popSpecificTrx_SJ.bycategory.pdf", dpi=700, width = 3, height = 2.25,  units = "in")
+ggsave("../../10_figures/01_plots/supp/16_popsp_description/barplot_PODER_popSpecificSJ.bycategory.pdf", dpi=700, width = 3, height = 2.25,  units = "in")
 
 
 ## now only the odds ratio in another order
@@ -606,144 +606,15 @@ ggsave("../../../10_figures/01_plots/main/fig_03/line_PODER_popSpecific_transcri
 
 
 # LINE PLOT FOR 2 SAMPLES SHARING FACETED with ----- REFSEQ ----------
-refseq <- fread("../02_sqanti/data/poder_evaluatedBy_RefSeq/poder_evaluatedBy_RefSeq_classification.txt")
+refseq <- fread("../04_evaluation/02_sqanti/data/poder_evaluatedBy_RefSeq/poder_evaluatedBy_RefSeq_classification.txt")
 refseq <- refseq[, .(isoform, structural_category)]
 categories <-c("Antisense","Intergenic", "NNC", "FSM", "NIC", "ISM", "Genic", "Fusion" )
 names(categories) <- unique(refseq$structural_category)
 refseq[, structural_category_refseq:=categories[structural_category]]
 subpopsplongmeta_refseq <- refseq[, .(isoform, structural_category_refseq)][subpopsplongmeta, on="isoform"]
 subpopsplongmeta_refseq[, trx_per_cat_per_pop:=uniqueN(isoform), by=c("structural_category_refseq", "population")]
-ggplot(unique(subpopsplongmeta_refseq[structural_category_refseq%in%c("FSM", "ISM", "NIC", "NNC"),][,.(population, eur, structural_category_refseq, total_throughput,trx_per_cat_per_pop)]), 
-       aes(x=total_throughput/10^6, y=trx_per_cat_per_pop))+
-  geom_line(data=unique(subpopsplongmeta_refseq[structural_category_refseq%in%c("FSM", "ISM", "NIC", "NNC")&eur=="Non-European", 
-                                                .(population, eur, structural_category_refseq, total_throughput,trx_per_cat_per_pop)]), 
-            linewidth=1, lty="11", color="darkgrey")+
-  geom_line(aes(col=structural_category_refseq),linewidth=1)+
-  mytheme+
-  scale_color_manual(values=c(colsqanti, "ISM"="#8EDE95"))+
-  labs(x="Total Mapped Reads per Population (M)", y="# Population Specific PODER Transcripts")+
-  guides(color="none")+
-  facet_wrap(~structural_category_refseq)+
-  labs(col="", alpha="", size="")+
-  geom_segment(data=unique(subpopsplongmeta_refseq[structural_category_refseq%in%c("FSM", "ISM"),
-                                                   .(population, eur, structural_category_refseq, total_throughput,trx_per_cat_per_pop)]),
-               aes(xend = total_throughput/10^6, # Adjust for arrow length
-                   yend = ifelse(eur == "European", trx_per_cat_per_pop + 25, trx_per_cat_per_pop - 25)),
-               color = "darkgrey") +
-  geom_segment(data=unique(subpopsplongmeta_refseq[structural_category_refseq%in%c("NIC", "NNC"),
-                                                   .(population, eur, structural_category_refseq, total_throughput,trx_per_cat_per_pop)]),
-               aes(xend = total_throughput/10^6, # Adjust for arrow length
-                   yend = ifelse(eur == "European", trx_per_cat_per_pop - 25, trx_per_cat_per_pop + 25)),
-               color = "darkgrey") +
-  ggnewscale::new_scale_color()+
-  geom_text(data=unique(subpopsplongmeta_refseq[structural_category_refseq%in%c("FSM", "ISM"), 
-                                                .(population, eur, structural_category_refseq, total_throughput,trx_per_cat_per_pop)]),
-            aes(x = total_throughput/10^6,  # Position text away from point
-                y = ifelse(eur == "European", trx_per_cat_per_pop + 35, trx_per_cat_per_pop - 35),
-                label = population,
-                color=population),
-            fontface="bold",
-            family="Helvetica",
-            size = 8*0.35,
-            alpha=0.6)+
-  geom_text(data=unique(subpopsplongmeta_refseq[structural_category_refseq%in%c("NIC", "NNC"), 
-                                                .(population, eur, structural_category_refseq, total_throughput,trx_per_cat_per_pop)]),
-            aes(x = total_throughput/10^6,  # Position text away from point
-                y = ifelse(eur == "European", trx_per_cat_per_pop - 35, trx_per_cat_per_pop + 35),
-                label = population,
-                color=population),
-            fontface="bold",
-            family="Helvetica",
-            size = 8*0.35,
-            alpha=0.6)+
-  scale_color_manual(values=popcol)+
-  guides(color="none")+
-  theme(legend.position = c(0.9, 0.90))+
-  xlim(c(52, 105))+
-  ggnewscale::new_scale_color()+
-  geom_point(aes(color=eur, size=eur, alpha=eur))+
-  scale_color_manual(values=c("#466995", "#A53860"))+
-  scale_size_manual(values=c(4,1.5))+
-  scale_alpha_manual(values=c(0.75, 0.9))+
-  labs(alpha="", size="", color="")
-ggsave("../../../10_figures/01_plots/supp/18_popsp_val_refseq/line_PODER_popSpecific_transcripts.2samplesSharing.faceted_refseq_PODER.pdf", dpi=700, width = 7, height = 4,  units = "in")
 
 
-
-
-
-
-# LINE PLOT FOR 2 SAMPLES SHARING
-ggplot(unique(subpopsplongmeta[structural_category%in%c("FSM", "ISM", "NIC", "NNC"), 
-                               .(population, eur, structural_category, total_throughput,trx_per_cat_per_pop)]), 
-       aes(x=total_throughput/10^6, y=trx_per_cat_per_pop))+
-  geom_line(aes(col=structural_category),linewidth=1.5)+
-  mytheme+
-  scale_color_manual(values=colsqanti)+
-  labs(x="Total Mapped Reads per Population (M)", y="# Population Specific PODER Transcripts")+
-  guides(color="none")+
-  ggnewscale::new_scale_color()+
-  geom_point(aes(color=eur, size=eur, alpha=eur))+
-  scale_color_manual(values=c("#466995", "#A53860"))+
-  scale_size_manual(values=c(6.5,3))+
-  scale_alpha_manual(values=c(0.75, 0.9))+
-  labs(col="", alpha="", size="")+
-  geom_segment(data = unique(subpopsplongmeta[structural_category == "FSM" ,.(population, eur, structural_category, total_throughput,trx_per_cat_per_pop)]),  # Only FSM data
-               aes(xend = total_throughput/10^6, # Adjust for arrow length
-                   yend = ifelse(eur == "European" & structural_category=="FSM", trx_per_cat_per_pop + 25, trx_per_cat_per_pop - 25)),
-               arrow = arrow(length = unit(0.2, "cm")), # Arrow size
-               color = "darkgrey") +
-  ggnewscale::new_scale_color()+
-  geom_text(data = unique(subpopsplongmeta[structural_category == "FSM", .(population, eur, structural_category, total_throughput,trx_per_cat_per_pop)]),  # Only FSM data
-            aes(x = total_throughput/10^6,  # Position text away from point
-                y = ifelse(eur == "European" & structural_category=="FSM", trx_per_cat_per_pop + 30, trx_per_cat_per_pop - 30),
-                label = population,
-                color=population),
-            fontface="bold",
-            family="Helvetica",
-            size = 4.5,
-            alpha=0.6)+
-  scale_color_manual(values=popcol)+
-  guides(color="none")+
-  theme(legend.position = "top")
-ggsave("../../../10_figures/suppfig/line_PODER_popSpecific_transcripts.2samplesSharing.pdf", dpi=700, width = 16, height = 14,  units = "cm")
-
-
-
-# LINE PLOT FOR 3 SAMPLES SHARING 
-ggplot(unique(subpopsplongmeta[structural_category%in%c("FSM", "ISM", "NIC", "NNC"), 
-                               .(population, eur, structural_category, total_throughput,trx_per_cat_per_pop)]), 
-       aes(x=total_throughput/10^6, y=trx_per_cat_per_pop))+
-  geom_line(aes(col=structural_category),linewidth=1.5)+
-  mytheme+
-  scale_color_manual(values=colsqanti)+
-  labs(x="Total Mapped Reads per Population (M)", y="# Population Specific PODER Transcripts")+
-  guides(color="none")+
-  ggnewscale::new_scale_color()+
-  geom_point(aes(color=eur, size=eur, alpha=eur))+
-  scale_color_manual(values=c("#466995", "#A53860"))+
-  scale_size_manual(values=c(6.5,3))+
-  scale_alpha_manual(values=c(0.75, 0.9))+
-  labs(col="", alpha="", size="")+
-  geom_segment(data = unique(subpopsplongmeta[structural_category == "FSM" ,.(population, eur, structural_category, total_throughput,trx_per_cat_per_pop)]),  # Only FSM data
-               aes(xend = total_throughput/10^6, # Adjust for arrow length
-                   yend = ifelse(eur == "European" & structural_category=="FSM", trx_per_cat_per_pop + 1, trx_per_cat_per_pop - 1)),
-               arrow = arrow(length = unit(0.2, "cm")), # Arrow size
-               color = "darkgrey") +
-  ggnewscale::new_scale_color()+
-  geom_text(data = unique(subpopsplongmeta[structural_category == "FSM", .(population, eur, structural_category, total_throughput,trx_per_cat_per_pop)]),  # Only FSM data
-            aes(x = total_throughput/10^6,  # Position text away from point
-                y = ifelse(eur == "European" & structural_category=="FSM", trx_per_cat_per_pop + 1.2, trx_per_cat_per_pop - 1.2),
-                label = population,
-                color=population),
-            fontface="bold",
-            family="Helvetica",
-            size = 4.5,
-            alpha=0.6)+
-  scale_color_manual(values=popcol)+
-  guides(color="none")+
-  theme(legend.position = "top")
-ggsave("../../../10_figures/suppfig/line_PODER_popSpecific_transcripts.3samplesSharing.pdf", dpi=700, width = 16, height = 14,  units = "cm")
 
 
 #########################33-----------------------------------------------------------
@@ -770,89 +641,3 @@ ggplot(myunique_popsp_trx, aes(x=population, y=max_expression, fill=population))
   guides(fill="none")
 
 
-
-
-
-
-############## FIND EUROPEAN SPECIFIC TRANSCIRPTS
-
-# POPULATION SPECIFIC TRANSCRIPTS
-
-prepopsp <-data[sample_sharing>=4, ]
-prepopsp[, number_eur_discovered := rowSums(.SD), .SDcols = c("AJI", "CEU")][, number_noneur_discovered := rowSums(.SD), .SDcols = c("ITU", "HAC", "PEL", "MPC", "YRI", "LWK")]
-popsp <- prepopsp[, eurspecificity :=fifelse(number_eur_discovered>=4 & number_noneur_discovered==0, "European-Specific",
-                                             fifelse(number_eur_discovered==0 & number_noneur_discovered>=11, "non-European Specific", "Shared"))]
-popsp <- popsp[eurspecificity!="Shared"]
-popsp[, noveltrx:=ifelse(structural_category=="FSM", "known", "novel")]
-table(popsp$noveltrx, popsp$eurspecificity)
-fisher.test(table(popsp$noveltrx, popsp$eurspecificity))
-
-
-cols_to_keep <- colnames(popsp)[grepl("^[a-zA-Z]{3}[0-9]$", colnames(popsp))]
-subpopsp <- popsp[, c(cols_to_keep, "sample_sharing", "structural_category", "isoform"), with = FALSE]
-subpopsplong <- melt(subpopsp, measure.vars= colnames(subpopsp)[grepl("^[a-zA-Z]{3}[0-9]$", colnames(subpopsp))], variable.name = "sample", value.name = "detected")
-subpopsplong <- subpopsplong[!is.na(detected)]
-subpopsplong <- subpopsplong[detected==1]
-
-subpopsplongmeta <- metadata[, .(sample, map_reads_assemblymap,population )][, total_throughput:=sum(map_reads_assemblymap), by="population"][subpopsplong, on="sample"]
-subpopsplongmeta[, trx_per_cat_per_pop := uniqueN(isoform), by=c("eur", "structural_category")]
-subpopsplongmeta[, trx_per_cat_per_pop_norm :=trx_per_cat_per_pop/total_throughput*10^6]
-subpopsplongmeta[, eur := ifelse(population%in%c("CEU", "AJI"), "European", "Non-European")]
-
-# LINE PLOT FOR 2 SAMPLES SHARING FACETED
-ggplot(unique(subpopsplongmeta[structural_category%in%c("FSM", "ISM", "NIC", "NNC"), 
-                               .( eur, structural_category, total_throughput,trx_per_cat_per_pop)]), 
-       aes(x=total_throughput/10^6, y=trx_per_cat_per_pop))+
-  geom_line(data=unique(subpopsplongmeta[structural_category%in%c("FSM", "ISM", "NIC", "NNC")&eur=="Non-European", 
-                                         .(population, eur, structural_category, total_throughput,trx_per_cat_per_pop)]), 
-            linewidth=1, lty="11", color="darkgrey")+
-  geom_line(aes(col=structural_category),linewidth=1)+
-  mytheme+
-  scale_color_manual(values=c(colsqanti))+
-  labs(x="Total Mapped Reads per Population (M)", y="# Population Specific PODER Transcripts")+
-  guides(color="none")+
-  facet_wrap(~structural_category)+
-  labs(col="", alpha="", size="")+
-  geom_segment(data=unique(subpopsplongmeta[structural_category%in%c("FSM"), 
-                                            .(population, eur, structural_category, total_throughput,trx_per_cat_per_pop)]),
-               aes(xend = total_throughput/10^6, # Adjust for arrow length
-                   yend = ifelse(eur == "European", trx_per_cat_per_pop + 25, trx_per_cat_per_pop - 25)),
-               arrow = arrow(length = unit(0.2, "cm")), # Arrow size
-               color = "darkgrey") +
-  geom_segment(data=unique(subpopsplongmeta[structural_category%in%c("NIC", "NNC"), 
-                                            .(population, eur, structural_category, total_throughput,trx_per_cat_per_pop)]),
-               aes(xend = total_throughput/10^6, # Adjust for arrow length
-                   yend = ifelse(eur == "European", trx_per_cat_per_pop - 25, trx_per_cat_per_pop + 25)),
-               arrow = arrow(length = unit(0.2, "cm")), # Arrow size
-               color = "darkgrey") +
-  ggnewscale::new_scale_color()+
-  geom_text(data=unique(subpopsplongmeta[structural_category%in%c("FSM"), 
-                                         .(population, eur, structural_category, total_throughput,trx_per_cat_per_pop)]),
-            aes(x = total_throughput/10^6,  # Position text away from point
-                y = ifelse(eur == "European", trx_per_cat_per_pop + 35, trx_per_cat_per_pop - 35),
-                label = population,
-                color=population),
-            fontface="bold",
-            family="Helvetica",
-            size = 8*0.35,
-            alpha=0.6)+
-  geom_text(data=unique(subpopsplongmeta[structural_category%in%c("NIC", "NNC"), 
-                                         .(population, eur, structural_category, total_throughput,trx_per_cat_per_pop)]),
-            aes(x = total_throughput/10^6,  # Position text away from point
-                y = ifelse(eur == "European", trx_per_cat_per_pop - 35, trx_per_cat_per_pop + 35),
-                label = population,
-                color=population),
-            fontface="bold",
-            family="Helvetica",
-            size = 8*0.35,
-            alpha=0.6)+
-  scale_color_manual(values=popcol)+
-  guides(color="none")+
-  theme(legend.position = c(0.9, 0.90))+
-  xlim(c(52, 105))+
-  ggnewscale::new_scale_color()+
-  geom_point(aes(color=eur, size=eur, alpha=eur))+
-  scale_color_manual(values=c("#466995", "#A53860"))+
-  scale_size_manual(values=c(4,1.5))+
-  scale_alpha_manual(values=c(0.75, 0.9))+
-  labs(alpha="", size="", color="")

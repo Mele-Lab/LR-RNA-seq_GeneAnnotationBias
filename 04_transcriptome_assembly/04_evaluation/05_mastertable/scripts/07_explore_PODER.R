@@ -189,14 +189,14 @@ ggplot(data, aes(x=associated_gene_biotype_sub, fill=proteinv47_predicted_ORF))+
   theme(legend.position = "top")  # Change legend position to top
 ggsave("../../../10_figures/suppfig/barplot_ORFPrediction_PerBiotype.pdf", dpi=700, width = 2.25, height = 2.5,  units = "cm")
 
-ggplot(data, aes(x=structural_category, fill=proteinv47_predicted_ORF))+
+ggplot(data[associated_gene_biotype_sub!="lncRNA"], aes(x=structural_category, fill=proteinv47_predicted_ORF))+
   geom_bar(position="fill", alpha=.95)+
   mytheme+
   labs(x="", y="Proportion PODER Transcripts", fill="")+
   geom_text(aes(label=after_stat(count)), stat="count", position=position_fill(vjust=0.5), size=6*0.35)+
   scale_fill_manual(values=c("#c44536", "#457b9d"))+
   theme(legend.position = "top")  # Change legend position to top
-ggsave("../../../10_figures/suppfig/barplot_ORFPrediction_PerCategories.pdf", dpi=700, width = 3, height = 2.5,  units = "in")
+ggsave("../../../10_figures/01_plots/supp/11_protein/barplot_ORFPrediction_PersqantiCategories.pdf", dpi=700, width = 5, height = 3.5,  units = "in")
 # PLOT BLASTP BITSCORE
 ggplot(data, aes(y=proteinv47_blastp_bitscore, x=associated_gene_biotype_sub, fill=associated_gene_biotype))+
   geom_violin(alpha=0.7, scale="width")+
