@@ -97,3 +97,17 @@ scripts/snakemake/ref/5_linker_db.nsq
 scripts/snakemake/ref/5_linker_db.ntf
 scripts/snakemake/ref/5_linker_db.nto
 scripts/snakemake/ref/gt_map.tsv
+data
+slurm_logs
+slurm_scripts
+workflow_dag.png
+smk_out
+.snakemake
+scripts/merged_prepruning.log
+scripts/merged_prepruning-temporary.psam
+scripts/merged_pruned.log
+scripts/merged_pruned-temporary.psam
+finalparsed.vcf
+finalparsed.cvf
+scripts/snakemake/array.tsv
+scripts/snakemake/array.tsv

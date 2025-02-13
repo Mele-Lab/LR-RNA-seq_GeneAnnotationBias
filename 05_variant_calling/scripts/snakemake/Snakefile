@@ -1,0 +1,332 @@
+import pandas as pd
+
+p = os.getcwd()
+sys.path.append(p)
+
+# from utils import *
+
+include: 'smkmod/samtools.smk'
+include: 'smkmod/formatting.smk'
+include: 'smkmod/variant_calling.smk'
+
+configfile: 'snakemake/config.yml'
+config_tsv = '/gpfs/projects/bsc83/Projects/pantranscriptome/pclavell/03_mapping/data/wholegenome/general_mapping_separated_samples_Q10_MAPQ10/array_4variantcall'
+chromosome_tsv = 'snakemake/chromosomes.tsv'
+#config_tsv = '/gpfs/projects/bsc83/Projects/pantranscriptome/pclavell/01_basecalling/data/data_array.tsv'
+
+# with open(configfile, 'r') as f:
+#     config = yaml.safe_load(f)
+
+
+df = pd.read_csv(config_tsv, sep='\t')
+chromosome_obj = pd.read_csv(chromosome_tsv, sep='\t')
+chroms = chromosome_obj.chr.tolist()
+
+def get_df_val(df, col, sample):
+    temp = df.loc[df['sample']==sample]
+    assert len(temp.index) == 1
+    return temp[col].values[0]
+
+wildcard_constraints:
+    chroms='|'.join([re.escape(x) for x in chromosome_obj.chr.tolist()]),
+    sample='|'.join([re.escape(x) for x in df['sample'].tolist()]),
+
+rule all:
+    input:
+        expand(config['data']['vc']['gatk']['vcf_merged'])
+        # expand(config['data']['final']['allmerged'],
+        #          chroms=chromosome_obj['chr'].tolist(),
+        #          sample=df['sample'].tolist())
+        #config['data']['final']['allmerged']
+        # expand(config['data']['vc']['gatk']['vcf_merged'],
+        #         chromosome=chromosome_obj['chr'].tolist())
+        # expand(config['data']['vc']['gatk']['vcf_merged'],
+        #         sample=df['sample'].tolist())
+
+
+
+
+# TODO MAYBE WE HAVE TO RECOVER THIS RULE BECAUSE I DIDN'T FILTER PFOR PRIMARY MAPPINGS
+# # filter reads for primary mappings
+# use rule sam_filt_for_primary as vc_filt_mappings with:
+#     input:
+#         align = rules.vc_map_genome.output.sam
+#     output:
+#         align = temporary(config['data']['vc']['map']['sam_filt'])
+
+# add rg tag because gatk throws an absolute fit if not
+use rule add_rg as vc_add_rg with:
+    input:
+        align = lambda wc: get_df_val(df, 'fname', wc.sample)
+        #align = config['data']['vc']['map']['bam']
+    output:
+        align = temporary(config['data']['vc']['map']['bam_rg'])
+
+use rule ref_make_gatk_dict as vc_make_dict with:
+    input:
+        fa = config['ref']['fa_full']
+    output:
+        fa_dict = config['ref']['fa_dict']
+
+use rule ref_make_fa_ind as vc_fa_ind with:
+    input:
+        fa = config['ref']['fa_full']
+    output:
+        fai = config['ref']['fa_full_ind']
+
+# TODO actually write this rule, there's nothing underneath ATM
+use rule gatk_split_reads as vc_split_spliced_reads with:
+    input:
+        fa = rules.vc_make_dict.input.fa,
+        align = rules.vc_add_rg.output.align,
+        index = rules.vc_fa_ind.output.fai
+    output:
+        align = temporary(config['data']['vc']['map']['bam_split'])
+
+use rule fix_read_flags as vc_fix_flags with:
+    input:
+        fa = rules.vc_make_dict.input.fa,
+        align = rules.vc_add_rg.output.align,
+        split_align = rules.vc_split_spliced_reads.output.align
+    output:
+        align = temporary(config['data']['vc']['map']['bam_split_flag'])
+
+use rule bam_sort as vc_sort_bam with:
+    input:
+        align = rules.vc_split_spliced_reads.output.align
+    output:
+        align = temporary(config['data']['vc']['map']['bam_sort'])
+
+# index chr splitted bams
+use rule bamindex as vc_ind_bam_first with:
+    input:
+        bam = rules.vc_sort_bam.output.align
+    output:
+        index = temporary(config['data']['vc']['map']['bam_sort_ind'])
+
+###########################################
+########### GATK
+###########################################
+
+# split bams into chromosomes
+use rule split_bams_into_chromosomes as chr_bamsplit with:
+    input:
+        bam_to_split = rules.vc_sort_bam.output.align,
+        index = rules.vc_ind_bam_first.output.index
+    output:
+        splitted_bam = config['data']['vc']['map']['splittedbam']
+
+# index chr splitted bams
+use rule bamindex as vc_ind_bam with:
+    input:
+        bam = rules.chr_bamsplit.output.splitted_bam
+    output:
+        index = temporary(config['data']['vc']['map']['bam_sort_ind_chr'])
+
+
+# actual variant calling
+use rule call_variants_gatk as vc_call_variants with:
+    input:
+        bam = rules.chr_bamsplit.output.splitted_bam,
+        bai = rules.vc_ind_bam.output.index,
+        fa = rules.vc_make_dict.input.fa,
+        dict = rules.vc_make_dict.output.fa_dict
+    output:
+        vcf = config['data']['vc']['gatk']['vcf_gz_splitted']
+
+# merge chromosomes of same individual
+def fmt_list_for_cli(x, sep=' '):
+    return f'{sep}'.join(x)
+
+use rule merge_variants as merge_chr_of_a_sample with:
+    input:
+        vcfs = lambda wildcards: expand(rules.vc_call_variants.output.vcf,
+            chroms=chromosome_obj['chr'].tolist(),
+            sample=wildcards.sample)
+    params:
+        vcfs_cli = lambda wildcards: fmt_list_for_cli(expand(rules.vc_call_variants.output.vcf,
+            chroms=chromosome_obj['chr'].tolist(),
+            sample=wildcards.sample))
+        # header_vcf = lambda wildcards: expand(rules.vc_call_variants.output.vcf,
+        #     chroms='chr1',
+        #     sample=wildcards.sample)
+    output:
+        vcfgz = temporary(config['data']['vc']['gatk']['vcf_gz'])
+
+
+
+# use rule gunzip as vc_gunzip_vcf with:
+#     input:
+#         ifile = rules.vc_call_variants.output.vcf
+#     output:
+#         ofile = config['data']['vc']['gatk']['vcf']
+
+# normalize variants so they're comparable across samples
+use rule vcf_norm as vc_vcf_norm with:
+    input:
+        vcf = rules.merge_chr_of_a_sample.output.vcfgz,
+        fa = rules.vc_call_variants.input.fa
+    output:
+        vcfnorm = temporary(config['data']['vc']['gatk']['vcf_norm'])
+
+
+# NEW PART
+
+
+#        vcflist = fmt_list_for_cli(list(lambda wildcards: expand(config['data']['vc']['gatk']['vcf_norm'], sample=df['sample'].tolist()))),
+
+# bgzip files so they can be merged
+use rule bgzip as compress_vcf with:
+    input:
+        ifile = rules.vc_vcf_norm.output.vcfnorm
+    output:
+        gz = config['data']['vc']['gatk']['vcf_norm_gz']
+
+# index files so they can be merged
+use rule vcfgz_index as index_premerge with:
+    input:
+        vcfgz = rules.compress_vcf.output.gz
+    output:
+        index = config['data']['vc']['gatk']['vcf_norm_gz_index']
+# TODO add rules for joint genotyping
+
+    # gatk --java-options "-Xmx4g -Xms4g" GenomicsDBImport \
+    #   -V data/gvcfs/mother.g.vcf.gz \
+    #   -V data/gvcfs/father.g.vcf.gz \
+    #   -V data/gvcfs/son.g.vcf.gz \
+    #   --genomicsdb-workspace-path my_database \
+    #   --tmp-dir=/path/to/large/tmp \
+    #   -L 20
+
+
+# merge vcfs of all samples
+use rule merge_samples as merging with:
+    input:
+        mock2 = lambda wildcards: expand(config['data']['vc']['gatk']['vcf_norm_gz_index'], sample=df['sample'].tolist()),
+        mock = lambda wildcards: expand(config['data']['vc']['gatk']['vcf_norm_gz'], sample=df['sample'].tolist())
+        #reference = config['ref']['fa_full']
+    params:
+        vcfs_cli = (lambda wildcards: fmt_list_for_cli(list(expand(config['data']['vc']['gatk']['vcf_norm_gz'], sample=df['sample'].tolist()))))
+    output:
+        vcfgz = config['data']['vc']['gatk']['vcf_merged']
+
+
+
+# # split vcf in chromosomes
+# use rule vcf_split_into_chr as chr_split with:
+#     input:
+#         vcfgz = rules.merging.output.vcfgz
+#     output:
+#         vcf = config['data']['vc']['filters']['chromosome']
+
+# # bgzip files so they can be merged
+# use rule bgzip as compress_vcf_2 with:
+#     input:
+#         ifile = rules.chr_split.output.vcf
+#     output:
+#         gz = config['data']['vc']['filters']['vcf_norm_gz_two']
+
+# # index files so they can be merged
+# use rule vcfgz_index as index_premerge_2 with:
+#     input:
+#         vcfgz = rules.compress_vcf_2.output.gz
+#     output:
+#         index = config['data']['vc']['filters']['vcf_norm_gz_index_two']
+
+# # normalize variants of 1000G
+# use rule vcf_norm as vc_vcf_norm_1000G with:
+#     input:
+#         vcf = config['data']['1000Gchr'],
+#         fa = rules.vc_call_variants.input.fa
+#     output:
+#         vcfnorm = config['data']['1000Gchr_normalized']
+
+# # bgzip files so they can be merged
+# use rule bgzip as compress_vcf_2_1000G with:
+#     input:
+#         ifile = rules.vc_vcf_norm_1000G.output.vcfnorm
+#     output:
+#         gz = config['data']['1000Gchr_normalized_compressed']
+
+# # index files so they can be merged
+# use rule vcfgz_index as index_premerge_2_1000G with:
+#     input:
+#         vcfgz = rules.compress_vcf_2_1000G.output.gz
+#     output:
+#         index = config['data']['1000Gchr_normalized_compressed_index']
+
+# # merge with 1000G chromosomes
+# use rule merge_samples_1000G as merge_with_1000g with:
+#     input:
+#         myvcf = rules.compress_vcf_2.output.gz,
+#         thousandGvcf = rules.compress_vcf_2_1000G.output.gz,
+#         index = rules.index_premerge_2.output.index,
+#         index2 = rules.index_premerge_2_1000G.output.index
+#     output:
+#         vcfgz = config['data']['vc']['filters']['1000Gchromosome']
+
+# # filter positions with some missigness
+# use rule vcf_filter_missing_pos as filter_incomplete with:
+#     input:
+#         vcf =  rules.merge_with_1000g.output.vcfgz
+#     output:
+#         vcf = config['data']['vc']['filters']['vcf_merged_complete']
+
+# # # prune merged vcf
+
+# # use rule vcf_pruning as prune with:
+# #     input:
+# #         vcf = rules.merging.output.vcfgz,
+# #         psam = config['data']['vc']['gatk']['vcf_merged_psam']
+# #     params:
+# #         output_prefix = config['params']['outputprefix']
+# #     output:
+# #         mock = config['data']['vc']['gatk']['mock1']
+
+# # # pca
+
+# # use rule vcf_pca as pca with:
+# #     input:
+# #         vcf = rules.merging.output.vcfgz,
+# #         mock = rules.prune.output.mock
+# #     params:
+# #         input_prefix = config['params']['outputprefix'],
+# #         output_prefix = config['params']['outputprefix2']
+# #     output:
+# #         mock = config['data']['vc']['gatk']['mock2']
+
+
+#  change the input and output files
+# use rule merge_variants as merge_all_chromosomes with:
+#     input:
+#         vcfs = lambda wildcards: expand(rules.filter_incomplete.output.vcf,
+#             chroms=chromosome_obj['chr'].tolist())
+#     params:
+#         vcfs_cli = lambda wildcards: fmt_list_for_cli(list(expand(rules.filter_incomplete.output.vcf,
+#             chroms=chromosome_obj['chr'].tolist())))
+
+#     output: # output file; no wildcards needed
+#         vcfgz = config['data']['final']['allmerged']
+
+# use rule keep_biallelic as filterout_multiallelic with:
+#     input:
+#         vcf = rules.merge_all_chromosomes.output.vcfgz
+#     output: 
+#         vcf = config['data']['final']['allmerged_nomultiallelic']
+
+# use rule parse_vcf as parse_final_vcf with:
+#     input:
+#         vcf = rules.filterout_multiallelic.output.vcf
+#     output:
+#         vcf = config['data']['final']['allmerged_nomultiallelic_parsed']
+
+
+# use rule vcf_pca_no_pruning as pca with:
+# use rule vcf_pca_no_pruning as pca with:
+#     input:
+#         vcf = rules.merge_all_chromosomes.output.vcfgz
+#     params:
+#         input_prefix = config['params']['outputprefix'],
+#         output_prefix = config['params']['outputprefix2']
+#     output:
+#         mock = config['data']['vc']['gatk']['mock2']
