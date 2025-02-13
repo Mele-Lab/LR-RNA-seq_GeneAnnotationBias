@@ -202,6 +202,14 @@ p<-ggplot(unique(data[, .(gid, ooa, population, n_aa_norm)]),
 ggsave(plot=p,"10_figures/01_plots/supp/22_afr_trx/ecdf_Expressed_aa_PerGene_AFROOA_pop.pdf", dpi=700, width = 3, height = 3,  units = "in")
 
 
+# personalized GRCh38
 
-
-
+data <- fread("../novelannotations/analysis_tables/250210_perc_novel_hg38_absent_sjs_w_variant_per_cell_line.tsv")
+ggplot(data, aes(x="", y=perc))+
+  geom_violin(fill="#61814B",alpha=0.5)+
+  geom_boxplot(width=0.3,fill="#61814B")+
+  ggbeeswarm::geom_quasirandom(size=0.5)+
+  mytheme+
+  labs(x="", y="% Novel Splice Junctions\nfound only in personalized-GRCh38\nexplained by tools filters")+
+  theme(axis.ticks.x=element_blank())
+ggsave("10_figures/01_plots/main/personalizedhg38/violin_percentage_NovelSJ_explained.pdf", dpi=700, width = 1.5, height = 2.25,  units = "in")

@@ -71,6 +71,8 @@ asts_test[, tested_genes:=uniqueN(geneid.v), by=c("sample", "annot")]
 asts[, afr:=fifelse(population%in%c("YRI", "LWK", "MPC"), "African", "OOA")]
 asts_test[, afr:=fifelse(population%in%c("YRI", "LWK", "MPC"), "African", "OOA")]
 asts
+asts[, annot:=factor(annot, levels=c("GENCODE", "PODER", "EnhancedGENCODE"))]
+
 # Significant genes per ancestry
 ggplot(unique(asts[, .(sample, annot, tested_genes, afr, population, map_reads_assemblymap)]), 
        aes(x=afr, y=tested_genes, fill=afr))+
@@ -88,8 +90,13 @@ ggplot(unique(asts[, .(sample, annot, tested_genes, afr, population, map_reads_a
   facet_wrap(~annot)+
   theme(legend.key.size = unit(0.2, "cm"),
         legend.margin = margin(0, 0, 0, 0),
-        legend.box.margin = margin(-10, 3, -10, -7))
-ggsave("../10_figures/01_plots/supp/30_as_afr/violin_sigASTU_afrOOA.pdf", dpi=700, width = 4, height = 4,  units = "in")
+        legend.box.margin = margin(-10, 3, -10, -7))+
+  facet_wrap(~annot, labeller = labeller(annot = c("EnhancedGENCODE" = "Enhanced\nGENCODE")))
+
+ggsave("../10_figures/01_plots/supp/30_as_afr/violin_sigASTU_afrOOA.pdf", dpi=700, width = 4, height = 2.75,  units = "in")
+
+asts_test[, annot:=factor(annot, levels=c("GENCODE", "PODER", "EnhancedGENCODE"))]
+
 ggplot(unique(asts_test[, .(sample, annot, tested_genes, afr, population, map_reads_assemblymap)]), 
        aes(x=afr, y=tested_genes, fill=afr))+
   geom_violin(alpha=0.7)+
@@ -106,8 +113,9 @@ ggplot(unique(asts_test[, .(sample, annot, tested_genes, afr, population, map_re
   facet_wrap(~annot)+
   theme(legend.key.size = unit(0.2, "cm"),
         legend.margin = margin(0, 0, 0, 0),
-        legend.box.margin = margin(-10, 3, -10, -7))
-ggsave("../10_figures/01_plots/supp/30_as_afr/violin_ASTU_afrOOA.pdf", dpi=700, width = 4, height = 4,  units = "in")
+        legend.box.margin = margin(-10, 3, -10, -7))+
+  facet_wrap(~annot, labeller = labeller(annot = c("EnhancedGENCODE" = "Enhanced\nGENCODE")))
+ggsave("../10_figures/01_plots/supp/30_as_afr/violin_ASTU_afrOOA.pdf", dpi=700, width = 4, height = 2.75,  units = "in")
 ggplot(unique(asts[annot=="PODER", .(sample, annot, tested_genes, afr, population, map_reads_assemblymap)]), 
        aes(x=afr, y=tested_genes, fill=afr))+
   geom_violin(alpha=0.7)+

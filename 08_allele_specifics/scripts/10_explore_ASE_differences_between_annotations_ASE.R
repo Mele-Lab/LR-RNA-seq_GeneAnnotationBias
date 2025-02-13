@@ -52,8 +52,8 @@ for(TYPE in c("pantrx", "gencode", "enhanced_gencode")){
 
 aseraw <- rbindlist(ase, use.names=TRUE)
 aseraw[, annot := ifelse(annot=="gencode", "GENCODE", 
-                          ifelse(annot=="enhanced_gencode", "Enhanced\nGENCODE", "PODER"))]
-aseraw[, annot:=factor(annot, levels=c("GENCODE", "PODER", "Enhanced\nGENCODE"))]
+                          ifelse(annot=="enhanced_gencode", "Enhanced GENCODE", "PODER"))]
+aseraw[, annot:=factor(annot, levels=c("GENCODE", "PODER", "Enhanced GENCODE"))]
 fwrite(aseraw, "data/ase_results_threeannots.tsv", quote=F, row.names = F, sep="\t")
 aseraw <- fread("data/ase_results_threeannots.tsv")
 # ase <- aseraw[gene_testable==TRUE]
@@ -64,6 +64,8 @@ aseraw <- fread("data/ase_results_threeannots.tsv")
 # ase <- unique_sig_count[ase, on=c("sample", "annot")]
 ase <- aseraw
 ase[, afr:=fifelse(population%in%c("YRI", "LWK", "MPC"), "African", "OOA")]
+ase <- ase[sample!="LWK4"]
+ase[, annot:=factor(annot, levels=c("GENCODE", "PODER", "Enhanced GENCODE"))]
 ggplot(unique(ase[, .(significant_genes, tested_genes, population, map_reads_assemblymap, annot, sample)]), 
        aes(x=tested_genes, y=significant_genes))+
   stat_poly_line(color="darkgrey")+
@@ -73,7 +75,7 @@ ggplot(unique(ase[, .(significant_genes, tested_genes, population, map_reads_ass
   mytheme+
   labs(y="# ASTU Significant Genes", x="# ASTU Tested Genes", size="Reads (M)", col="Population")+
   scale_color_manual(values=popcols)+
-  facet_wrap(~annot)+
+  facet_wrap(~annot, labeller = labeller(annot = c("Enhanced GENCODE" = "Enhanced\nGENCODE")))+
   scale_size_continuous(range = c(0.5, 4))
 ggsave("../10_figures/01_plots/supp/29_as_test_disc/scatter.ASEdisc_test.pdf", dpi=700, width = 6.5, height = 3,  units = "in")
 
@@ -93,8 +95,9 @@ ggplot(unique(ase[, .(sample, annot, tested_genes, afr, population, map_reads_as
   facet_wrap(~annot)+
   theme(legend.key.size = unit(0.2, "cm"),
         legend.margin = margin(0, 0, 0, 0),
-        legend.box.margin = margin(-10, 3, -10, -7))
-ggsave("../10_figures/01_plots/supp/30_as_afr/violin_testedASE_afrOOA.pdf", dpi=700, width = 4, height = 4,  units = "in")
+        legend.box.margin = margin(-10, 3, -10, -7))+
+  facet_wrap(~annot, labeller = labeller(annot = c("Enhanced GENCODE" = "Enhanced\nGENCODE")))
+ggsave("../10_figures/01_plots/supp/30_as_afr/violin_testedASE_afrOOA.pdf", dpi=700, width = 4, height = 2.75,  units = "in")
 
 ggplot(unique(ase[, .(sample, annot, significant_genes, afr, population, map_reads_assemblymap)]), 
        aes(x=afr, y=significant_genes, fill=afr))+
@@ -112,8 +115,9 @@ ggplot(unique(ase[, .(sample, annot, significant_genes, afr, population, map_rea
   facet_wrap(~annot)+
   theme(legend.key.size = unit(0.2, "cm"),
         legend.margin = margin(0, 0, 0, 0),
-        legend.box.margin = margin(-10, 3, -10, -7))
-ggsave("../10_figures/01_plots/supp/30_as_afr/violin_significantASE_afrOOA.pdf", dpi=700, width = 4, height = 4,  units = "in")
+        legend.box.margin = margin(-10, 3, -10, -7))+
+  facet_wrap(~annot, labeller = labeller(annot = c("Enhanced GENCODE" = "Enhanced\nGENCODE")))
+ggsave("../10_figures/01_plots/supp/30_as_afr/violin_significantASE_afrOOA.pdf", dpi=700, width = 4, height = 2.75,  units = "in")
 
 
 

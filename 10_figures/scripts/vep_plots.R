@@ -28,10 +28,10 @@ classification <- fread("data/vep/VEP_severityClassification.tsv")
 
 enhanced <- fread("data/vep/GencodePoder_coding.tsv")[, source:="Enhanced\nGENCODE"]
 gencode <- fread("data/vep/Gencode_coding.tsv")[, source:="GENCODE"]
-poder <- fread("data/vep/Poder_coding.tsv")[, source:="PODER"]
+# poder <- fread("data/vep/Poder_coding.tsv")[, source:="PODER"]
 
 data <- rbind.data.frame(enhanced, gencode)
-data <- rbind.data.frame(data, poder)
+# data <- rbind.data.frame(data, poder)
 
 data <- classification[data, on=c("SO_term"="type")]
 
@@ -46,7 +46,7 @@ data[, percent:=paste0(round(count/totalcount*100, 0), "%")]
 ggplot(unique(data[, .(Impact, source, count,percent)]), aes(x=source, y=count/10^6, fill=Impact))+
   geom_col()+
   mytheme+
-  scale_fill_manual(values=impactcol)+
+  scale_fill_manual(values=modcol)+
   labs(x="", y="# Coding Consequences (Million)")+
   geom_text(aes(label=percent), position=position_stack(vjust=0.5), size=6*0.35)
 ggsave("../10_figures/01_plots/supp/40_vep/barplot_vep.pdf", dpi=700, width = 3, height = 3,  units = "in")
