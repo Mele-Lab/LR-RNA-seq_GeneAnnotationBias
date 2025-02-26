@@ -210,20 +210,47 @@ ggsave("../10_figures/01_plots/supp/35_as_validation/violin_ASE_validation.pdf",
 
 gwassets <- fread("../../../../Data/GWAScatalog/modified/full_gwas_catalog.parsed4_enrichments.geneids.tsv")
 library(clusterProfiler)
+
+
+
+# tag hla
+hla <-  fread("../../../../Data/gene_annotations/gencode/v47/modified/gencode.v47.primary_assembly.HLA_proteincoding_genes.tsv", header=F)
+hla[, gene:=gsub("\\..*","", V1)][, V1:=NULL]
+hla <- hla$gene
+
+asqtl[, hla:=fifelse(geneid%in%hla, "HLA", "notHLA")]
+
 res_ase_gencode <- enricher(gene=asqtl[annot=="GENCODEv47" & ASE=="ASE", geneid],
                             universe=asqtl[annot=="GENCODEv47" & ASE!="not Tested", geneid],
                             TERM2GENE= gwassets)
 res_ase_poder <- enricher(gene=asqtl[annot=="PODER" & ASE=="ASE", geneid],
                           universe=asqtl[annot=="PODER" & ASE!="not Tested", geneid],
                           TERM2GENE= gwassets)
-res_astu_gencode <- enricher(gene=asqtl[annot=="GENCODEv47" & ASTS=="ASTS", geneid],
-                             universe=asqtl[annot=="GENCODEv47" & ASTS!="not Tested", geneid],
+res_astu_gencode <- enricher(gene=asqtl[annot=="GENCODEv47" & ASTS=="ASTS" , geneid],
+                             universe=asqtl[annot=="GENCODEv47" & ASTS!="not Tested" & hla=="notHLA", geneid],
                              TERM2GENE= gwassets,
                              qvalueCutoff=0.02)
-res_astu_poder <- enricher(gene=asqtl[annot=="PODER" & ASTS=="ASTS", geneid],
-                           universe=asqtl[annot=="PODER" & ASTS!="not Tested", geneid],
+res_astu_poder <- enricher(gene=asqtl[annot=="PODER" & ASTS=="ASTS" , geneid],
+                           universe=asqtl[annot=="PODER" & ASTS!="not Tested" & hla=="notHLA", geneid],
                            TERM2GENE= gwassets,
                            qvalueCutoff=0.02)
+
+library(org.Hs.eg.db)
+resgo_astu_poder <- enrichGO(gene=asqtl[annot=="PODER" & ASTS=="ASTS" & hla=="notHLA" , geneid],
+                           universe=asqtl[annot=="PODER" & ASTS!="not Tested" & hla=="notHLA", geneid],
+                           keyType = "ENSEMBL",
+                           OrgDb = "org.Hs.eg.db",
+                           ont="BP" ,
+                           qvalueCutoff=0.05)
+resgo_ase_poder <- enrichGO(gene=asqtl[annot=="PODER" & ASE=="ASE" & hla=="notHLA" , geneid],
+                             universe=asqtl[annot=="PODER" & ASE!="not Tested" & hla=="notHLA", geneid],
+                             keyType = "ENSEMBL",
+                             OrgDb = "org.Hs.eg.db",
+                             ont="BP" ,
+                             qvalueCutoff=0.05)
+as.data.frame(resgo_astu_poder)
+as.data.frame(resgo_ase_poder)
+
 
 enhanced <- fread("data/ASTS_results_threeannots.tsv", sep="\t")
 enhanced <- unique(enhanced[annot=="EnhancedGENCODE" & !is.na(FDR), .(FDR, geneid.v)])

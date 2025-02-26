@@ -73,7 +73,7 @@ ggplot(unique(ase[, .(significant_genes, tested_genes, population, map_reads_ass
                formula = y ~ x, parse = TRUE, label.x.npc = "left", label.y.npc = 0.9, size = 6*0.35) +  # Equation and R-squared
   geom_point(aes(col=population,size=map_reads_assemblymap/10^6), alpha=0.7)+
   mytheme+
-  labs(y="# ASTU Significant Genes", x="# ASTU Tested Genes", size="Reads (M)", col="Population")+
+  labs(y="# ASE Significant Genes", x="# ASE Tested Genes", size="Reads (M)", col="Population")+
   scale_color_manual(values=popcols)+
   facet_wrap(~annot, labeller = labeller(annot = c("Enhanced GENCODE" = "Enhanced\nGENCODE")))+
   scale_size_continuous(range = c(0.5, 4))

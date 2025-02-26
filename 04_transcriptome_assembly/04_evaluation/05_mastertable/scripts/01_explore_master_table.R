@@ -522,7 +522,7 @@ ggplot(unique(gencodesub[, .(gene_biotype, minsupport, transcriptid.v)]), aes(x=
   geom_violin(alpha=0.7)+
   geom_boxplot(outliers=F, width=0.15)+
   mytheme+
-  labs(x="", y="Recounts Counts of\nleast supported SJ/transcript")+
+  labs(x="", y="Recounts Counts of\nleast supported Splice Junction\n per GENCODE transcript", title ="Transcript Level")+
   scale_y_continuous(trans="log10")+
   # scale_fill_manual(values=c("darkred", "#356CA1"))+
   # geom_hline(yintercept=lncrnacutoff, col="darkred", linetype="dashed")+

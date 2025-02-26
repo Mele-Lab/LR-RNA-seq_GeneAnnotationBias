@@ -22,36 +22,88 @@ setup_script(relative_path, 3, 48)
 catch_args(0)
 ##
 ## 0----------------------------END OF HEADER----------------------------------0
-data <- fread("../novelannotations/analysis_tables/241108_n_t_structural_category_protein_category_subcategory.tsv")
-ourcat <- fread("../novelannotations/analysis_tables/241124_long_struct_cat_aa_cat.tsv")
-# orfs <- fread("../novelannotations/analysis_tables/241108_n_t_structural_category_protein_category_annot_aa.tsv")
-# orfs[, V1:=NULL]
-library(ggalluvial)
-library(ggplot2)
-library(ggalluvial)
 
-categories <- c("FSM", "ISM", "NIC", "NNC", "Intergenic","Genic", "Fusion", "Antisense")
-names(categories) <- unique(data$protein_splice_category)[c(2,5,7,8,6,4,3,1)]
-colsqanti <- c("#61814B", "#8EDE95", "#356CA1", "#C8773C",  "darkred", "#B5B5B5", "#4F4F4F", "#6E5353")
-names(colsqanti) <- c("FSM", "ISM", "NIC", "NNC", "Intergenic","Genic", "Fusion", "Antisense")
-ourcat[, structural_category_basic:=fifelse(structural_category%in%c("FSM", "FSM w/o CDS"), "FSM", structural_category)]
-ourcat[, structural_category_basic_novel:=fifelse(structural_category%in%c("NIC", "NNC"), "Novel", structural_category_basic)]
+data <- fread("../novelannotations/analysis_tables/250224_protein_table_for_alluvial.tsv")
+# data <- fread("../novelannotations/analysis_tables/241108_n_t_structural_category_protein_category_subcategory.tsv")
+# ourcat <- fread("../novelannotations/analysis_tables/241124_long_struct_cat_aa_cat.tsv")
+# # orfs <- fread("../novelannotations/analysis_tables/241108_n_t_structural_category_protein_category_annot_aa.tsv")
+# # orfs[, V1:=NULL]
+# library(ggalluvial)
+# 
+# categories <- c("FSM", "ISM", "NIC", "NNC", "Intergenic","Genic", "Fusion", "Antisense")
+# names(categories) <- unique(data$protein_splice_category)[c(2,5,7,8,6,4,3,1)]
+# colsqanti <- c("#61814B", "#8EDE95", "#356CA1", "#C8773C",  "darkred", "#B5B5B5", "#4F4F4F", "#6E5353")
+# names(colsqanti) <- c("FSM", "ISM", "NIC", "NNC", "Intergenic","Genic", "Fusion", "Antisense")
+# ourcat[, structural_category_basic:=fifelse(structural_category%in%c("FSM", "FSM w/o CDS"), "FSM", structural_category)]
+# ourcat[, structural_category_basic_novel:=fifelse(structural_category%in%c("NIC", "NNC"), "Novel", structural_category_basic)]
+# 
+# # Compute %
+# prop.table(table(ourcat$structural_category_basic, ourcat$aa_seq_novelty), margin = 1)
+# prop.table(table(ourcat$structural_category_basic_novel, ourcat$aa_seq_novelty), margin = 1)
+# 
+# # prepare data
+# newdata <- melt(ourcat[, .(isoform, structural_category, aa_seq_novelty)], id.vars = "isoform")
+# 
+# newdata[, value:=fifelse(value=="Truncation", "Known\nTruncated", value)]
+# newdata[, value:=fifelse(value=="FSM w/o CDS", "FSM\nwithout\nCDS", value)]
+# newdata[, variable:=factor(variable, levels=rev(c("structural_category", "aa_seq_novelty" )))]
+# ggplot(newdata,
+#        aes(x=variable, stratum=value, fill=value, label=value, alluvium=isoform)) +
+#   geom_flow(aes(order=value),width = 0.5) +
+#   geom_stratum(color=NA,width = 0.5) +
+#   geom_text(stat = "stratum", size = 6*0.35, family="Helvetica") +
+#   mytheme+
+#   theme(
+#     axis.title.x = element_blank(),        # Removes x-axis title
+#     axis.line.x = element_blank(),
+#     axis.line.y = element_blank(),  # Keeps y-axis line
+#     panel.background = element_blank(),    # Removes plot background
+#     panel.border = element_blank(),        # Removes plot border
+#     plot.background = element_blank(),     # Removes background outside panel
+#     panel.grid = element_blank()           # Removes grid lines
+#   )+
+#   labs(x = "", y = "# Transcripts - ORF pairs")+
+#   scale_x_discrete(labels = c("structural_category"="Transcript", "aa_seq_novelty"="Predicted\nORF"), expand = c(0, 0)) +
+#   scale_y_continuous( expand = c(0, 0)) +
+#   guides(fill = "none")+
+#   scale_fill_manual(values = c(colsqanti, "FSM\nwithout\nCDS"="#82A76A", "Known"="#61814B", "Known\nTruncated"="#94C595", "Novel"="#BC7EBF"))+
+#   coord_flip()
+# ggsave("10_figures/01_plots/main/fig_02/alluvial_fromTrxtoOurORFcategory.pdf", dpi=700, width = 3, height = 2,  units = "in")
 
-# Compute %
-prop.table(table(ourcat$structural_category_basic, ourcat$aa_seq_novelty), margin = 1)
-prop.table(table(ourcat$structural_category_basic_novel, ourcat$aa_seq_novelty), margin = 1)
 
-# prepare data
-newdata <- melt(ourcat[, .(isoform, structural_category, aa_seq_novelty)], id.vars = "isoform")
+#####------------------------
+# **Expand the dataset to create one row per instance**
+df_expanded <- data %>%
+  uncount(isoform)  # Expands each row by its count
+df_expanded$isoform <- paste0("iso", 1:nrow(df_expanded))
+# Reshape into long format for plotting
+df_long <- df_expanded %>%
+  pivot_longer(cols = c(structural_category, aa_novelty_2), 
+               names_to = "variable", values_to = "value")
 
-newdata[, value:=fifelse(value=="Truncation", "Known\nTruncated", value)]
-newdata[, value:=fifelse(value=="FSM w/o CDS", "FSM\nwithout\nCDS", value)]
-newdata[, variable:=factor(variable, levels=rev(c("structural_category", "aa_seq_novelty" )))]
-ggplot(newdata,
-       aes(x=variable, stratum=value, fill=value, label=value, alluvium=isoform)) +
-  geom_flow(aes(order=value),width = 0.5) +
-  geom_stratum(color=NA,width = 0.5) +
-  geom_text(stat = "stratum", size = 6*0.35, family="Helvetica") +
+setDT(df_long)
+df_long[, value:=fifelse(value=="Known truncation", "Known\nTruncated",
+                         fifelse(value=="Known elongation", "Known\nElongated", value))]
+df_long[, value:=factor(value, levels=c("NNC", "NIC","Novel", "Known\nElongated", "Known", "Known\nTruncated", "NMD"))]
+
+df_long <- df_long %>%
+  group_by(variable, value) %>%
+  mutate(count = n()) %>%
+  ungroup() %>%
+  mutate(percentage = count / sum(count) * 100) # prepare colors
+colsqanti <- c("#C8773C","#356CA1", "#BC7EBF","#738062", "#61814B", "#8EDE95", "darkgrey")
+names(colsqanti) <- c("NNC", "NIC","Novel", "Known\nElongated", "Known", "Known\nTruncated", "NMD")
+
+data[, total:=sum(isoform), by="structural_category"]
+data[, percentage:=isoform/total*100, by="structural_category"]
+# Create the plot using geom_flow
+ggplot(df_long, 
+       aes(x = variable, stratum = value, alluvium = isoform, fill = value, label = value)) +
+  geom_flow(aes(order = value), width = 0.5, alpha = 0.7) +  # Flows colored by stratum values
+  geom_stratum(color = NA, width = 0.5) +  # Stratum without borders
+  geom_text(stat = "stratum", size = 6*0.35, family = "Helvetica") +  # Add text labels
+  labs(x = "", y = "# Transcripts - ORF pairs")+
+  scale_x_discrete(labels = c("structural_category"="Transcript", "aa_novelty_2"="Predicted\nORF"), expand = c(0, 0)) +
   mytheme+
   theme(
     axis.title.x = element_blank(),        # Removes x-axis title
@@ -62,16 +114,11 @@ ggplot(newdata,
     plot.background = element_blank(),     # Removes background outside panel
     panel.grid = element_blank()           # Removes grid lines
   )+
-  labs(x = "", y = "# Transcripts - ORF pairs")+
-  scale_x_discrete(labels = c("structural_category"="Transcript", "aa_seq_novelty"="Predicted\nORF"), expand = c(0, 0)) +
-  scale_y_continuous( expand = c(0, 0)) +
+  scale_y_continuous( expand = c(0, 0))+
   guides(fill = "none")+
-  scale_fill_manual(values = c(colsqanti, "FSM\nwithout\nCDS"="#82A76A", "Known"="#61814B", "Known\nTruncated"="#94C595", "Novel"="#BC7EBF"))+
+  scale_fill_manual(values = colsqanti)+
   coord_flip()
 ggsave("10_figures/01_plots/main/fig_02/alluvial_fromTrxtoOurORFcategory.pdf", dpi=700, width = 3, height = 2,  units = "in")
-
-
-
 
 
 

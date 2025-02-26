@@ -139,25 +139,24 @@ ggsave("../10_figures/01_plots/main/fig_04/violin_sigASTU_afrOOA_PODER.pdf", dpi
 ggplot(unique(asts[, .(sample, annot, tested_genes, afr, population, map_reads_assemblymap)]), 
        aes(x=annot, y=tested_genes, fill=annot))+
   geom_violin(alpha=0.7)+
-  ggbeeswarm::geom_quasirandom(aes(color=population, size=map_reads_assemblymap/10^6),alpha=0.5)+
-  scale_size_continuous(range = c(0.5, 1.5))+
+  ggbeeswarm::geom_quasirandom(aes(color=population),alpha=0.5)+
   geom_boxplot(outliers = F, width=0.1)+
   scale_color_manual(values=c(popcols))+
   mytheme+
-  labs(x="", y="# Significant ASTU Genes", size="Mapped\nReads (M)", col="Population", fill="")+
-  geom_pwc(method="t_test", label.size=7*0.35, p.adjust.by ="panel",label = "p.adj.format",step.increase = 0.16)+
+  labs(x="", y="# Significant ASTU Genes",  col="Population", fill="")+
+  geom_pwc(method="t_test", label.size=7*0.35, p.adjust.by ="panel",label = "p.adj",step.increase = 0.16, method.args = list(alternative = "two.sided", paired=TRUE))+
   # stat_compare_means(comparisons = list(c("PODER", "GENCODEv47"), 
   #                                       c("Enhanced\nGENCODEv47", "PODER"),
   #                                       c("Enhanced\nGENCODEv47", "GENCODEv47")),method = "t.test",
   #                    method.args = list(alternative = "two.sided", paired=TRUE), size=6*0.35,p.adjust.method = "holm",label = "p.adj")+
-  scale_fill_manual(values=c( "#7F675B", "#A2AD59", "#62531C"))+
+  scale_fill_manual(values=c( "#7F675B", "#A2AD59", "darkgrey"))+
   guides(fill="none")+
   theme(legend.key.size = unit(0.2, "cm"),
         legend.margin = margin(0, 0, 0, 0),
         legend.box.margin = margin(-10, 3, -10, -7))+
-  scale_x_discrete(labels=c("GENCODEv47"="GENCODE", "Enhanced\nGENCODEv47"="Enhanced\nGENCODE"))+
+  scale_x_discrete(labels=c("GENCODEv47"="GENCODE", "EnhancedGENCODE"="Enhanced\nGENCODE"))+
   ylim(c(15, 125))
-ggsave("../10_figures/01_plots/main/fig_04/violin_sigASTU_byAnnot.pdf", dpi=700, width = 2.75, height = 2.75,  units = "in")
+ggsave("../10_figures/01_plots/main/fig_04/violin_sigASTU_byAnnot.pdf", dpi=700, width = 2.75, height = 2.25,  units = "in")
 ggsave("../10_figures/01_plots/supp/31_as_annots/violin_sigASTU_byAnnot.pdf", dpi=700, width = 4, height = 4,  units = "in")
 ggplot(unique(asts_test[, .(sample, annot, tested_genes, afr, population, map_reads_assemblymap)]), 
        aes(x=annot, y=tested_genes, fill=annot))+

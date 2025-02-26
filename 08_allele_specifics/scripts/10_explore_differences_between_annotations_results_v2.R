@@ -79,7 +79,7 @@ ggplot(unique(asts[, .(sig_genes, tested_genes, population, map_reads_assemblyma
   scale_color_manual(values=popcols)+
   facet_wrap(~annot)+
   scale_size_continuous(range = c(0.5, 4))
-  ggsave("../10_figures/01_plots/supp/29_as_test_disc/scatter.ASTUdisc_test.pdf", dpi=700, width = 6.5, height = 3,  units = "in")
+ggsave("../10_figures/01_plots/supp/29_as_test_disc/scatter.ASTUdisc_test.pdf", dpi=700, width = 6.5, height = 3,  units = "in")
 
 # # number of tested genes per annot?
 # 
@@ -116,8 +116,8 @@ ggplot(unique(asts[, .(sig_genes, tested_genes, population, map_reads_assemblyma
 
 # Explore how many more genes are tested in each annot
 astswide <- dcast(unique(asts[, .(sample, annot, tested_genes)]), sample ~ annot, value.var = "tested_genes") 
-astswide[, diff_tested_genes:=PODER-GENCODEv47]
-astswide[, ratio_tested_genes:=PODER/GENCODEv47]
+astswide[, diff_tested_genes:=PODER-GENCODE]
+astswide[, ratio_tested_genes:=PODER/GENCODE]
 
 astswidemeta <- metadata[, .(sample, population, map_reads_assemblymap)][astswide, on="sample"]
 astswidemeta[, eur:=ifelse(population %in% c("LWK", "YRI"), "AFR",

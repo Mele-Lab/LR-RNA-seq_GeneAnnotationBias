@@ -45,6 +45,12 @@ median_fun <- function(x,y) {
   return(data.frame(y = y, label =  round(10^median(x), 0)))
 }
 
+# how many transcripts per gene are there?
+
+mean(data[structural_category=="Intergenic", .(isoform, geneid.v)][, .N, by=.(geneid.v)][,N])
+
+
+
 # ADAPTATIONS
 data[, predicted_NMD:=fifelse(predicted_NMD==TRUE, "Predicted NMD", "Not NMD")]
 data[, proteinv47_protein_is_nmd:=fifelse(proteinv47_protein_is_nmd==TRUE, "Predicted NMD", "Not NMD")]

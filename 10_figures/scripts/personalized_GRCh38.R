@@ -34,6 +34,7 @@ names(popcol) <- metadata$population
 
 data <- fread("../novelannotations/analysis_tables/250206_personalized_hg38s_n_ic.tsv")
 
+
 ggplot(data, aes(x=map_genome, y=n_ic))+
   geom_point()+
   mytheme+
@@ -53,35 +54,39 @@ ggplot(data, aes(x=map_genome, y=n_sj))+
 ggsave("10_figures/01_plots/supp/41_personalized_GRCh38/lineplot_numberSpliceJunctions_perHaplotype.pdf", dpi=700, width = 3.75, height = 2.75,  units = "in")
 
 
+# load data
+# data <- fread("../novelannotations/analysis_tables/250206_perc_novel_ics_uniq_to_pers_hg38.tsv")
 
-data <- fread("../novelannotations/analysis_tables/250206_perc_novel_ics_uniq_to_pers_hg38.tsv")
+data <- fread("../novelannotations/analysis_tables/250226_ratio_novel_ics_in_haps_vs_hg38.tsv")
+data <- data[, .(cell_line_id, n_novel_ic, n_non_hg38_novel_ic, n_novel_ic_hg38, ratio_novel, diff, population, map_reads_assemblymap)]
 
-data[, mean:=mean(perc_uniq_to_haplotypes), by="population"]
-data[, sd:=sd(perc_uniq_to_haplotypes), by="population"]
+data[, increase:=(ratio_novel-1)*100]
+data[, mean:=mean(increase), by="population"]
+data[, sd:=sd(increase), by="population"]
 
 ggplot(unique(data[, .(mean, sd, population)]), aes(x=reorder(population, mean), fill=population))+
   geom_col(aes(y=mean), alpha=0.8)+
   geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width=0.25, linewidth=0.2)+
-  ggbeeswarm::geom_quasirandom(data=data, mapping=aes(y=perc_uniq_to_haplotypes),size=0.3)+
+  ggbeeswarm::geom_quasirandom(data=data, mapping=aes(y=increase),size=0.3)+
   mytheme+
-  labs(x="", y="% of Intron Chains Unique\nto personalized-GRCh38s")+
+  labs(x="", y="% increase in Novel Transcripts\nUnique to personalized-GRCh38s")+
   scale_fill_manual(values=popcol)+
   guides(fill="none")+
-  annotate(geom="text", x=1.5, y=4.2, label="p=3e-05", size=6*0.35)
-ggsave("10_figures/01_plots/supp/41_personalized_GRCh38/barplot_IntronChainsUniquetopersonalizedGRCh38s.pdf", dpi=700, width = 1.8, height = 2.25,  units = "in")
+  annotate(geom="text", x=1.5, y=4.5, label="p=0.0004", size=6*0.35)
+ggsave("10_figures/01_plots/main/personalizedhg38/barplot_IntronChainsUniquetopersonalizedGRCh38s.pdf", dpi=700, width = 1.8, height = 2.25,  units = "in")
 
 ## test if there are differences-------------------------
 
 # Test for Normality
-shapiro.test(unique(data[, .(perc_uniq_to_haplotypes, population)])$perc_uniq_to_haplotypes) # Apply separately for each group if needed
+shapiro.test(unique(data[, .(increase, population)])$increase) # Apply separately for each group if needed
 
 # Test for Homogeneity of Variances
-car::leveneTest(perc_uniq_to_haplotypes ~ population, data = unique(data[, .(perc_uniq_to_haplotypes, population)]))
+car::leveneTest(increase ~ population, data = unique(data[, .(increase, population)]))
 
 # Perform ANOVA
-anova_result <- aov(perc_uniq_to_haplotypes ~ population, data = unique(data[, .(perc_uniq_to_haplotypes, population)]))
-summary(anova_result)
-
+anova_result <- aov(increase ~ population, data = unique(data[, .(increase, population)]))
+anovares <-summary(anova_result)
+anovares[[1]]$`Pr(>F)`[1]
 # Post-hoc Tukey Test
 tukey_result <- TukeyHSD(anova_result)
 tukey_result$population
@@ -108,7 +113,7 @@ tukey_result[Group1=="PEL" & Group2=="LWK", `:=`(Group1="LWK", Group2="PEL")]
 p <-ggplot(tukey_result, aes(x=Group1, y=Group2, fill=abs(as.numeric(diff))))+
   geom_tile()+
   geom_text(aes(label=sig))+
-  labs(x="", y="", fill="Mean\nDifference")+
+  labs(x="", y="", fill="Mean Increase in\nNovel Transcripts\nDifference (%)")+
   scale_fill_continuous(low="white", high="#61814B", na.value="white")+
   scale_x_discrete(limits=unique(data$population)[order(unique(data$mean))])+
   scale_y_discrete(limits=unique(data$population)[order(unique(data$mean))])+
@@ -126,13 +131,13 @@ p +
   # Add colored squares for Group2 (vertical annotations)
   geom_tile(data = tukey_result, aes(x = 0.5, y = Group2),  # Adjust `x` to place left of plot
             fill = popcol[tukey_result$Group2], width = 0.2, height = 1, alpha=0.8)
-ggsave("10_figures/01_plots/supp/41_personalized_GRCh38/heatmap_AnovaSignificantDifferencesbetweenPOPS_perHaplotype.pdf", dpi=700, width = 1.8, height = 2.25,  units = "in")
+ggsave("10_figures/01_plots/main/personalizedhg38/heatmap_AnovaSignificantDifferencesbetweenPOPS_perHaplotype.pdf", dpi=700, width = 2.35, height = 2.25,  units = "in")
 
 
-data <- fread("../novelannotations/analysis_tables/250206_perc_novel_sjs_uniq_to_pers_hg38.tsv")
-ggplot(data, aes(x=population, y=perc_uniq_to_haplotypes, fill=population))+
-  geom_boxplot(outliers = F, show.legend = T)+
-  ggbeeswarm::geom_quasirandom()+
-  mytheme+
-  labs(x="", y="% of Splice Junctions Unique to personalized-GRCh38s")+
-  scale_fill_manual(values=popcol)
+# data <- fread("../novelannotations/analysis_tables/250206_perc_novel_sjs_uniq_to_pers_hg38.tsv")
+# ggplot(data, aes(x=population, y=perc_uniq_to_haplotypes, fill=population))+
+#   geom_boxplot(outliers = F, show.legend = T)+
+#   ggbeeswarm::geom_quasirandom()+
+#   mytheme+
+#   labs(x="", y="% of Splice Junctions Unique to personalized-GRCh38s")+
+#   scale_fill_manual(values=popcol)

@@ -30,8 +30,7 @@ names(popcol) <- metadata$population
 
 
 
-
-data <- fread("../novelannotations/analysis_tables/250212_snp_exon_intersect_fst.tsv")
+data <- fread("../novelannotations/analysis_tables/250213_snp_exon_60bp_intersect_fst.tsv")
 data <- data[, .(novelty, pop1_det, pop2_det, pop1, pop2, fst)]
 data[, detection:=factor(fifelse(pop1_det & pop2_det, "both", "one"))]
 
@@ -95,7 +94,7 @@ ggplot(result, aes(x=pop2, y=pop1))+
             height = 1, width=0.2)+
   scale_fill_manual(values = popcol, na.value = "grey90")+
   guides(fill="none")
-ggsave("10_figures/01_plots/supp/41_personalized_GRCh38/heatmap_WilcoxonSignificantDifferencesbetweenPOPS_FST.pdf", dpi=700, width = 1.8, height = 2.25,  units = "in")
+ggsave("10_figures/01_plots/supp/41_personalized_GRCh38/heatmap_WilcoxonSignificantDifferencesbetweenPOPS_FST_60bp.pdf", dpi=700, width = 1.8, height = 2.25,  units = "in")
 
 
 
@@ -157,6 +156,7 @@ ggplot(resultss, aes(x=odds.ratio, y=reorder(population, odds.ratio)))+
          alpha=guide_legend(override.aes = list(size = 3), nrow=2))+
   annotation_logticks(sides="b")+
   guides(color="none")
+ggsave("10_figures/01_plots/supp/41_personalized_GRCh38/dotplot_enrichment.popspExons_in_highfst_CEUvsallPOPS_FST_60bp.pdf", dpi=700, width = 1.8, height = 2.25,  units = "in")
 
 
 
@@ -206,7 +206,7 @@ ggplot(resultss, aes(x=odds.ratio, y=reorder(population, odds.ratio)))+
   guides(color = guide_legend(override.aes = list(size = 3)),
          alpha=guide_legend(override.aes = list(size = 3), nrow=2))+
   guides(color="none")
-ggsave("10_figures/01_plots/supp/41_personalized_GRCh38/dotplot_enrichment.novel_in_highfst_CEUvsallPOPS_FST.pdf", dpi=700, width = 1.8, height = 2.25,  units = "in")
+ggsave("10_figures/01_plots/supp/41_personalized_GRCh38/dotplot_enrichment.novel_in_highfst_CEUvsallPOPS_FST_60bp.pdf", dpi=700, width = 1.8, height = 2.25,  units = "in")
 
 
 
@@ -254,4 +254,4 @@ ggplot(resultss, aes(x=odds.ratio, y=reorder(population, odds.ratio)))+
   guides(color = guide_legend(override.aes = list(size = 3)),
          alpha=guide_legend(override.aes = list(size = 3), nrow=2))+
   guides(color="none")
-ggsave("10_figures/01_plots/supp/41_personalized_GRCh38/dotplot_enrichment.novel35prime_in_highfst_CEUvsallPOPS_FST.pdf", dpi=700, width = 1.8, height = 2.25,  units = "in")
+ggsave("10_figures/01_plots/supp/41_personalized_GRCh38/dotplot_enrichment.novel35prime_in_highfst_CEUvsallPOPS_FST_60bp.pdf", dpi=700, width = 1.8, height = 2.25,  units = "in")

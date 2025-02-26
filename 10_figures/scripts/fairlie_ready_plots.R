@@ -52,39 +52,50 @@ ggplot(data[novelty!="Known"], aes(x=associated_gene_biotype, fill=novelty))+
 ggsave("10_figures/01_plots/main/fig_02/barplot_internalPODERexonsNovelty_Perbiotype.pdf", dpi=700, width = 3.5, height = 2.5,  units = "in")
 
 
-data <- fread("../novelannotations/analysis_tables/241031_perc_supported_ics_per_annot.tsv")
-data[, dataset:=factor(dataset, levels=c("PODER", "ENCODE4", "GTEx", "CHESS3"))]
-data$tech <- c("Long-Reads", "Short-Reads", "Long-Reads", "Long-Reads")
-data$poder <- factor(c(0,0,0,1))
-ggplot(data, aes(x=dataset, y=n_ic, fill=tech))+
-  geom_col(aes(alpha=poder))+
-  geom_text(aes(label=paste(round(perc, digits=1), "%", sep=" ")), vjust=-0.5)+
-  mytheme+
-  labs(x="", y="# Externally-supported\nNovel Transcripts", fill="")+
-  scale_fill_manual(values=c("purple", "#4A90E2"))+
-  scale_alpha_manual(values=c(0.6, 1))+
-  guides(alpha="none")+
-  theme(legend.position="top")+
-  ylim(c(0,19000))
-ggsave("10_figures/suppfig/barplot_PODER_ENCODE_GTEX_CHESS_validation.pdf", dpi=700, width = 11, height = 10,  units = "cm")
-
 
 
 data <- fread("../novelannotations/analysis_tables/241031_n_supported_ics_by_novelty.tsv")
-data[, structural_category:=factor(structural_category, levels=rev(c("FSM", "NIC", "NNC", "Intergenic", "Genic", "Fusion", "Antisense")))]
-data[, supported_by_external:=factor(supported_by_external, levels=c("TRUE", "FALSE"))]
+data[, structural_category:=factor(structural_category, levels=c("FSM", "NIC", "NNC", "Intergenic", "Genic", "Fusion", "Antisense"))]
+data[, supported_by_external:=factor(supported_by_external, levels=rev(c("TRUE", "FALSE")))]
+# ggplot(data, aes(x=structural_category, y=n_t,  fill=structural_category))+
+#   geom_col(aes(alpha=supported_by_external), position = position_dodge2(width = 0.9, preserve = "single"))+
+#   geom_text(aes(label=n_t, group=supported_by_external), vjust=0.5,hjust=0,position = position_dodge2(width = 0.9, preserve = "single"), size=6*0.35)+
+#   mytheme+
+#   labs(x="", y="# PODER Transcripts", alpha="Externally\nValidated")+
+#   scale_fill_manual(values=colsqanti)+
+#   scale_alpha_manual(values=rev(c(0.5, 1)))+
+#   guides(fill="none",alpha = guide_legend(override.aes = list(size = 3)))+
+#   theme(legend.position=c(0.8,0.25))+
+#   ylim(c(0, 71000))+
+#   coord_flip()
+# ggsave("10_figures/01_plots/main/fig_02/barplot_PODER_validation_bysqanticat.pdf", dpi=700, width = 2.35, height = 3,  units = "in")
+
+sumdata <- unique(data[, sumcount:=sum(n_t), by="structural_category"][, maximum:=max(n_t), by="structural_category"][, .(structural_category, maximum, sumcount)])
+data[, supported_by_external:=factor(fifelse(supported_by_external==TRUE, "Supported", "Not Supported"), levels=c("Supported", "Not Supported"))]
 ggplot(data, aes(x=structural_category, y=n_t,  fill=structural_category))+
   geom_col(aes(alpha=supported_by_external), position = position_dodge2(width = 0.9, preserve = "single"))+
-  geom_text(aes(label=n_t, group=supported_by_external), vjust=0.5,hjust=0,position = position_dodge2(width = 0.9, preserve = "single"), size=6*0.35)+
+  geom_text(aes(label=n_t, group=supported_by_external), vjust=0.5,hjust=0, angle=90,position = position_dodge2(width = 0.9, preserve = "single"), size=6*0.35)+
   mytheme+
-  labs(x="", y="# PODER Transcripts", alpha="Externally\nValidated")+
+  labs(x="Structural Category compared to GENCODE v47", y="# PODER Transcripts", alpha="Support in\nOther Catalogs")+
   scale_fill_manual(values=colsqanti)+
   scale_alpha_manual(values=rev(c(0.5, 1)))+
   guides(fill="none",alpha = guide_legend(override.aes = list(size = 3)))+
-  theme(legend.position=c(0.8,0.25))+
-  ylim(c(0, 71000))+
-  coord_flip()
-ggsave("10_figures/01_plots/main/fig_02/barplot_PODER_validation_bysqanticat.pdf", dpi=700, width = 2.35, height = 3,  units = "in")
+  theme(legend.position=c(0.8,0.8))+
+  ylim(c(0, 85000))+
+  geom_text(data=sumdata, aes(x=structural_category, y=maximum+15000, label = sumcount), size=6*0.35, fontface="bold")
+ggsave("10_figures/01_plots/main/fig_02/barplot_PODER_validation_bysqanticat.pdf", dpi=700, width = 3, height = 3,  units = "in")
+
+
+# ggplot(data, aes(x=structural_category, y=n_t,  fill=structural_category))+
+#   geom_col(aes(alpha=supported_by_external))+
+#   geom_text(aes(label=n_t, group=supported_by_external),position = position_stack(vjust=0.5), size=5*0.35)+
+#   mytheme+
+#   labs(x="", y="# PODER Transcripts", alpha="Externally\nValidated")+
+#   scale_fill_manual(values=colsqanti)+
+#   scale_alpha_manual(values=rev(c(0.5, 1)))+
+#   guides(fill="none",alpha = guide_legend(override.aes = list(size = 3)))+
+#   theme(legend.position=c(0.8,0.25))
+# ggsave("10_figures/01_plots/main/fig_02/barplot_PODER_validation_bysqanticat.pdf", dpi=700, width = 2.35, height = 3,  units = "in")
 
 
 
@@ -116,26 +127,36 @@ data <- fread("../novelannotations/analysis_tables/241122_perc_unsupported_ics_p
 data[, dataset:=factor(dataset, levels=c("PODER", "ENCODE4", "GTEx", "CHESS3"))]
 data$tech <- c("Long-Reads", "Short-Reads", "Long-Reads", "Long-Reads")
 data$poder <- factor(c(0,0,0,1))
-ggplot(data, aes(x=dataset, y=n_ic, fill=tech))+
-  geom_col(aes(alpha=poder))+
-  geom_text(aes(label=paste(round(perc, digits=1), "%", sep=" ")), vjust=-0.5, size=6*0.35)+
-  geom_text(aes(label=n_ic), vjust=1.5, size=6*0.35)+
-  mytheme+
-  labs(x="", y="# Novel Transcripts\nnot Supported by External Effort", fill="")+
-  scale_fill_manual(values=c("purple", "#4A90E2"))+
-  scale_alpha_manual(values=c(0.6, 1))+
-  guides(alpha="none")+
+data[, total:=n_ic/(perc/100)]
+data[, n_ic_supported:=n_ic/(perc/100)*(1-perc/100)]
+data[, V1:=NULL]
+mydata <- melt(data, id.vars = c("dataset", "poder", "total", "tech", "perc"), variable.name = "Support", value.name = "Number")
+mydata[, perc:=round(Number/total*100, 1)]
+mydata[, Support:=fifelse(Support=="n_ic", "Not Supported", "Supported")]
+
+
+ggplot(mydata, aes(x=dataset, y=Number, fill=tech)) +
+  geom_col(aes(alpha=Support)) +
+  geom_text(aes(label=paste(perc, "%", sep=" "), group = Support), position=position_stack(vjust=0.35), size=6*0.35, show.legend = F) +
+  geom_text(aes(label=Number, group = Support), position=position_stack(vjust=0.5), size=6*0.35, show.legend = F) +
+  mytheme +
+  labs(x="", y="# Novel Transcripts", alpha="External Catalog Support", fill="Technology") +
+  scale_fill_manual(values=c("purple", "#4A90E2")) +
+  scale_alpha_manual(values=c(0.6, 1)) +
   theme(legend.key.size = unit(0.2, "cm"),
         legend.margin = margin(0, 0, 0, 0),
         legend.box.margin = margin(-10, 3, -10, -7),
-        legend.position="top")+
-  ylim(c(0,60000))
+        legend.position="top") +
+  guides(fill = guide_legend(nrow = 1, title.position = "top"),
+         alpha = guide_legend(nrow = 1, title.position = "top"))
+
 ggsave("10_figures/01_plots/supp/12_external_supp/barplot_PODER_ENCODE_GTEX_CHESS_nonvalidation.pdf", dpi=700, width = 3, height = 2.25,  units = "in")
 
 
 chess <- fread("../novelannotations/analysis_tables/chess_sqanti_classification.txt")[, .(isoform, structural_category)][, effort:="CHESS3"]
 encode <- fread("../novelannotations/analysis_tables/enc_sqanti_classification.txt")[, .(isoform, structural_category)][, effort:="ENCODE4"]
 gtex <- fread("../novelannotations/analysis_tables/gtex_sqanti_classification.txt")[, .(isoform, structural_category)][, effort:="GTExv9"]
+poder <- fread("04_transcriptome_assembly/04_evaluation/05_mastertable/data/29102024_PODER_mastertable.tsv")[, .(isoform, structural_category)][, effort:="PODER"]
 
 mydata <- rbind.data.frame(rbind.data.frame(chess, encode), gtex)
 categories <- c("FSM", "ISM", "NIC", "NNC", "Intergenic", "Genic", "Fusion", "Antisense")
@@ -145,9 +166,13 @@ names(colsqanti) <- c("FSM", "ISM", "NIC", "NNC", "Intergenic", "Genic", "Fusion
 
 mydata[, structural_category:=categories[structural_category]]
 mydata[, structural_category:=factor(structural_category, levels=categories)]
+mydata <- rbind.data.frame(mydata, poder)
+mydata$effort <- factor(mydata$effort,  levels = c("PODER", "GTExv9","ENCODE4", "CHESS3"))
+
+
 
 ggplot(mydata[!is.na(structural_category)], aes(x=structural_category, fill=structural_category))+
-  facet_wrap(~effort)+
+  facet_wrap(~effort, nrow=1)+
   geom_bar()+
   mytheme+
   scale_fill_manual(values=colsqanti)+
@@ -156,7 +181,7 @@ ggplot(mydata[!is.na(structural_category)], aes(x=structural_category, fill=stru
   theme(axis.text.x=element_text(angle=45, vjust=1, hjust=1))+
   geom_text(aes(label = after_stat(count)), stat="count", angle=90, size=6*0.35, hjust=0)+
   ylim(c(0, 180000))
-ggsave("10_figures/01_plots/supp/12_external_supp/barplot_ENCODE_GTEX_CHESS_sqanti.pdf", dpi=700, width = 6, height = 3,  units = "in")
+ggsave("10_figures/01_plots/supp/12_external_supp/barplot_ENCODE_GTEX_CHESS_sqanti.pdf", dpi=700, width = 7, height = 3,  units = "in")
 
 
 
@@ -213,3 +238,160 @@ ggplot(data, aes(x="", y=perc))+
   labs(x="", y="% Novel Splice Junctions\nfound only in personalized-GRCh38\nexplained by tools filters")+
   theme(axis.ticks.x=element_blank())
 ggsave("10_figures/01_plots/main/personalizedhg38/violin_percentage_NovelSJ_explained.pdf", dpi=700, width = 1.5, height = 2.25,  units = "in")
+
+
+
+
+#### MAGE tau
+
+data <- fread("../novelannotations/analysis_tables/250213_mage_tau_biotype_pop_spec.tsv")
+ggplot(data[!associated_gene_biotype %in% c("Other", "Pseudogene")], 
+       aes(x = tau, color = pop_spec_t)) +
+  geom_density() +
+  facet_wrap(~associated_gene_biotype) +
+  mytheme +
+  scale_color_manual(values = c("black", "grey", "darkred"), 
+                     labels = c("Absent from PODER" = "Absent from\nPODER", 
+                                "False" = "Population-Shared", 
+                                "True" = "Population-Specific")) +
+  labs(x = bquote(tau ~ "\n(Transcript Expression\nPopulation-Specificity)"), 
+       y = "Density", color = "") +
+  guides(color = guide_legend(override.aes = list(linetype = 1, shape = 2, size = 5)))+
+  theme(legend.position = "top")
+ggsave("10_figures/01_plots/supp/MAGE_tau.pdf", dpi=700, width = 4, height = 2.25,  units = "in")
+
+
+
+### FST
+
+data <- fread("../novelannotations/analysis_tables/250219_novel_exon_fsts.tsv")
+
+novelpval <- format(wilcox.test(data[novelty=="Novel", mean_mean_fst], data[novelty=="Known", mean_mean_fst])$p.value, scientific = TRUE, digits = 2)
+novelfivethree <- format(wilcox.test(data[novelty=="Novel 5'/3'", mean_mean_fst], data[novelty=="Known", mean_mean_fst])$p.value, scientific = TRUE, digits = 2)
+p <- ggplot(data, aes(mean_mean_fst, col=novelty)) + 
+  stat_ecdf(geom = "step")+
+  mytheme+
+  scale_color_manual(values=c("darkgrey", "#AD5113","#519D8F"))+
+  labs(x=expression("Mean " ~ F[ST] ~ "(CEU-All Populations)"), color="Exonic Region", y="Cumulative Proportion")+
+  ggmagnify::geom_magnify(from = c(xmin = 0.025, xmax = 0.1, ymin = 0.75, ymax = 1), 
+                          to = c(xmin = 0.15, xmax = 0.65, ymin = 0.1, ymax = 0.75))+
+  annotate(geom="text", label=paste0("p=",novelpval), x=0.5, y=0.15, color="#AD5113")+
+  annotate(geom="text", label=paste0("p=",novelfivethree), x=0.5, y=0.25, color="#519D8F")
+ggsave(plot=p,"10_figures/01_plots/supp/10_fst/ECDF_fstCEUYRI.YRIdiscoveredExons.pdf", dpi=700, width = 6, height = 4,  units = "in")
+
+
+
+# FST popsp exons
+data <- fread("../novelannotations/analysis_tables/250221_pop_spec_exon_fsts.tsv")
+
+novelpval <- format(wilcox.test(data[novelty=="Novel", mean_mean_fst], data[novelty=="Known", mean_mean_fst])$p.value, scientific = TRUE, digits = 2)
+novelfivethree <- format(wilcox.test(data[novelty=="Novel 5'/3'", mean_mean_fst], data[novelty=="Known", mean_mean_fst])$p.value, scientific = TRUE, digits = 2)
+p <- ggplot(data, aes(mean_mean_fst, col=pop_spec)) + 
+  stat_ecdf(geom = "step")+
+  mythemen+
+  scale_color_manual(values=c("darkgrey", "#AD5113","#519D8F"))+
+  labs(x=expression("Mean " ~ F[ST] ~ "(CEU-All Populations)"), color="Exonic Region", y="Cumulative Proportion")+
+  # ggmagnify::geom_magnify(from = c(xmin = 0.025, xmax = 0.1, ymin = 0.75, ymax = 1), 
+  #                         to = c(xmin = 0.15, xmax = 0.65, ymin = 0.1, ymax = 0.75))+
+  # annotate(geom="text", label=paste0("p=",novelpval), x=0.5, y=0.15, color="#AD5113")+
+  # annotate(geom="text", label=paste0("p=",novelfivethree), x=0.5, y=0.25, color="#519D8F")+
+  facet_wrap(~pop_spec_pop)
+ggsave(plot=p,"10_figures/01_plots/supp/10_fst/ECDF_fstCEUYRI.YRIdiscoveredExons.pdf", dpi=700, width = 6, height = 4,  units = "in")
+
+
+
+
+##### SJ explainability
+
+data <- fread("../novelannotations/analysis_tables/250221_personal_hg38_unique_novel_explainability.tsv")
+data <- as.data.frame(data)
+# Load packages
+library(ComplexUpset)
+
+
+median_fun <- function(x) {
+  return(data.frame(label = round(median(x), 2)))  # Return median value for annotation
+}
+
+# Define the set columns
+set_columns <- c("SS variant","Exonic variant\n+-10bp from SJ")
+
+# Create an intersection identifier column
+data$intersection <- apply(data[set_columns], 1, paste, collapse = "")
+data$intersection <- factor(data$intersection, levels = rev(c("FALSEFALSE", "FALSETRUE", "TRUEFALSE", "TRUETRUE")))
+# Create the UpSet plot with boxplots
+upset(
+  data, 
+  sort_intersections_by='degree',
+  set_sizes = FALSE,
+  intersect = set_columns,
+  base_annotations = list(),
+  annotations = list(
+    'Value Distribution' = (
+      ggplot(data, aes(x = intersection, y = `% SJs`)) +
+        geom_boxplot(fill = "#61814B", linewidth=0.25) +
+        mytheme +
+        labs(x = "", y = "% of Novel Splice Junctions\nExplained by Tool Filters") +
+        theme(axis.text.x = element_blank()) +
+        stat_summary(
+          fun = median, 
+          geom = "text", 
+          aes( label = paste0(round( after_stat(y), 0), "%")),  # Round the median and use as label
+          vjust = -2, size=6*0.35
+        )+
+        coord_cartesian(ylim=c(0, 74))
+      
+    )
+  )
+)+
+  xlab("")+
+  theme(text=element_text(family="Helvetica", size=7, face="bold"))
+ggsave("10_figures/01_plots/main/personalizedhg38/upset_percentageExplainedNovelSJ.pdf", dpi=700, width = 3, height = 3,  units = "in")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Define the plot with boxplot and median annotations
+ggplot(data, aes(x = intersection, y = `% SJs`)) +
+  geom_boxplot(fill = "#61814B") +
+  mytheme +
+  labs(x = "", y = "% of Novel Splice Junctions\nExplained by Tool Filters") +
+  theme(axis.text.x = element_blank()) +
+  stat_summary(
+    fun = median, 
+    geom = "text", 
+    aes( label = paste0(round( after_stat(y), 0), "%")),  # Round the median and use as label
+    vjust = -2
+  )+
+  coord_cartesian(ylim=c(0, 70))
+
+# Define the plot with boxplot and median annotations using `n_sj_w_explanation`
+ggplot(data, aes(x = intersection, y = `% SJs`)) +
+  geom_boxplot(fill = "#61814B") +
+  mytheme +
+  labs(x = "", y = "% of Novel Splice Junctions\nExplained by Tool Filters") +
+  theme(axis.text.x = element_blank()) +
+  stat_summary(
+    fun = median, 
+    geom = "point", 
+    aes(y = after_stat(y)),  # Compute median for the `y` position
+    size = 3, color = "red"  # Use a point for median
+  ) +
+  geom_text(
+    aes(
+      label = paste0(round(n_sj_w_explanation, 0), "%"),
+      y = max(`% SJs`, na.rm = TRUE) + 5  # Position the label above the max value of `% SJs`
+    ),
+    vjust = 0  # Adjust vertical alignment of the text
+  )
+
