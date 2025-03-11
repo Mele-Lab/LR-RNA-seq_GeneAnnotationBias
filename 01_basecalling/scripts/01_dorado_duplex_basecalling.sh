@@ -2,7 +2,6 @@
 
 POD5_DIR=$1
 SAMPLE_NAME=$2
-#SAMPLE_NAME=$(dirname ${POD5_DIR} | awk '{split($1, parsedpath,"/"); print parsedpath[9]}')
 
 module load dorado/0.5.3-linux-x64 cuda/12.2 nvidia-hpc-sdk/23.11
 

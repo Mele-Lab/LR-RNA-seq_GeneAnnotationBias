@@ -445,7 +445,7 @@ ggplot(unique(data[unique_region=="hg38", .(category, pop, unique_region, counts
   stat_summary(fun.data = median_fun, geom = "text", fun.args = list(y =5), size=6*0.35)+
   scale_fill_manual(values=c("#9D1616","#9A4B4B", "#D18A8A"))+
   guides(fill="none")
-ggsave("10_figures/01_plots/main/fig_05/violin_types_transcripts_nonref.pdf", dpi=700, width = 2, height = 2.25,  units = "in")
+ggsave("10_figures/01_plots/main/fig_05/violin_types_transcripts_nonref.pdf", dpi=700, width = 2.5, height = 2.5,  units = "in")
 ggplot(unique(data[unique_region=="T2T", .(category, pop, unique_region, counts)]), aes(x=category, y=counts, fill=category))+
   geom_violin(alpha=0.75)+
   geom_boxplot(outliers=F, width=0.05)+

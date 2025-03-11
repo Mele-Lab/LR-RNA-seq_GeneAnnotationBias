@@ -1,3 +1,5 @@
+#!/bin/bash
+
 module load samtools
 
 BAM=$1

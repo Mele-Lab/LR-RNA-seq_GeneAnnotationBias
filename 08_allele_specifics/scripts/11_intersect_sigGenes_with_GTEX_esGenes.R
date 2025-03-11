@@ -227,11 +227,11 @@ res_ase_poder <- enricher(gene=asqtl[annot=="PODER" & ASE=="ASE", geneid],
                           universe=asqtl[annot=="PODER" & ASE!="not Tested", geneid],
                           TERM2GENE= gwassets)
 res_astu_gencode <- enricher(gene=asqtl[annot=="GENCODEv47" & ASTS=="ASTS" , geneid],
-                             universe=asqtl[annot=="GENCODEv47" & ASTS!="not Tested" & hla=="notHLA", geneid],
+                             universe=asqtl[annot=="GENCODEv47" & ASTS!="not Tested", geneid],
                              TERM2GENE= gwassets,
                              qvalueCutoff=0.02)
 res_astu_poder <- enricher(gene=asqtl[annot=="PODER" & ASTS=="ASTS" , geneid],
-                           universe=asqtl[annot=="PODER" & ASTS!="not Tested" & hla=="notHLA", geneid],
+                           universe=asqtl[annot=="PODER" & ASTS!="not Tested" , geneid],
                            TERM2GENE= gwassets,
                            qvalueCutoff=0.02)
 
@@ -259,6 +259,15 @@ res_astu_enhanced <- enricher(gene=enhanced[FDR<0.05, geneid],
                            universe=enhanced[, geneid],
                            TERM2GENE= gwassets,
                            qvalueCutoff=0.02)
+
+
+res_astu_enhanced <- as.data.table(as.data.frame(res_astu_enhanced))[, annot:="EnhancedGENCODE"]
+res_astu_gencode <- as.data.table(as.data.frame(res_astu_gencode))[, annot:="GENCODE"]
+res_astu_poder <- as.data.table(as.data.frame(res_astu_poder))[, annot:="PODER"]
+
+res_astu_all <- rbind.data.frame(rbind.data.frame(res_astu_gencode, res_astu_poder), res_astu_enhanced)
+fwrite(res_astu_all, "data/gwas_enrichment_allannots.tsv", sep="\t", row.names = F)
+res_astu_all <- fread("data/gwas_enrichment_allannots.tsv")
 # PLOTS
 ggplot(as.data.frame(res_astu_gencode), aes(x=FoldEnrichment, size = Count, y=reorder(Description, Count), color = p.adjust)) +
   geom_point(stat = "identity") +
@@ -296,7 +305,7 @@ ggplot(res_astu_poder[p.adjust<0.02], aes(x=FoldEnrichment, size = Count, y=reor
         legend.box.margin = margin(-10, 3, -10, -7),
         plot.title = element_text(family="Helvetica", face="bold"))+
   scale_size_continuous(range = c(0.5, 4))
-ggsave("../10_figures/01_plots/main/fig_04/dotplot.GWASpoder.pdf", dpi=700, width = 4, height = 2.5,  units = "in")
+ggsave("../10_figures/01_plots/main/fig_04/dotplot.GWASpoder.pdf", dpi=700, width = 4, height = 3,  units = "in")
 
 
 

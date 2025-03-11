@@ -36,6 +36,8 @@ names(newcats) <- cats
 names(colsqanti) <- newcats
 plotme[, structural_category:=newcats[structural_category]]
 plotme[, structural_category:=factor(structural_category, levels=newcats)]
+plotme[, newstructure:=fifelse(structural_category%in%c("FSM", "ISM", "NIC", "NNC"), as.character(structural_category), as.character("Other"))]
+plotme[, newcount:=sum(count), by=.(sample, newstructure)]
 
 
 median_fun <- function(x,y) {
@@ -50,6 +52,15 @@ ggplot(plotme, aes(x=structural_category, y=as.integer(count), fill=structural_c
   labs(y="# Transcripts", x="Structural Category of Personal Assembly-built Annotation\nLifted off to GRCh38 compared to enhanced GENCODE")+
   stat_summary(fun.data = median_fun, geom = "text", fun.args = list(y = 5000), size=6*0.35)
 ggsave("10_figures/01_plots/supp/38_map_pg/boxplot.sqanti_of_personal_assembliesGTF_liftedofftoGRCh38_comparedToEnhancedGENCODE.pdf", dpi=700, width = 3.5, height = 2.25,  units = "in")
+
+ggplot(unique(plotme[, .(newstructure, newcount)]), aes(x=newstructure, y=as.integer(newcount), fill=newstructure))+
+  geom_boxplot(size=0.25)+
+  ggbeeswarm::geom_quasirandom(show.legend = F, size=0.5)+
+  scale_fill_manual(values=colsqanti)+mytheme+
+  guides(fill="none")+
+  labs(y="# Transcripts", x="Personal Assembly Transcript\nStructure Novelty")+
+  stat_summary(fun.data = median_fun, geom = "text", fun.args = list(y = 5000), size=6*0.35)
+ggsave("10_figures/01_plots/main/fig_05/boxplot.sqanti_of_personal_assembliesGTF_liftedofftoGRCh38_comparedToEnhancedGENCODE.pdf", dpi=700, width = 2.5, height = 2.5,  units = "in")
 
 
 # load expression data

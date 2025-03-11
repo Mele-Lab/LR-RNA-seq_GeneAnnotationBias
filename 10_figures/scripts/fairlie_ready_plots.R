@@ -228,19 +228,39 @@ ggsave(plot=p,"10_figures/01_plots/supp/22_afr_trx/ecdf_Expressed_aa_PerGene_AFR
 
 
 # personalized GRCh38
+metadata <- fread("00_metadata/data/samples_metadata_online.tsv")
+popcol <- unique(metadata$color_pop)
+names(popcol) <- unique(metadata$population)
 
-data <- fread("../novelannotations/analysis_tables/250210_perc_novel_hg38_absent_sjs_w_variant_per_cell_line.tsv")
+data <- fread("10_figures/data/250210_perc_novel_hg38_absent_sjs_w_variant_per_cell_line.tsv")
+data[, cell_line_id:=gsub("^..", "", cell_line_id)]
+metadata[, cell_line_id:=gsub("^..", "", cell_line_id)]
+
+data <- unique(metadata[, .(cell_line_id, population)])[data, on="cell_line_id"]
+
 ggplot(data, aes(x="", y=perc))+
+  geom_violin(fill="#61814B",alpha=0.5)+
+  geom_boxplot(width=0.3,fill="#61814B")+
+  ggbeeswarm::geom_quasirandom(size=0.5, aes(color=population))+
+  mytheme+
+  labs(x="", y="% Novel Splice Junctions\nfound only in personalized-GRCh38\nexplained by tools filters", color="")+
+  theme(axis.ticks.x=element_blank(), legend.position = "top")+
+  scale_color_manual(values=popcol)
+ggsave("10_figures/01_plots/main/personalizedhg38/violin_percentage_NovelSJ_explained.pdf", dpi=700, width = 1.5, height = 2.25,  units = "in")
+
+
+data <- fread("../novelannotations/analysis_tables/250221_personal_hg38_unique_novel_explainability.tsv")
+data[, explained:=fifelse(`Exonic variant\n+-10bp from SJ` | `SS variant`, TRUE, FALSE)]
+data[, total:=sum(n_sj), by=.(cell_line_id)]
+data[, sum:=sum(n_sj), by=.(cell_line_id, explained)]
+data[, per:=sum/total*100]
+ggplot(unique(data[explained==TRUE]), aes(x="", y=per))+
   geom_violin(fill="#61814B",alpha=0.5)+
   geom_boxplot(width=0.3,fill="#61814B")+
   ggbeeswarm::geom_quasirandom(size=0.5)+
   mytheme+
   labs(x="", y="% Novel Splice Junctions\nfound only in personalized-GRCh38\nexplained by tools filters")+
   theme(axis.ticks.x=element_blank())
-ggsave("10_figures/01_plots/main/personalizedhg38/violin_percentage_NovelSJ_explained.pdf", dpi=700, width = 1.5, height = 2.25,  units = "in")
-
-
-
 
 #### MAGE tau
 
