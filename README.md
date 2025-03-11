@@ -7,4 +7,6 @@ Description of directories content
   - **01_espresso, 02_isoquant, 03_flair:** transcript discovery pipelines
   - **04_evaluation:**
     - **04_mastertable**: Preparation and explorations of Unfiltered Merged Annotation (UMA) and PODER (Population Diverse Enhanced longReads) annotation. It includes all gene annotation bias analyses.
-- **06_quantification**
+- **06_quantification**: transcript expression quantification used for transcript filtering
+- **08_allele_specifics**: ASE and ASTU and subsequent analyses
+- **fd_personal_genomes**: All code for "Personalized genome reference assemblies enhance novel splice junction discovery" section
