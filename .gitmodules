@@ -1,0 +1,3 @@
+[submodule "fairlie"]
+	path = fairlie
+	url = git@github.com:fairliereese/240903_pt.git
