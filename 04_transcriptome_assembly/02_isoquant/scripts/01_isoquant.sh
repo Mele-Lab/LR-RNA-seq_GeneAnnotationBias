@@ -33,11 +33,3 @@ SAMPLENAME=$(echo $1 | sed 's-.*/--' | sed 's/\.bam//')
 
 # --genedb $ANNOTATIONGTF \
 
-
-# ########### TAMARA'S SETTINGS
-# isoquant.py \
-#     --fl_data \
-#     --check_canonical \
-#     --report_novel_unspliced true \
-#     -o isoquant_output_ont_custom \
-#     --delta 8 \

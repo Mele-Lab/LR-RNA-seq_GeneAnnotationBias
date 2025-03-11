@@ -41,12 +41,12 @@ names(impactcol) <- unique(data$Impact)
 data[, count :=sum(freq), by=.(Impact, source)]
 data[, totalcount :=sum(freq), by=.(source)]
 data[, percent:=paste0(round(count/totalcount*100, 0), "%")]
-
+fwrite(data, "data/vep/consequences_bothannotations.tsv", sep="\t", row.names = F)
 
 ggplot(unique(data[, .(Impact, source, count,percent)]), aes(x=source, y=count/10^6, fill=Impact))+
   geom_col()+
   mytheme+
-  scale_fill_manual(values=modcol)+
+  scale_fill_manual(values=impactcol)+
   labs(x="", y="# Coding Consequences (Million)")+
   geom_text(aes(label=percent), position=position_stack(vjust=0.5), size=6*0.35)
 ggsave("../10_figures/01_plots/supp/40_vep/barplot_vep.pdf", dpi=700, width = 3, height = 3,  units = "in")

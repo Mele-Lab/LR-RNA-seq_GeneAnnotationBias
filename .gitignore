@@ -111,3 +111,10 @@ finalparsed.vcf
 finalparsed.cvf
 scripts/snakemake/array.tsv
 scripts/snakemake/array.tsv
+05_variant_calling
+07_differential_expressions
+09_other_analyses/01_map_to_pangenome
+09_other_analyses/03_novel_exons_fst
+11_sqtl
+Z_03.1_pseudogene_exploration
+Z_resources
