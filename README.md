@@ -11,4 +11,4 @@ Description of directories content
 - [**06_quantification:**](https://github.com/Mele-Lab/LR-RNA-seq_GeneAnnotationBias/tree/master/06_quantification) transcript expression quantification used for transcript filtering
 - [**08_allele_specifics:**](https://github.com/Mele-Lab/LR-RNA-seq_GeneAnnotationBias/tree/master/08_allele_specifics) ASE and ASTU and subsequent analyses
 - [**fd_personal_genomes:**](https://github.com/Mele-Lab/LR-RNA-seq_GeneAnnotationBias/tree/master/fd_personal_genome) All code for "Personalized genome reference assemblies enhance novel splice junction discovery" section
-- [**fairlie:**]() All data processing and analysis code ran by Fairlie (see folder for more details on specific analyses)
+- [**fairlie:**](https://github.com/fairliereese/240903_pt/tree/6fc2f746ed78187ecd6dae2398c73c90080e6dcd) All data processing and analysis code ran by Fairlie (see folder for more details on specific analyses)
