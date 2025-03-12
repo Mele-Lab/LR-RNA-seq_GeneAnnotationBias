@@ -1,6 +1,3 @@
 [submodule "fairlie"]
 	path = fairlie
 	url = git@github.com:fairliereese/240903_pt.git
-[submodule "merge_ics"]
-	path = merge_ics
-	url = git@github.com:fairliereese/240706_pantranscriptome_cerberus_gtf_merge.git
