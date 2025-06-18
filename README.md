@@ -57,5 +57,14 @@ We ran 4 different tools for transcript discovery.
 - [**Intercatalog overlap:**](https://github.com/fairliereese/240903_pt/tree/main/snakemake/ics_inter_catalog) Extract unique intron chains from each catalog (CHESS3, ENCODE4, GTEx) and run SQANTI on them.
 - [**ENCODE portal LR-RNA-seq parsing:**](https://github.com/fairliereese/240903_pt/tree/main/snakemake/encode) Determine genetic ancestry (if annotated) of ENCODE LR-RNA-seq catalog.
 - [**GTEx requantification:**](https://github.com/fairliereese/240903_pt/tree/main/snakemake/gtex_lr-kallisto) Re-quantify the GTEx LR-RNA-seq dataset from FASTQ using lr-kallisto and PODER.
-- [**MAGE requantification:**](https://github.com/fairliereese/240903_pt/tree/main/snakemake/mage): Quantification of [MAGE](https://github.com/mccoy-lab/MAGE) RNA-seq dataset using kallisto and multiple annotations (PODER, GENCODE, Enhanced GENCODE).
-- [**Novel exon FSTs:**](https://github.com/fairliereese/240903_pt/tree/main/snakemake/pop_div_exon_fsts): Find known exons and novel transcribed regions of novel exons. Compute the Fst values pairwise between each set of populations in the 1000G that overlap ours for the SNP variants that fall within these regions.
+- [**MAGE requantification:**](https://github.com/fairliereese/240903_pt/tree/main/snakemake/mage) Quantification of [MAGE](https://github.com/mccoy-lab/MAGE) RNA-seq dataset using kallisto and multiple annotations (PODER, GENCODE, Enhanced GENCODE).
+- [**Novel exon FSTs:**](https://github.com/fairliereese/240903_pt/tree/main/snakemake/pop_div_exon_fsts) Find known exons and novel transcribed regions of novel exons. Compute the Fst values pairwise between each set of populations in the 1000G that overlap ours for the SNP variants that fall within these regions.
+
+## Additional documentation
+
+We provide additional documentation to explain the layout of processing / analysis performed by the different members of the group, as we do not all employ the same strategies.
+
+### Fairlie
+- [**Overview of repo:**](https://github.com/fairliereese/240903_pt/tree/main) Structure of repo Fairlie used to do all data processing and analyses.
+- [**Snakemake:**](https://github.com/fairliereese/240903_pt/tree/main/snakemake) Structure and content of Snakemake pipelines used to perform large-scale data processing.
+- [**Analyses:**](https://github.com/fairliereese/240903_pt/blob/main/analysis/README.md) All exploratory analyses, plotting, and statistical testing; split by section of the paper.
