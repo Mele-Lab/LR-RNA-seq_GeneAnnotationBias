@@ -54,6 +54,7 @@ We ran 4 different tools for transcript discovery.
 - [**Download:**](https://github.com/fairliereese/240903_pt/tree/main/snakemake/map_personal) Download of personal assemblies from pangenome matching our LR-RNA-seq samples. <!-- Also mapping but we ended up using Fabien's -->
 
 ### Other analyses
+- [**SIRV analysis:**](https://github.com/fairliereese/240903_pt/blob/main/snakemake/qc_sirvs): QC SIRVs from raw mappings.
 - [**Intercatalog overlap:**](https://github.com/fairliereese/240903_pt/tree/main/snakemake/ics_inter_catalog) Extract unique intron chains from each catalog (CHESS3, ENCODE4, GTEx) and run SQANTI on them.
 - [**ENCODE portal LR-RNA-seq parsing:**](https://github.com/fairliereese/240903_pt/tree/main/snakemake/encode) Determine genetic ancestry (if annotated) of ENCODE LR-RNA-seq catalog.
 - [**GTEx requantification:**](https://github.com/fairliereese/240903_pt/tree/main/snakemake/gtex_lr-kallisto) Re-quantify the GTEx LR-RNA-seq dataset from FASTQ using lr-kallisto and PODER.
